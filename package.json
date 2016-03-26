@@ -16,6 +16,7 @@
     "serve-favicon": "~2.2.0",
     "coffee-middleware": "^0.3.0",
     "less": "^2.5.1",
-    "less-middleware": "1.0.x"
+    "less-middleware": "1.0.x",
+    "express-session":"~1.13.0"
   }
 }
