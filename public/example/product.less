@@ -1,0 +1,76 @@
+@import "../.global.less";
+
+body {
+	//background-color: @backgroundColor;
+	padding: 0.6em;
+	.ui.form .field > label {
+		font-weight: inherit;
+		font-size: 0.828571em;
+	}
+	.ui.segment, .ui.vertical.accordion.menu {
+		border-radius: 0 !important;
+	}
+	.result-list.ui.segment {
+		padding: 0px;
+		#productTable {
+			table {
+				table-layout: auto;
+				font-size: 12.8px;
+				th {
+					font-weight: inherit;
+					color: rgba(0,0,0,0.6);
+				}
+				.status{
+					min-width: 80px;
+					text-align: center;
+				}
+				.num{
+					text-align: right;
+					min-width: 80px;
+				}
+				.amount{
+					text-align: right;
+					min-width: 80px;
+				}
+				.fang{
+					text-align: center;
+					min-width: 120px;
+				}
+				.date,.name,.region,.csz,.csy{
+					text-align: center;
+					min-width: 100px;
+				}
+				.card-no,.id{
+					text-align: center;
+					min-width: 120px;
+				}
+
+			}
+		}
+	}
+
+	.ui.vertical.accordion.menu {
+		> .item {
+			padding: 0;
+			.title {
+				background-color: #E8E8E8;
+				padding: 0.4em;
+				span, i:not(.dropdown) {
+					font-size: 0.82em;
+					font-weight: bold
+				}
+				color: rgba(0, 0, 0, 0.6);
+				line-height: 1.4em;
+
+			}
+
+			> .content {
+				padding: 1em;
+				> :last-child {
+					padding-bottom: 1em;
+				}
+			}
+		}
+
+	}
+}

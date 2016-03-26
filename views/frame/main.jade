@@ -1,0 +1,78 @@
+extends ../.cola
+append head
+	link(rel="stylesheet", type="text/css", href="/frame/main.css")
+block body
+	.v-box
+		.box.ui.menu.secondary.attached.page-header
+			.item.logo.header
+				img.ui.mini.image(src="/resources/images/logo.png")
+				span Cola-UI Client Framework
+			.right.menu
+				a.item.msg.icon.mail
+					i.icon.mail
+					span.badge 5
+				a.item.msg.icon
+					i.icon.alarm.icon-animated-bell
+					span.badge 22
+				a.item.icon.user(c-onclick="showUserSidebar()")
+					img.ui.image.avatar(src="/resources/images/avatars/alex.png")
+					i.icon.dropdown
+		.flex-box
+			.h-box
+				#frameworkSidebarBox.box.main-menu.ui.segment.inverted.basic.vertical
+					.side-accordion
+						.bar(c-onclick="toggleSidebar()")
+							i.iconfont.icon-sidebar
+						#frameworkSidebar.ui.accordion
+							div(c-repeat="menu in menus").item.active
+								div.title.menu-item
+									i(c-classname="menu.icon")
+									span(c-bind="menu.label")
+								div.content
+									div.menu-item(c-repeat="item in menu.menus" c-onclick="menuItemClick(item)")
+										i(c-classname="item.icon")
+										span(c-bind="item.label")
+
+				.flex-box
+					div
+						#subMenuLayer(c-widget="Layer; animation:slide right")
+							div.title
+								span(c-bind="currentMenu.label")
+							#subMenuTree
+								template(name="node-default")
+									i(c-classname="menu.hasChild ? 'icon folder outline' : 'icon file'")
+									span(c-bind="menu.label")
+							#subMenuNavbar(c-onclick="hideSubMenuLayer()")
+								div
+									i.iconfont.icon-weibiaoti26
+						#viewTab(c-widget="Tab; height:100%")
+							nav.tab-bar
+								ul.tabs
+									li(name="dashboard" c-widget="TabButton; icon:dashboard; caption:控制台;closeable:true")
+							ul.contents
+								li(name="dashboard")
+
+	#userSidebar(c-widget="Sidebar; modalOpacity:0; direction:right")
+
+		.v-box
+			.box
+				.ui.segment.text-center.basic.inverted.basic-info
+					div.avatar
+						img.ui.image.tiny.avatar.centered(c-src="user.avatar")
+					div.name(c-bind="user.name")
+			.flex-box
+				div
+					.ui.segment.text-center.basic
+						a.msg
+							i.icon.mail
+							span 消息
+							span.detail(c-bind="user.messageCount+'条'")
+						a.msg
+							i.icon.alarm
+							span 任务
+							span.detail(c-bind="user.taskCount+'条'")
+			.box.text-center
+				.sign-out-btn.teal.basic(c-widget="Button; caption:安全退出")
+					i.icon.sign.out
+append scripts
+	script(src="/frame/main.js")
