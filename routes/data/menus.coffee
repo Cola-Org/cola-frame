@@ -11,8 +11,8 @@ module.exports = [
 				target: "",
 				closeable: true
 			}, {
-				icon: "iconfont icon-zhandianguanli",
-				label: "产品维护",
+				icon: "iconfont icon-shoudan",
+				label: "催收管理",
 				type: "subWindow",
 				path: "/example/product",
 				target: "",
@@ -51,7 +51,7 @@ module.exports = [
 					}
 				]
 			}, {
-				icon: "iconfont icon-yonghuguanli",
+				icon: "iconfont icon-1305quanxianshezhi",
 				label: "用户权限"
 			}, {
 				icon: "iconfont icon-mail-setting",
@@ -72,7 +72,7 @@ module.exports = [
 				icon: "iconfont icon-zhucerenzheng",
 				label: "职位管理"
 			}, {
-				icon: "iconfont icon-zhandianshezhi",
+				icon: "iconfont icon-03",
 				label: "批量邀请"
 			}
 		]

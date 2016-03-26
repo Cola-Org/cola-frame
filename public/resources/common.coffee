@@ -9,7 +9,9 @@ properties =
 	longPollingInterval: 2000
 	"service.messagePull": "/service/message/pull"
 	"service.login": "/service/account/login"
+	"service.logout": "/service/account/logout"
 	"service.menus": "/service/menus"
+	"service.user.detail":"/service/user/detail"
 
 Frame = window.Frame =
 	_tabs: {}

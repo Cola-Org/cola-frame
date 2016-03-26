@@ -66,13 +66,13 @@ block body
 						a.msg
 							i.icon.mail
 							span 消息
-							span.detail(c-bind="user.messageCount+'条'")
+							span.detail(c-bind="messages.messageCount+'条'")
 						a.msg
 							i.icon.alarm
 							span 任务
-							span.detail(c-bind="user.taskCount+'条'")
+							span.detail(c-bind="messages.taskCount+'条'")
 			.box.text-center
-				.sign-out-btn.teal.basic(c-widget="Button; caption:安全退出")
+				.sign-out-btn.teal.basic(c-widget="Button; caption:安全退出; click:logout")
 					i.icon.sign.out
 append scripts
 	script(src="/frame/main.js")

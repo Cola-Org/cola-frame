@@ -1,8 +1,8 @@
 @import "../.global.less";
-
+@captionBarBGColor:#f8f8f8;
 body {
 	//background-color: @backgroundColor;
-	padding: 0.6em;
+	padding: 0.3em;
 	.ui.form .field > label {
 		font-weight: inherit;
 		font-size: 0.828571em;
@@ -48,13 +48,39 @@ body {
 			}
 		}
 	}
-
+.ui.segment{
+	>.ui.top.attached.label{
+		background-color: @captionBarBGColor;
+		&:before{
+			position: absolute;
+			left: 0;
+			width: 2px;
+			top:0;
+			content: "";
+			bottom: 0;
+			background-color: @primaryColor;
+		}
+	}
+}
 	.ui.vertical.accordion.menu {
+		//border-color: rgba(205, 217, 229, 0.15);
 		> .item {
+			//border-color: transparent !important;
 			padding: 0;
 			.title {
-				background-color: #E8E8E8;
-				padding: 0.4em;
+				//padding-left: 1em;
+				position: relative;
+				&:before{
+					position: absolute;
+					left: 0;
+					width: 2px;
+					top:0;
+					content: "";
+					bottom: 0;
+					background-color: @orange;
+				}
+				background-color: @captionBarBGColor;
+				padding: 0.4em 0.4em 0.4em 0.8em;
 				span, i:not(.dropdown) {
 					font-size: 0.82em;
 					font-weight: bold

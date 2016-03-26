@@ -7,6 +7,10 @@ cola((model)->
 		provider:
 			url: Frame.prop("service.messagePull")
 	})
+	model.describe("user", {
+		provider:
+			url: Frame.prop("service.user.detail")
+	})
 	makeMenuItemDom = (data, i)->
 		contentDom = [
 			{
@@ -51,8 +55,22 @@ cola((model)->
 	model.action({
 		showUserSidebar: ()->
 			cola.widget("userSidebar").show()
+		logout: ()->
+			$.ajax({
+				type: "POST",
+				url: Frame.prop("service.logout")
+			}).done((result) ->
+				if result.type
+					window.location.reload()
+			).fail(() ->
+				alert("退出失败，请检查网络连接！")
+				return
+			)
 		menuItemClick: (item)->
 			data = item.toJSON()
+			console.log(event.target)
+			if event.target
+				$(event.target).closest()
 			menus = data.menus
 			recursive = (d)->
 				if d.menus
@@ -69,7 +87,10 @@ cola((model)->
 			else
 				model.set("subMenu", [])
 				cola.widget("subMenuLayer").hide()
-				Frame.open(data.path,data)
+				Frame.open(data.path, data)
+
+
+
 
 		hideSubMenuLayer: ()->
 			cola.widget("subMenuLayer").hide()

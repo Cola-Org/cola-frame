@@ -5,6 +5,14 @@ cola((model)->
 		provider:
 			url: "/service/products"
 	})
+
+	model.action({
+		getColor:(status)->
+			if status is "完成"
+				return "positive-text"
+			else
+				return "negative-text"
+	})
 	model.widgetConfig({
 		productTable: {
 			$type: "table",
