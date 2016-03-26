@@ -11,45 +11,16 @@ cola((model)->
 		provider:
 			url: Frame.prop("service.user.detail")
 	})
-	makeMenuItemDom = (data, i)->
-		contentDom = [
-			{
-				class: "title menu-item"
-				content: [
-					{
-						tagName: "i"
-						class: data.icon
-					}
-					{
-						tagName: "span"
-						content: data.label
-					}
-				]
-			}
-		]
-		if data.menus
-			menusDom = []
-			for itemDate in data.menus
-				menusDom.push(makeMenuItemDom(itemDate))
-			contentDom.push({
-				class: "content"
-				content: menusDom
-			})
-		return {
-		tagName: "div"
-		class: "item"
-		content: contentDom
-		}
+
 	model.widgetConfig({
 		subMenuTree:
 			$type: "tree",
 			autoExpand: true,
 			bind:
-				hasChildProperty: "hasChild"
 				expression: "menu in subMenu"
 				child:
 					recursive: true,
-					hasChildProperty: "hasChild",
+
 					expression: "menu in menu.menus"
 	})
 	model.action({
@@ -68,13 +39,9 @@ cola((model)->
 			)
 		menuItemClick: (item)->
 			data = item.toJSON()
-			console.log(event.target)
-			if event.target
-				$(event.target).closest()
 			menus = data.menus
 			recursive = (d)->
 				if d.menus
-					d.hasChild = true
 					recursive(item) for item in d.menus
 				else
 					d.hasChild = false
