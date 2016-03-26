@@ -136,7 +136,7 @@ block body
 			template(name="waje")
 				div.amount(c-bind="item.waje")
 			template(name="yhje")
-				div.amount(c-bind="formatNumber(item.yhje,'$00,000.00')")
+				div.amount(c-bind="formatNumber(item.yhje,'¥##,###.00')")
 			template(name="qs")
 				div.num(c-bind="item.qs+'期'")
 			template(name="name")
