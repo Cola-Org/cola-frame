@@ -11,7 +11,7 @@ properties =
 	"service.login": "/service/account/login"
 	"service.logout": "/service/account/logout"
 	"service.menus": "/service/menus"
-	"service.user.detail":"/service/user/detail"
+	"service.user.detail": "/service/user/detail"
 
 Frame = window.Frame =
 	_tabs: {}
@@ -74,3 +74,4 @@ language = $.cookie("_language") || window.navigator.language;
 if language
 	document.write("<script src=\"resources/cola-ui/i18n/#{language}/cola.js\"></script>");
 	document.write("<script src=\"resources/i18n/#{language}/common.js\"></script>");
+$(NProgress.done)

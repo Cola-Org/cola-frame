@@ -20,7 +20,6 @@ cola((model)->
 				expression: "menu in subMenu"
 				child:
 					recursive: true,
-
 					expression: "menu in menu.menus"
 	})
 	model.action({
@@ -55,9 +54,6 @@ cola((model)->
 				model.set("subMenu", [])
 				cola.widget("subMenuLayer").hide()
 				Frame.open(data.path, data)
-
-
-
 
 		hideSubMenuLayer: ()->
 			cola.widget("subMenuLayer").hide()

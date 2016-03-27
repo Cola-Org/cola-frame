@@ -7,11 +7,20 @@ html
 			meta(name="apple-mobile-web-app-status-bar-style", content="black")
 			meta(charset="UTF-8")
 			title Cola-UI 客户端框架
-			base(href="/")
+			base(href=siteContext || "/")
+			link(rel="stylesheet", type="text/css", href="/resources/nprogress/nprogress.css")
+			script(src="/resources/nprogress/nprogress.js")
+
+
 			link(rel="stylesheet", type="text/css", href="/resources/cola-ui/semantic.css")
 			link(rel="stylesheet", type="text/css", href="/resources/cola-ui/cola.css")
 			link(rel="stylesheet", type="text/css", href="/resources/common.css")
-	block body
+	body
+		script(type="text/javascript").
+			NProgress.configure({showSpinner: false, minimum: 0.3})
+			NProgress.start();
+		block body
+
 	block scripts
 		script(src="/resources/jquery/jquery-2.1.3.js")
 		script(src="/resources/jquery/jquery.cookie.js")
