@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta charset="UTF-8">
+    <title>Cola-UI 客户端框架</title>
+    <base href="http://localhost:8080/">
+    <link rel="stylesheet" type="text/css" href="/resources/nprogress/nprogress.css">
+    <script src="/resources/nprogress/nprogress.js"></script>
+    <link rel="stylesheet" type="text/css" href="/resources/cola-ui/semantic.css">
+    <link rel="stylesheet" type="text/css" href="/resources/cola-ui/cola.css">
+    <link rel="stylesheet" type="text/css" href="/resources/common.css">
+    <link rel="stylesheet" type="text/css" href="/example/product.css">
+  </head>
+  <body>
+    <script type="text/javascript">
+      NProgress.configure({showSpinner: false, minimum: 0.3})
+      NProgress.start();
+    </script>
+    <div style="width: 100%; margin-top: 0px;" class="ui vertical accordion menu">
+      <div class="item">
+        <div class="title active">
+          <div class="dropdown icon"></div><i class="icon sitemap"></i><span>组织结构</span>
+        </div>
+        <div class="content active">
+          <div class="ui form">
+            <div class="fields">
+              <div class="field">
+                <label>公司</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>部门</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>催收组</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>催收员</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="item">
+        <div class="title"><i class="icon payment"></i>
+          <div class="dropdown icon"></div><span>案件信息</span>
+        </div>
+        <div class="content">
+          <div class="ui form">
+            <div class="fields">
+              <div class="field">
+                <label>委托方</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>批次号</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>委案日期</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>结案日期</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>地区</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>案件状态</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+            </div>
+            <div class="fields">
+              <div class="field">
+                <label>末次跟进日期</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>待跟进日期</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>跟进次数</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>催收状态</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>案件金额</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="item">
+        <div class="title active">
+          <div class="dropdown icon"></div><i class="icon marker"></i><span>精确查询</span>
+        </div>
+        <div class="content active">
+          <div class="ui form">
+            <div class="fields">
+              <div class="field">
+                <label>证件号后四位</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>姓名</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>电话号码后四位</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>卡号后四位</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+              <div class="field">
+                <label>案件编号</label>
+                <div c-widget="input" class="mini"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div c-widget="Button; icon:search; caption:查询" class="blue"></div>
+    <div class="ui segment">
+      <div class="ui top attached label">结果统计</div>
+      <div>
+        <div class="ui label red"><span>BP金额:</span><a class="detail">2789.00元</a></div>
+        <div class="ui label orange"><span>已还金额:</span><a class="detail">1821.00元</a></div>
+        <div class="ui label yellow"><span>PTP金额:</span><a class="detail">82.00元</a></div>
+        <div class="ui label olive"><span>CP金额:</span><a class="detail">169.00元</a></div>
+        <div class="ui label green"><span>案件数量:</span><a class="detail">67</a></div>
+        <div class="ui label teal"><span>有偿件:</span><a class="detail">32</a></div>
+        <div class="ui label"><span>委案金额:</span><a class="detail">389.20元</a></div>
+      </div>
+    </div>
+    <div class="ui segment result-list">
+      <div id="productTable">
+        <template name="ygCount">
+          <div c-bind="item.ygCount+'次'" class="num"></div>
+        </template>
+        <template name="csStatus">
+          <div c-bind="item.csStatus" c-classname="getColor(item.csStatus)+' status'" class="status"></div>
+        </template>
+        <template name="dgDate">
+          <div c-bind="item.dgDate" class="date"></div>
+        </template>
+        <template name="wtf">
+          <div c-bind="item.wtf" class="fang"></div>
+        </template>
+        <template name="slf">
+          <div c-bind="item.slf" class="fang"></div>
+        </template>
+        <template name="waDate">
+          <div c-bind="item.waDate" class="date"></div>
+        </template>
+        <template name="syDay">
+          <div c-bind="item.syDay+'天'" class="num"></div>
+        </template>
+        <template name="waje">
+          <div c-bind="item.waje" class="amount"></div>
+        </template>
+        <template name="yhje">
+          <div c-bind="formatNumber(item.yhje,'¥##,###.00')" class="amount"></div>
+        </template>
+        <template name="qs">
+          <div c-bind="item.qs+'期'" class="num"></div>
+        </template>
+        <template name="name">
+          <div c-bind="item.name" class="name"></div>
+        </template>
+        <template name="id">
+          <div c-bind="item.id" class="id"></div>
+        </template>
+        <template name="cardNo">
+          <div c-bind="item.cardNo" class="card-no"></div>
+        </template>
+        <template name="region">
+          <div c-bind="item.region" class="region"></div>
+        </template>
+        <template name="csz">
+          <div c-bind="item.csz" class="csz"></div>
+        </template>
+        <template name="csy">
+          <div c-bind="item.csy" class="csy"></div>
+        </template>
+      </div>
+    </div>
+  </body>
+  <script src="/resources/jquery/jquery-2.1.3.js"></script>
+  <script src="/resources/jquery/jquery.cookie.js"></script>
+  <script src="/resources/cola-ui/3rd.js"></script>
+  <script src="/resources/cola-ui/semantic.js"></script>
+  <script src="/resources/cola-ui/cola.js"></script>
+  <script src="/resources/common.js"></script>
+  <script src="/example/product.js"></script>
+</html>

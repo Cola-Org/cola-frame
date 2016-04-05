@@ -2,7 +2,7 @@ extends ../../.cola
 append head
 	link(rel="stylesheet", type="text/css", href="/frame/account/login.css")
 block body
-	.v-box.login-page
+	.v-box.account-page
 		.box.ui.menu.secondary.attached.page-header
 			.item.logo.header
 				img.ui.mini.image(src="/resources/images/logo.png")
@@ -20,9 +20,10 @@ block body
 							.field
 								div(c-widget="Checkbox; label:记住我; bind:cacheInfo")
 							.field
-								a.password-forget(href="/password/forget") 找回密码
+								a.float-right(href="/frame/account/forgot-password") 找回密码
 						.field
-							div.large.fluid.circular.login-btn(c-widget="Button; caption:登录; click:signIn" tabindex="0")
+							div.large.fluid.circular.submit-btn(c-widget="Button; caption:登录; click:signIn"
+							tabindex="0")
 						.field
 							.ui.message.error
 append scripts

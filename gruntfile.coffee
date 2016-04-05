@@ -133,7 +133,6 @@ module.exports = (grunt) ->
 		configure = this.data
 		configure.dest = "dest";
 
-		console.dir(configure)
 		configure.contextPath = removeLastDelim(configure.contextPath)
 		configure.siteRoot = endWithDelim(configure.siteRoot)
 		configure.siteContext = "#{removeLastDelim(configure.siteRoot)}#{endWithDelim(startWithDelim(configure.contextPath))}"

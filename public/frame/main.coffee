@@ -1,15 +1,15 @@
 cola((model)->
 	model.describe("menus", {
 		provider:
-			url: Frame.prop("service.menus")
+			url: App.prop("service.menus")
 	})
 	model.describe("messages", {
 		provider:
-			url: Frame.prop("service.messagePull")
+			url: App.prop("service.messagePull")
 	})
 	model.describe("user", {
 		provider:
-			url: Frame.prop("service.user.detail")
+			url: App.prop("service.user.detail")
 	})
 
 	model.widgetConfig({
@@ -21,14 +21,21 @@ cola((model)->
 				child:
 					recursive: true,
 					expression: "menu in menu.menus"
+		subMenuLayer:
+			beforeShow: ()->
+				$("#viewTab").parent().addClass("lock")
+			beforeHide: ()->
+				$("#viewTab").parent().removeClass("lock")
 	})
 	model.action({
+		dropdownDisplay: (item)->
+			return !!item.get("menus")
 		showUserSidebar: ()->
 			cola.widget("userSidebar").show()
 		logout: ()->
 			$.ajax({
 				type: "POST",
-				url: Frame.prop("service.logout")
+				url: App.prop("service.logout")
 			}).done((result) ->
 				if result.type
 					window.location.reload()
@@ -36,6 +43,7 @@ cola((model)->
 				alert("退出失败，请检查网络连接！")
 				return
 			)
+
 		menuItemClick: (item)->
 			data = item.toJSON()
 			menus = data.menus
@@ -48,12 +56,11 @@ cola((model)->
 				recursive(data) for menu in menus
 				model.set("subMenu", menus)
 				model.set("currentMenu", data)
-
 				cola.widget("subMenuLayer").show()
 			else
 				model.set("subMenu", [])
 				cola.widget("subMenuLayer").hide()
-				Frame.open(data.path, data)
+				App.open(data.path, data)
 
 		hideSubMenuLayer: ()->
 			cola.widget("subMenuLayer").hide()
@@ -63,5 +70,11 @@ cola((model)->
 			$dom.toggleClass(className, !$dom.hasClass(className));
 	})
 
-	$("#frameworkSidebar").accordion({exclusive: false})
+	$("#frameworkSidebar").accordion({exclusive: false}).delegate(".menu-item", "click", ()->
+		$("#frameworkSidebar").find(".menu-item.current-item").removeClass("current-item");
+		$fly(@).addClass("current-item")
+	)
+	$("#rightContainer>.layer-dimmer").on("click", ()->
+		cola.widget("subMenuLayer").hide();
+	)
 )

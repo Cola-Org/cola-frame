@@ -1,15 +1,15 @@
 cola((model)->
 	model.describe("menus", {
 		provider:
-			url: Frame.prop("service.menus")
+			url: App.prop("service.menus")
 	})
 	model.describe("messages", {
 		provider:
-			url: Frame.prop("service.messagePull")
+			url: App.prop("service.messagePull")
 	})
 	model.describe("user", {
 		provider:
-			url: Frame.prop("service.user.detail")
+			url: App.prop("service.user.detail")
 	})
 
 	model.widgetConfig({

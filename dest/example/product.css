@@ -1,0 +1,101 @@
+/*---   Neutrals  ---*/
+/*--- Colored Backgrounds ---*/
+/*--- Colored Headers ---*/
+/*--- Colored Text ---*/
+/*-------------------
+       Accents
+--------------------*/
+/* Differentiating Layers */
+body {
+  padding: 0.3em;
+}
+body .ui.form .field > label {
+  font-weight: inherit;
+  font-size: 0.828571em;
+}
+body .ui.segment,
+body .ui.vertical.accordion.menu {
+  border-radius: 0 !important;
+}
+body .result-list.ui.segment {
+  padding: 0px;
+}
+body .result-list.ui.segment #productTable table {
+  table-layout: auto;
+  font-size: 12.8px;
+}
+body .result-list.ui.segment #productTable table th {
+  font-weight: inherit;
+  color: rgba(0, 0, 0, 0.6);
+}
+body .result-list.ui.segment #productTable table .status {
+  min-width: 80px;
+  text-align: center;
+}
+body .result-list.ui.segment #productTable table .num {
+  text-align: right;
+  min-width: 80px;
+}
+body .result-list.ui.segment #productTable table .amount {
+  text-align: right;
+  min-width: 80px;
+}
+body .result-list.ui.segment #productTable table .fang {
+  text-align: center;
+  min-width: 120px;
+}
+body .result-list.ui.segment #productTable table .date,
+body .result-list.ui.segment #productTable table .name,
+body .result-list.ui.segment #productTable table .region,
+body .result-list.ui.segment #productTable table .csz,
+body .result-list.ui.segment #productTable table .csy {
+  text-align: center;
+  min-width: 100px;
+}
+body .result-list.ui.segment #productTable table .card-no,
+body .result-list.ui.segment #productTable table .id {
+  text-align: center;
+  min-width: 120px;
+}
+body .ui.segment > .ui.top.attached.label {
+  background-color: #f8f8f8;
+}
+body .ui.segment > .ui.top.attached.label:before {
+  position: absolute;
+  left: 0;
+  width: 2px;
+  top: 0;
+  content: "";
+  bottom: 0;
+  background-color: #40bf97;
+}
+body .ui.vertical.accordion.menu > .item {
+  padding: 0;
+}
+body .ui.vertical.accordion.menu > .item .title {
+  position: relative;
+  background-color: #f8f8f8;
+  padding: 0.4em 0.4em 0.4em 0.8em;
+  color: rgba(0, 0, 0, 0.6);
+  line-height: 1.4em;
+}
+body .ui.vertical.accordion.menu > .item .title:before {
+  position: absolute;
+  left: 0;
+  width: 2px;
+  top: 0;
+  content: "";
+  bottom: 0;
+  background-color: #FC6E51;
+}
+body .ui.vertical.accordion.menu > .item .title span,
+body .ui.vertical.accordion.menu > .item .title i:not(.dropdown) {
+  font-size: 0.82em;
+  font-weight: bold;
+}
+body .ui.vertical.accordion.menu > .item > .content {
+  padding: 1em;
+}
+body .ui.vertical.accordion.menu > .item > .content > :last-child {
+  padding-bottom: 1em;
+}

@@ -28,13 +28,17 @@ block body
 								div.title.menu-item
 									i(c-classname="menu.icon")
 									span(c-bind="menu.label")
+									i.icon.angle.left.dropdown-icon(c-display="dropdownDisplay(menu)")
 								div.content
 									div.menu-item(c-repeat="item in menu.menus" c-onclick="menuItemClick(item)")
 										i(c-classname="item.icon")
 										span(c-bind="item.label")
+										i.icon.angle.left.dropdown-icon(c-display="dropdownDisplay(item)")
+
 
 				.flex-box
-					div
+					#rightContainer
+						.layer-dimmer
 						#subMenuLayer(c-widget="Layer; animation:slide right")
 							div.title
 								span(c-bind="currentMenu.label")

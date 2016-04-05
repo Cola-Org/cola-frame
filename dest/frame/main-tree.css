@@ -1,0 +1,142 @@
+/*---   Neutrals  ---*/
+/*--- Colored Backgrounds ---*/
+/*--- Colored Headers ---*/
+/*--- Colored Text ---*/
+/*-------------------
+       Accents
+--------------------*/
+/* Differentiating Layers */
+.page-header.ui.menu .logo img {
+  margin-right: 0.6em;
+}
+.page-header.ui.menu .item.msg {
+  padding-right: 0.52857143em;
+  padding-left: 0.52857143em;
+  position: relative;
+}
+.page-header.ui.menu .item.msg i {
+  font-size: 1.25em;
+}
+.page-header.ui.menu .item.msg span.badge {
+  border-radius: 3px;
+  position: relative;
+  top: -8px;
+  left: 2px;
+  font-size: 0.8em;
+  background-color: #d93e50;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 0.2em 0.2em 0.1em 0.2em;
+  min-width: 16px;
+  text-align: center;
+  display: inline-block;
+  font-weight: bold;
+}
+.page-header.ui.menu .item.msg.mail span.badge {
+  background-color: #2f886e;
+}
+.page-header.ui.menu .user.item i {
+  margin: 0em 0em 0em 0.5em;
+}
+.page-header.ui.menu .user.item .avatar {
+  margin: 0;
+}
+#userSidebar {
+  width: 16em;
+  left: auto;
+  background-color: #394555;
+}
+#userSidebar .box {
+  padding: 3em 1em;
+}
+#userSidebar .ui.segment.basic-info {
+  background-color: transparent;
+}
+#userSidebar .ui.segment.basic-info > .avatar {
+  display: inline-block;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+}
+#userSidebar .ui.segment.basic-info .name {
+  margin-top: 0.5em;
+  line-height: 2em;
+  color: rgba(255, 255, 255, 0.8);
+}
+#userSidebar .flex-box a.msg {
+  cursor: pointer;
+  font-size: 0.8em;
+  padding: 0 0.5em;
+  color: rgba(255, 255, 255, 0.8);
+}
+#userSidebar .flex-box a.msg i.icon.alarm {
+  color: #A333C8;
+}
+#userSidebar .flex-box a.msg i.icon.mail {
+  color: #00B5AD;
+}
+#userSidebar .sign-out-btn {
+  box-shadow: 0px 0px 0px 1px #40bf97 inset !important;
+  color: #40bf97 !important;
+}
+#viewTab > .tab-bar {
+  height: 36px;
+}
+#viewTab > .tab-bar > .tabs > .tab-button {
+  border-top-right-radius: 2px;
+  border-top-left-radius: 2px;
+  line-height: 36px;
+  font-size: 0.92em;
+}
+#viewTab > .contents {
+  padding: 0;
+}
+#viewTab > .contents .item {
+  height: 100%;
+}
+#viewTab > .contents .item > * {
+  height: inherit;
+}
+body {
+  position: relative;
+}
+.menu-tree.ui.tree {
+  height: 100%;
+  font-size: 0.92em;
+  background-color: #28303a;
+}
+.menu-tree.ui.tree .child-nodes {
+  overflow: visible;
+  margin-left: 1.2em !important;
+}
+.menu-tree.ui.tree > .items .tree.node {
+  padding-left: 0;
+}
+.menu-tree.ui.tree .tree.item {
+  background-color: #28303a;
+  position: relative;
+}
+.menu-tree.ui.tree .tree.item:before {
+  position: absolute;
+  content: "";
+  border-left: 1px solid #b8c7ce;
+  left: -2px;
+  height: 100%;
+}
+.menu-tree.ui.tree .tree.node > .expand-button {
+  width: 1em;
+  color: #b8c7ce;
+}
+.menu-tree.ui.tree .tree.node > .node-content {
+  position: absolute;
+}
+.menu-tree.ui.tree .tree.node > .node-content > i {
+  position: absolute;
+  color: #aeb9c2;
+  width: 1.4em;
+  text-align: center;
+  margin: 0;
+}
+.menu-tree.ui.tree .tree.node > .node-content > span {
+  margin-left: 1.6em;
+  font-size: 0.95em;
+  color: #aeb9c2;
+}
