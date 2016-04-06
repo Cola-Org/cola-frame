@@ -28,7 +28,7 @@ unless rootApp
 App = window.App =
 	_tabs: {}
 	getRootWindow: ()->
-		return if rootApp then  rootWindow else window
+		return if rootApp then rootWindow else window
 
 	open: (path, config)->
 		if rootApp
@@ -64,14 +64,14 @@ App = window.App =
 		if rootApp
 			return rootApp.goLogin(callback)
 		else
-			if callback and typeof  callback == "function"
-				console.log("待实现内部登录功能")
+			login(callback)
+
 
 	refreshMessage: ()->
 		if rootApp
 			rootApp.refreshMessage()
 		else
-			refreshMessage()
+			refreshMessage?()
 
 	prop: (key, value)->
 		if arguments.length == 1

@@ -1,11 +1,11 @@
 @import "../.global.less";
+
 .page-header.ui.menu {
 	.logo {
 		img {
 			margin-right: 0.6em;
 		}
 	}
-
 	.item.msg {
 		padding-right: 0.52857143em;
 		padding-left: 0.52857143em;
@@ -89,7 +89,6 @@
 
 }
 
-
 #viewTab {
 	> .tab-bar {
 		height: 36px;
@@ -108,6 +107,33 @@
 			height: 100%;
 			> * {
 				height: inherit;
+			}
+		}
+	}
+}
+
+#loginDialog {
+	border-radius: 0.7571429rem;
+	#containerSignIn {
+		border-radius: 0.7571429rem;
+		margin: 0;
+		h2 {
+			margin: 0 0 25px;
+			font-size: 25px;
+			font-weight: 400;
+			text-align: center;
+			color: #323a45;
+		}
+		padding: 2em 2em 1em 2em;
+		.ui.form {
+			> .field:not(:last-child) {
+				margin-bottom: 1.6em;
+			}
+			a.float-right {
+				float: right;
+			}
+			.submit-btn {
+				margin-top: 1em;
 			}
 		}
 	}

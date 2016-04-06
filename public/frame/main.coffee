@@ -3,23 +3,71 @@ cola((model)->
 		provider:
 			url: App.prop("service.menus")
 	})
-	model.describe("messages", {
-		provider:
-			url: App.prop("service.messagePull")
-	})
+
 	model.describe("user", {
 		provider:
 			url: App.prop("service.user.detail")
 	})
 
+
+	model.dataType({
+		name: "Login"
+		properties: {
+			userName:
+				validators: {$type: "required", message: ""}
+			password:
+				validators: {$type: "required", message: ""}
+		}
+	})
+	model.describe("login", "Login")
+	model.set("login", {})
+
+	window.refreshMessage = ()->
+		model.describe("messages", {
+			provider:
+				url: App.prop("service.messagePull")
+		})
+	refreshMessage()
+	loginCallback = null
+	window.login = (callback)->
+		cola.widget("loginDialog").show()
+		if callback and typeof  callback == "function"
+			loginCallback = callback
+	login = ()->
+		data = model.get("login")
+		cola.widget("containerSignIn").addClass("loading")
+		$.ajax({
+			type: "POST",
+			url: App.prop("service.login")
+			data: JSON.stringify(data.toJSON())
+			contentType: "application/json"
+		}).done((result) ->
+			cola.widget("containerSignIn").removeClass("loading")
+			unless result.type
+				showMessage(result.message)
+				return
+			cola.widget("loginDialog").hide()
+			if loginCallback
+				callback = loginCallback
+				loginCallback = null
+				callback()
+		).fail(() ->
+			cola.widget("containerSignIn").removeClass("loading")
+			return
+		)
 	model.widgetConfig({
+		loginDialog:
+			$type: "dialog"
+			width: 400
+#			height: 300
+
 		subMenuTree:
-			$type: "tree",
-			autoExpand: true,
+			$type: "tree"
+			autoExpand: true
 			bind:
 				expression: "menu in subMenu"
 				child:
-					recursive: true,
+					recursive: true
 					expression: "menu in menu.menus"
 		subMenuLayer:
 			beforeShow: ()->
@@ -27,8 +75,20 @@ cola((model)->
 			beforeHide: ()->
 				$("#viewTab").parent().removeClass("lock")
 	})
+	showLoginMessage = (content)->
+		cola.widget("formSignIn").setMessages([{
+			type: "error"
+			text: content
+		}])
 	model.action({
-		dropdownDisplay: (item)->
+		signIn: ()->
+			cola.widget("formSignIn").setMessages(null)
+			data = model.get("login")
+			if data.validate()
+				login()
+			else
+				showLoginMessage("用户名或密码不能为空！")
+		dropdownIconVisible: (item)->
 			return !!item.get("menus")
 		showUserSidebar: ()->
 			cola.widget("userSidebar").show()

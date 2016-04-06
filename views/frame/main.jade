@@ -28,12 +28,12 @@ block body
 								div.title.menu-item
 									i(c-classname="menu.icon")
 									span(c-bind="menu.label")
-									i.icon.angle.left.dropdown-icon(c-display="dropdownDisplay(menu)")
+									i.icon.angle.left.dropdown-icon(c-display="dropdownIconVisible(menu)")
 								div.content
 									div.menu-item(c-repeat="item in menu.menus" c-onclick="menuItemClick(item)")
 										i(c-classname="item.icon")
 										span(c-bind="item.label")
-										i.icon.angle.left.dropdown-icon(c-display="dropdownDisplay(item)")
+										i.icon.angle.left.dropdown-icon(c-display="dropdownIconVisible(item)")
 
 
 				.flex-box
@@ -44,8 +44,9 @@ block body
 								span(c-bind="currentMenu.label")
 							#subMenuTree
 								template(name="node-default")
-									i(c-classname="menu.hasChild ? 'icon folder outline' : 'icon file'")
-									span(c-bind="menu.label")
+									div
+										i(c-classname="menu.hasChild ? 'icon folder outline' : 'icon file'")
+										span(c-bind="menu.label")
 							#subMenuNavbar(c-onclick="hideSubMenuLayer()")
 								div
 									i.iconfont.icon-weibiaoti26
@@ -75,5 +76,20 @@ block body
 			.box.text-center
 				.sign-out-btn.teal.basic(c-widget="Button; caption:安全退出; click:logout")
 					i.icon.sign.out
+	#loginDialog
+		.ui.segment#containerSignIn(c-widget="segment;")
+			.ui.form#formSignIn(c-widget="form")
+				h2 用户登录
+				.field
+					div.large(c-widget="input; placeholder:用户名; postOnInput:true; bind:login.userName")
+				.field
+					div.large(c-widget="input; placeholder:密码;inputType:password; postOnInput:true; bind:login.password")
+				.field(style="min-height: 1em;")
+					a.float-right(href="/frame/account/forgot-password") 找回密码
+				.field
+					div.large.fluid.circular.submit-btn(c-widget="Button; caption:登录; click:signIn"
+					tabindex="0")
+				.field
+					.ui.message.error
 append scripts
 	script(src="/frame/main.js")
