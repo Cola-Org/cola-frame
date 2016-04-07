@@ -1,0 +1,43 @@
+/*---   Neutrals  ---*/
+/*--- Colored Backgrounds ---*/
+/*--- Colored Headers ---*/
+/*--- Colored Text ---*/
+/*-------------------
+       Accents
+--------------------*/
+/* Differentiating Layers */
+.error-page > .flex-box {
+  background: url("../resources/images/bg4.jpg") 50% 50% / cover no-repeat fixed;
+}
+.error-page > .flex-box > div .error-info {
+  height: 20em;
+  width: 48em;
+  position: absolute;
+  left: 50%;
+  padding: 2em;
+  text-align: center;
+  top: 50%;
+  margin-left: -24em;
+  margin-top: -10em;
+  background-color: rgba(255, 255, 255, 0.75);
+  color: rgba(0, 0, 0, 0.68);
+  border-radius: 1em;
+}
+.error-page > .flex-box > div .error-info strong {
+  font-size: 8em;
+  line-height: 1em;
+}
+.error-page > .flex-box > div .error-info p {
+  font-size: 1.5em;
+  line-height: 2.4em;
+  font-weight: 600;
+}
+.error-page > .flex-box > div .error-info .go-home > a > :last-child {
+  margin-left: 0.6em;
+}
+.error-page > .flex-box > div .error-info > .ui.attached.progress {
+  left: 0.8em;
+  right: 0.8em;
+  width: auto;
+  margin-top: -2px;
+}
