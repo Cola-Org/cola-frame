@@ -34,8 +34,6 @@ block body
 										i(c-classname="item.icon")
 										span(c-bind="item.label")
 										i.icon.angle.left.dropdown-icon(c-display="dropdownIconVisible(item)")
-
-
 				.flex-box
 					#rightContainer
 						.layer-dimmer
@@ -68,11 +66,11 @@ block body
 						a.msg
 							i.icon.mail
 							span 消息
-							span.detail(c-bind="messages.messageCount+'条'")
+							span.detail(c-bind="messages.message+'条'")
 						a.msg
 							i.icon.alarm
 							span 任务
-							span.detail(c-bind="messages.taskCount+'条'")
+							span.detail(c-bind="messages.task+'条'")
 			.box.text-center
 				.sign-out-btn.teal.basic(c-widget="Button; caption:安全退出; click:logout")
 					i.icon.sign.out

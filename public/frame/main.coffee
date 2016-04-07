@@ -21,13 +21,36 @@ cola((model)->
 	})
 	model.describe("login", "Login")
 	model.set("login", {})
+	model.set("messages", {})
 
+	errorCount = 0
+	longPollingTimeOut = null
 	window.refreshMessage = ()->
-		model.describe("messages", {
-			provider:
-				url: App.prop("service.messagePull")
-		})
+		options = {}
+		if longPollingTimeOut then clearTimeout(longPollingTimeOut)
+		if App.prop("longPollingTimeout")
+			options.timeout = App.prop("longPollingTimeout")
+		$.ajax(App.prop("service.messagePull"), options).done((messages)->
+			if messages
+				errorCount = 0
+				for message in messages
+					model.set("messages.#{message.type}", message.content)
+			if App.prop("liveMessage")
+				longPollingTimeOut = setTimeout(refreshMessage, App.prop("longPollingInterval"))
+		).error((xhr, status, ex)->
+			if App.prop("liveMessage")
+				if status == "timeout"
+					longPollingTimeOut = setTimeout(refreshMessage, App.prop("longPollingInterval"))
+				else
+					errorCount++
+					longPollingTimeOut = setTimeout(refreshMessage, 5000 * Math.pow(2, Math.min(6, (errorCount - 1))))
+		)
+
+
+	longPollingTimeOut = setTimeout(refreshMessage, 1000)
+
 	refreshMessage()
+
 	loginCallback = null
 	window.login = (callback)->
 		cola.widget("loginDialog").show()
@@ -59,7 +82,6 @@ cola((model)->
 		loginDialog:
 			$type: "dialog"
 			width: 400
-#			height: 300
 
 		subMenuTree:
 			$type: "tree"

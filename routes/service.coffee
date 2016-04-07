@@ -27,10 +27,16 @@ router.get("/menus", (req, res, next)->
 	res.send(require("./data/menus"))
 )
 router.get("/message/pull", (req, res, next)->
-	res.send({
-		messageCount: 8
-		taskCount: 22
-	})
+	res.send([
+		{
+			type:"message",
+			content:8
+		},
+		{
+			type:"task",
+			content:22
+		}
+	])
 )
 router.get("/products", (req, res, next)->
 	res.send(require("./data/data"))
