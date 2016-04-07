@@ -21,10 +21,6 @@
 
   if (!rootApp) {
     properties = {
-      contextPath: "/",
-      serviceUrlPattern: /^\/?service\/[a-z]+/,
-      serviceUrlPrefix: "/",
-      htmlSuffix: "",
       mainView: "./frame/main",
       loginPath: "./login",
       longPollingTimeout: 0,
