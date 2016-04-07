@@ -95,6 +95,30 @@
 #viewTab > .contents .item > * {
   height: inherit;
 }
+#loginDialog {
+  border-radius: 0.7571429rem;
+}
+#loginDialog #containerSignIn {
+  border-radius: 0.7571429rem;
+  margin: 0;
+  padding: 2em 2em 1em 2em;
+}
+#loginDialog #containerSignIn h2 {
+  margin: 0 0 25px;
+  font-size: 25px;
+  font-weight: 400;
+  text-align: center;
+  color: #323a45;
+}
+#loginDialog #containerSignIn .ui.form > .field:not(:last-child) {
+  margin-bottom: 1.6em;
+}
+#loginDialog #containerSignIn .ui.form a.float-right {
+  float: right;
+}
+#loginDialog #containerSignIn .ui.form .submit-btn {
+  margin-top: 1em;
+}
 body {
   position: relative;
 }

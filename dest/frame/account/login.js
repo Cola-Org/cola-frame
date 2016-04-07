@@ -15,7 +15,7 @@
         }
       }
     });
-    mainPath = "" + window.location.origin + (App.prop("mainView"));
+    mainPath = "" + (App.prop("mainView"));
     model.set("userName", $.cookie("_userName"), {
       path: "/"
     });

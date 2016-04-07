@@ -1,11 +1,11 @@
 extends ../.cola
 append head
-	link(rel="stylesheet", type="text/css", href="/frame/main.css")
+	link(rel="stylesheet", type="text/css", href="./frame/main.css")
 block body
 	.v-box
 		.box.ui.menu.secondary.attached.page-header
 			.item.logo.header
-				img.ui.mini.image(src="/resources/images/logo.png")
+				img.ui.mini.image(src="./resources/images/logo.png")
 				span Cola-UI Client Framework
 			.right.menu
 				a.item.msg.icon.mail
@@ -15,7 +15,7 @@ block body
 					i.icon.alarm.icon-animated-bell
 					span.badge 22
 				a.item.icon.user(c-onclick="showUserSidebar()")
-					img.ui.image.avatar(src="/resources/images/avatars/alex.png")
+					img.ui.image.avatar(src="./resources/images/avatars/alex.png")
 					i.icon.dropdown
 		.flex-box
 			.h-box
@@ -83,11 +83,11 @@ block body
 				.field
 					div.large(c-widget="input; placeholder:密码;inputType:password; postOnInput:true; bind:login.password")
 				.field(style="min-height: 1em;")
-					a.float-right(href="/frame/account/forgot-password") 找回密码
+					a.float-right(href="./frame/account/forgot-password") 找回密码
 				.field
 					div.large.fluid.circular.submit-btn(c-widget="Button; caption:登录; click:signIn"
 					tabindex="0")
 				.field
 					.ui.message.error
 append scripts
-	script(src="/frame/main.js")
+	script(src="./frame/main.js")

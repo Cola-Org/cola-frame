@@ -15,15 +15,15 @@ unless rootApp
 		serviceUrlPattern: /^\/?service\/[a-z]+/
 		serviceUrlPrefix: "/"
 		htmlSuffix: ""
-		mainView: "/frame/main"
-		loginPath: "/login"
+		mainView: "./frame/main"
+		loginPath: "./login"
 		longPollingTimeout: 0
 		longPollingInterval: 2000
-		"service.messagePull": "/service/message/pull"
-		"service.login": "/service/account/login"
-		"service.logout": "/service/account/logout"
-		"service.menus": "/service/menus"
-		"service.user.detail": "/service/user/detail"
+		"service.messagePull": "./service/message/pull"
+		"service.login": "./service/account/login"
+		"service.logout": "./service/account/logout"
+		"service.menus": "./service/menus"
+		"service.user.detail": "./service/user/detail"
 
 App = window.App =
 	_tabs: {}

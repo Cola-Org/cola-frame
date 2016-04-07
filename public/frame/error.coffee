@@ -1,7 +1,7 @@
 cola((model)->
 	waitingTime = 15
 	model.set("timer", waitingTime)
-	homePath = "#{window.location.origin}#{App.prop("mainView")}"
+	homePath = App.prop("mainView")
 
 	model.set("home", homePath)
 	$("#timeProgress").progress({

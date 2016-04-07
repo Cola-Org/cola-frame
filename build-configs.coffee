@@ -6,4 +6,4 @@ module.exports =
 		htmlSuffix: ".html",
 		language: "zh-CN",
 		currency: "￥"
-		siteRoot:"http://localhost:8080"
+		siteRoot:""

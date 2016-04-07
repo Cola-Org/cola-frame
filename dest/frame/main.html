@@ -6,13 +6,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta charset="UTF-8">
     <title>Cola-UI 客户端框架</title>
-    <base href="http://localhost:8080/">
-    <link rel="stylesheet" type="text/css" href="/resources/nprogress/nprogress.css">
-    <script src="/resources/nprogress/nprogress.js"></script>
-    <link rel="stylesheet" type="text/css" href="/resources/cola-ui/semantic.css">
-    <link rel="stylesheet" type="text/css" href="/resources/cola-ui/cola.css">
-    <link rel="stylesheet" type="text/css" href="/resources/common.css">
-    <link rel="stylesheet" type="text/css" href="/frame/main.css">
+    <base href="/">
+    <link rel="stylesheet" type="text/css" href="./resources/nprogress/nprogress.css">
+    <script src="./resources/nprogress/nprogress.js"></script>
+    <link rel="stylesheet" type="text/css" href="./resources/cola-ui/semantic.css">
+    <link rel="stylesheet" type="text/css" href="./resources/cola-ui/cola.css">
+    <link rel="stylesheet" type="text/css" href="./common/common.css">
+    <link rel="stylesheet" type="text/css" href="./frame/main.css">
   </head>
   <body>
     <script type="text/javascript">
@@ -21,8 +21,8 @@
     </script>
     <div class="v-box">
       <div class="box ui menu secondary attached page-header">
-        <div class="item logo header"><img src="/resources/images/logo.png" class="ui mini image"><span>Cola-UI Client Framework</span></div>
-        <div class="right menu"><a class="item msg icon mail"><i class="icon mail"></i><span class="badge">5</span></a><a class="item msg icon"><i class="icon alarm icon-animated-bell"></i><span class="badge">22</span></a><a c-onclick="showUserSidebar()" class="item icon user"><img src="/resources/images/avatars/alex.png" class="ui image avatar"><i class="icon dropdown"></i></a></div>
+        <div class="item logo header"><img src="./resources/images/logo.png" class="ui mini image"><span>Cola-UI Client Framework</span></div>
+        <div class="right menu"><a class="item msg icon mail"><i class="icon mail"></i><span class="badge">5</span></a><a class="item msg icon"><i class="icon alarm icon-animated-bell"></i><span class="badge">22</span></a><a c-onclick="showUserSidebar()" class="item icon user"><img src="./resources/images/avatars/alex.png" class="ui image avatar"><i class="icon dropdown"></i></a></div>
       </div>
       <div class="flex-box">
         <div class="h-box">
@@ -31,9 +31,9 @@
               <div c-onclick="toggleSidebar()" class="bar"><i class="iconfont icon-sidebar"></i></div>
               <div id="frameworkSidebar" class="ui accordion">
                 <div c-repeat="menu in menus" class="item active">
-                  <div class="title menu-item"><i c-classname="menu.icon"></i><span c-bind="menu.label"></span><i c-display="dropdownDisplay(menu)" class="icon angle left dropdown-icon"></i></div>
+                  <div class="title menu-item"><i c-classname="menu.icon"></i><span c-bind="menu.label"></span><i c-display="dropdownIconVisible(menu)" class="icon angle left dropdown-icon"></i></div>
                   <div class="content">
-                    <div c-repeat="item in menu.menus" c-onclick="menuItemClick(item)" class="menu-item"><i c-classname="item.icon"></i><span c-bind="item.label"></span><i c-display="dropdownDisplay(item)" class="icon angle left dropdown-icon"></i></div>
+                    <div c-repeat="item in menu.menus" c-onclick="menuItemClick(item)" class="menu-item"><i c-classname="item.icon"></i><span c-bind="item.label"></span><i c-display="dropdownIconVisible(item)" class="icon angle left dropdown-icon"></i></div>
                   </div>
                 </div>
               </div>
@@ -45,7 +45,9 @@
               <div id="subMenuLayer" c-widget="Layer; animation:slide right">
                 <div class="title"><span c-bind="currentMenu.label"></span></div>
                 <div id="subMenuTree">
-                  <template name="node-default"><i c-classname="menu.hasChild ? 'icon folder outline' : 'icon file'"></i><span c-bind="menu.label"></span></template>
+                  <template name="node-default">
+                    <div><i c-classname="menu.hasChild ? 'icon folder outline' : 'icon file'"></i><span c-bind="menu.label"></span></div>
+                  </template>
                 </div>
                 <div id="subMenuNavbar" c-onclick="hideSubMenuLayer()">
                   <div><i class="iconfont icon-weibiaoti26"></i></div>
@@ -53,13 +55,9 @@
               </div>
               <div id="viewTab" c-widget="Tab; height:100%">
                 <nav class="tab-bar">
-                  <ul class="tabs">
-                    <li name="dashboard" c-widget="TabButton; icon:dashboard; caption:控制台;closeable:true"></li>
-                  </ul>
+                  <ul class="tabs"></ul>
                 </nav>
-                <ul class="contents">
-                  <li name="dashboard"></li>
-                </ul>
+                <ul class="contents"></ul>
               </div>
             </div>
           </div>
@@ -76,7 +74,7 @@
         </div>
         <div class="flex-box">
           <div>
-            <div class="ui segment text-center basic"><a class="msg"><i class="icon mail"></i><span>消息</span><span c-bind="messages.messageCount+'条'" class="detail"></span></a><a class="msg"><i class="icon alarm"></i><span>任务</span><span c-bind="messages.taskCount+'条'" class="detail"></span></a></div>
+            <div class="ui segment text-center basic"><a class="msg"><i class="icon mail"></i><span>消息</span><span c-bind="messages.message+'条'" class="detail"></span></a><a class="msg"><i class="icon alarm"></i><span>任务</span><span c-bind="messages.task+'条'" class="detail"></span></a></div>
           </div>
         </div>
         <div class="box text-center">
@@ -84,12 +82,32 @@
         </div>
       </div>
     </div>
+    <div id="loginDialog">
+      <div id="containerSignIn" c-widget="segment;" class="ui segment">
+        <div id="formSignIn" c-widget="form" class="ui form">
+          <h2>用户登录</h2>
+          <div class="field">
+            <div c-widget="input; placeholder:用户名; postOnInput:true; bind:login.userName" class="large"></div>
+          </div>
+          <div class="field">
+            <div c-widget="input; placeholder:密码;inputType:password; postOnInput:true; bind:login.password" class="large"></div>
+          </div>
+          <div style="min-height: 1em;" class="field"><a href="./frame/account/forgot-password" class="float-right">找回密码</a></div>
+          <div class="field">
+            <div c-widget="Button; caption:登录; click:signIn" tabindex="0" class="large fluid circular submit-btn"></div>
+          </div>
+          <div class="field">
+            <div class="ui message error"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
-  <script src="/resources/jquery/jquery-2.1.3.js"></script>
-  <script src="/resources/jquery/jquery.cookie.js"></script>
-  <script src="/resources/cola-ui/3rd.js"></script>
-  <script src="/resources/cola-ui/semantic.js"></script>
-  <script src="/resources/cola-ui/cola.js"></script>
-  <script src="/resources/common.js"></script>
-  <script src="/frame/main.js"></script>
+  <script src="./resources/jquery/jquery-2.1.3.js"></script>
+  <script src="./resources/jquery/jquery.cookie.js"></script>
+  <script src="./resources/cola-ui/3rd.js"></script>
+  <script src="./resources/cola-ui/semantic.js"></script>
+  <script src="./resources/cola-ui/cola.js"></script>
+  <script src="./common/common.js"></script>
+  <script src="./frame/main.js"></script>
 </html>

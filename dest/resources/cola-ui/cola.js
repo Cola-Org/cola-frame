@@ -1,4 +1,4 @@
-/*! Cola UI - 0.8.3
+/*! Cola UI - 0.8.5
  * Copyright (c) 2002-2016 BSTEK Corp. All rights reserved.
  *
  * This file is dual-licensed under the AGPLv3 (http://www.gnu.org/licenses/agpl-3.0.html)
@@ -949,7 +949,7 @@
 
 
   /*
-  Mothods
+  Methods
    */
 
   cola.callback = function(callback, success, result) {
@@ -2476,7 +2476,7 @@
         }
         if (cola.setting("pagingParamStyle") === "from") {
           options.data.from = this.from;
-          options.data.limit = this.limit;
+          options.data.limit = this.limit + (this.detectEnd ? 1 : 0);
         } else {
           options.data.pageSize = this.pageSize;
           options.data.pageNo = this.pageNo;
@@ -2488,11 +2488,11 @@
       if (!this.pageNo >= 1) {
         this.pageNo = 1;
       }
-      if (this.pageSize > 1 && this.pageNo > 1) {
-        this.from = this.pageSize * (this.pageNo - 1);
+      this.from = this.pageSize * (this.pageNo - 1);
+      this.limit = this.pageSize;
+      if (this.pageSize) {
+        this.applyPagingParameters(options);
       }
-      this.limit = this.pageSize + (this.detectEnd ? 1 : 0);
-      this.applyPagingParameters(options);
     };
 
     return ProviderInvoker;
@@ -2507,6 +2507,9 @@
     }
 
     Provider.ATTRIBUTES = {
+      loadMode: {
+        defaultValue: "lazy"
+      },
       pageSize: null,
       detectEnd: null
     };
@@ -2592,7 +2595,7 @@
     Provider.prototype.translateResult = function(result, invokerOptions) {
       if (this._detectEnd && result instanceof Array) {
         if (result.length >= this._pageSize) {
-          result.pop();
+          result = result.slice(0, this._pageSize);
         } else {
           result = {
             $entityCount: (invokerOptions.data.from || 0) + result.length,
@@ -3801,15 +3804,11 @@
             data: this,
             property: prop
           };
-          if (loadMode === "async") {
-            this._notify(cola.constants.MESSAGE_LOADING_START, notifyArg);
-          }
+          this._notify(cola.constants.MESSAGE_LOADING_START, notifyArg);
           providerInvoker.invokeAsync({
             complete: (function(_this) {
               return function(success, result) {
-                if (loadMode === "async") {
-                  _this._notify(cola.constants.MESSAGE_LOADING_END, notifyArg);
-                }
+                _this._notify(cola.constants.MESSAGE_LOADING_END, notifyArg);
                 if (_this._data[prop] !== providerInvoker) {
                   success = false;
                 }
@@ -3841,7 +3840,7 @@
           if (context != null) {
             context.unloaded = true;
           }
-          if (provider) {
+          if (provider && provider._loadMode === "lazy") {
             value = loadData.call(this, provider);
             callbackProcessed = true;
           }
@@ -4213,12 +4212,13 @@
     Entity.prototype.getPath = _getEntityPath;
 
     Entity.prototype.flush = function(property, loadMode) {
-      var callback, propertyDef;
+      var callback, oldLoadMode, propertyDef, provider;
       if (loadMode == null) {
         loadMode = "async";
       }
       propertyDef = this.dataType.getProperty(property);
-      if ((propertyDef != null ? propertyDef._provider : void 0) == null) {
+      provider = propertyDef != null ? propertyDef._provider : void 0;
+      if (!provider) {
         throw new cola.Exception("Provider undefined.");
       }
       this._set(property, void 0);
@@ -4226,13 +4226,19 @@
         callback = loadMode;
         loadMode = "async";
       }
-      return this._get(property, loadMode, {
-        complete: (function(_this) {
-          return function(success, result) {
-            cola.callback(callback, success, result);
-          };
-        })(this)
-      });
+      oldLoadMode = provider._loadMode;
+      provider._loadMode = "lazy";
+      try {
+        return this._get(property, loadMode, {
+          complete: (function(_this) {
+            return function(success, result) {
+              cola.callback(callback, success, result);
+            };
+          })(this)
+        });
+      } finally {
+        provider._loadMode = oldLoadMode;
+      }
     };
 
     Entity.prototype._setListener = function(listener) {
@@ -6391,9 +6397,10 @@
    */
 
   cola.AbstractDataModel = (function() {
+    AbstractDataModel.prototype.disableObserverCount = 0;
+
     function AbstractDataModel(model1) {
       this.model = model1;
-      this.disableObserverCount = 0;
     }
 
     AbstractDataModel.prototype.get = function(path, loadMode, context) {
@@ -8229,6 +8236,7 @@
     currentRouter = router;
     if (router.templateUrl) {
       model = cola.createRouterModel(router);
+      eventArg.nextModel = model;
       cola.util.userData(router.targetDom, "_model", model);
       cola.loadSubView(router.targetDom, {
         model: model,
@@ -8254,7 +8262,6 @@
         document.title = router.title;
       }
     }
-    eventArg.nextModel = model;
     cola.fire("routerSwitch", cola, eventArg);
   };
 
@@ -8854,16 +8861,37 @@
   cola._DomClassFeature = (function(superClass) {
     extend(_DomClassFeature, superClass);
 
-    function _DomClassFeature(expression, className1) {
-      this.className = className1;
+    function _DomClassFeature(expression) {
       _DomClassFeature.__super__.constructor.call(this, expression);
     }
 
     _DomClassFeature.prototype._doRender = function(domBinding, value) {
-      domBinding.$dom[value ? "addClass" : "removeClass"](this.className);
+      if (this._lastClassName) {
+        domBinding.$dom.removeClass(this._lastClassName);
+      }
+      if (value) {
+        domBinding.$dom.addClass(value);
+        this._lastClassName = value;
+      }
     };
 
     return _DomClassFeature;
+
+  })(cola._DomFeature);
+
+  cola._DomToggleClassFeature = (function(superClass) {
+    extend(_DomToggleClassFeature, superClass);
+
+    function _DomToggleClassFeature(expression, className1) {
+      this.className = className1;
+      _DomToggleClassFeature.__super__.constructor.call(this, expression);
+    }
+
+    _DomToggleClassFeature.prototype._doRender = function(domBinding, value) {
+      domBinding.$dom[value ? "addClass" : "removeClass"](this.className);
+    };
+
+    return _DomToggleClassFeature;
 
   })(cola._DomFeature);
 
@@ -9584,7 +9612,7 @@
         if (attrName === "style") {
           newFeatures = buildStyleFeature(attrValue);
           features = features ? features.concat(newFeatures) : newFeatures;
-        } else if (attrName === "class") {
+        } else if (attrName === "class" || attrName === "classname") {
           newFeatures = buildClassFeature(attrValue);
           features = features ? features.concat(newFeatures) : newFeatures;
         } else {
@@ -9784,14 +9812,22 @@
     if (!classStr) {
       return false;
     }
-    classConfig = cola.util.parseStyleLikeString(classStr);
     features = [];
-    for (className in classConfig) {
-      classExpr = classConfig[className];
-      expression = cola._compileExpression(classExpr);
+    try {
+      expression = cola._compileExpression(classStr);
       if (expression) {
-        feature = new cola._DomClassFeature(expression, className, true);
+        feature = new cola._DomClassFeature(expression);
         features.push(feature);
+      }
+    } catch (_error) {
+      classConfig = cola.util.parseStyleLikeString(classStr);
+      for (className in classConfig) {
+        classExpr = classConfig[className];
+        expression = cola._compileExpression(classExpr);
+        if (expression) {
+          feature = new cola._DomToggleClassFeature(expression, className);
+          features.push(feature);
+        }
       }
     }
     return features;
@@ -9803,8 +9839,6 @@
     if (expression) {
       if (attr === "display") {
         feature = new cola._DisplayFeature(expression);
-      } else if (attr === "classname") {
-        feature = new cola._DomAttrFeature(expression, "class", false);
       } else if (attr === "options" && dom.nodeName === "SELECT") {
         feature = new cola._SelectOptionsFeature(expression);
       } else {
@@ -9859,7 +9893,7 @@
 
 }).call(this);
 
-/*! Cola UI - 0.8.3
+/*! Cola UI - 0.8.5
  * Copyright (c) 2002-2016 BSTEK Corp. All rights reserved.
  *
  * This file is dual-licensed under the AGPLv3 (http://www.gnu.org/licenses/agpl-3.0.html)
@@ -9869,7 +9903,7 @@
  * at http://www.bstek.com/contact.
  */
 (function() {
-  var ACTIVE_PINCH_REG, ACTIVE_ROTATE_REG, ALIAS_REGEXP, BLANK_PATH, DEFAULT_DATE_DISPLAY_FORMAT, DEFAULT_DATE_INPUT_FORMAT, DEFAULT_TIME_DISPLAY_FORMAT, DEFAULT_TIME_INPUT_FORMAT, DropBox, LIST_SIZE_PREFIXS, PAN_VERTICAL_EVENTS, SAFE_PULL_EFFECT, SAFE_SLIDE_EFFECT, SLIDE_ANIMATION_SPEED, SWIPE_VERTICAL_EVENTS, TEMP_TEMPLATE, _columnsSetter, _createGroupArray, _destroyRenderableElement, _findWidgetConfig, _getEntityId, _pageCodeMap, _pagesItems, _removeTranslateStyle, containerEmptyChildren, currentDate, currentHours, currentMinutes, currentMonth, currentSeconds, currentYear, dateTimeSlotConfigs, dateTypeConfig, dropdownDialogMargin, emptyRadioGroupItems, isIE11, now, slotAttributeGetter, slotAttributeSetter,
+  var ACTIVE_PINCH_REG, ACTIVE_ROTATE_REG, ALIAS_REGEXP, BLANK_PATH, DEFAULT_DATE_DISPLAY_FORMAT, DEFAULT_DATE_INPUT_FORMAT, DEFAULT_TIME_DISPLAY_FORMAT, DEFAULT_TIME_INPUT_FORMAT, DropBox, LIST_SIZE_PREFIXS, PAN_VERTICAL_EVENTS, SAFE_PULL_EFFECT, SAFE_SLIDE_EFFECT, SLIDE_ANIMATION_SPEED, SWIPE_VERTICAL_EVENTS, TEMP_TEMPLATE, _columnsSetter, _createGroupArray, _destroyRenderableElement, _findWidgetConfig, _getEntityId, _pageCodeMap, _pagesItems, _removeTranslateStyle, containerEmptyChildren, currentDate, currentHours, currentMinutes, currentMonth, currentSeconds, currentYear, dateTimeSlotConfigs, dateTypeConfig, dropdownDialogMargin, emptyRadioGroupItems, isIE11, now, oldErrorTemplate, slotAttributeGetter, slotAttributeSetter,
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
@@ -10562,18 +10596,15 @@
       return template;
     },
     _cloneTemplate: function(template, supportMultiNodes) {
-      var templ;
+      var fragment, l, len1, templ;
       if (template instanceof Array) {
-        if (supportMultiNodes) {
-          return (function() {
-            var l, len1, results;
-            results = [];
-            for (l = 0, len1 = template.length; l < len1; l++) {
-              templ = template[l];
-              results.push(templ.cloneNode(true));
-            }
-            return results;
-          })();
+        if (supportMultiNodes && template.length > 1) {
+          fragment = document.createDocumentFragment();
+          for (l = 0, len1 = template.length; l < len1; l++) {
+            templ = template[l];
+            fragment.appendChild(templ.cloneNode(true));
+          }
+          return fragment;
         } else {
           return template[0].cloneNode(true);
         }
@@ -16646,13 +16677,15 @@
         oldTab.get$Dom().removeClass("active");
         $(oldTab.get("contentContainer")).removeClass("active");
       }
-      newTab.get$Dom().addClass("active");
-      container = newTab.get("contentContainer");
-      if (!container) {
-        this._tabContentRender(newTab);
+      if (newTab) {
+        newTab.get$Dom().addClass("active");
         container = newTab.get("contentContainer");
+        if (!container) {
+          this._tabContentRender(newTab);
+          container = newTab.get("contentContainer");
+        }
+        $(container).addClass("active");
       }
-      $(container).addClass("active");
       this._currentTab = newTab;
       this.fire("change", this, arg);
       return true;
@@ -16902,6 +16935,274 @@
 
   })(cola.Widget);
 
+  cola.Panel = (function(superClass) {
+    extend(Panel, superClass);
+
+    function Panel() {
+      return Panel.__super__.constructor.apply(this, arguments);
+    }
+
+    Panel.CLASS_NAME = "panel";
+
+    Panel.ATTRIBUTES = {
+      collapsible: {
+        type: "boolean",
+        defaultValue: true
+      },
+      closable: {
+        type: "boolean",
+        defaultValue: false
+      },
+      caption: {
+        refreshDom: true
+      },
+      icon: {
+        refreshDom: true
+      }
+    };
+
+    Panel.TEMPLATES = {
+      "tools": {
+        tagName: "div"
+      }
+    };
+
+    Panel.EVENTS = {
+      open: null,
+      collapsedChange: null,
+      close: null,
+      beforeOpen: null,
+      beforeCollapsedChange: null,
+      beforeClose: null
+    };
+
+    Panel.prototype.collapsedChange = function() {
+      var $dom, collapsed;
+      $dom = this._$dom;
+      collapsed = this.isCollapsed();
+      if (this.fire("beforeCollapsedChange", this, {}) === false) {
+        return this;
+      }
+      $dom.toggleClass("collapsed", !collapsed);
+      setTimeout((function(_this) {
+        return function() {
+          return _this.fire("collapsedChange", _this, {});
+        };
+      })(this), 300);
+    };
+
+    Panel.prototype.isCollapsed = function() {
+      var ref;
+      return (ref = this._$dom) != null ? ref.hasClass("collapsed") : void 0;
+    };
+
+    Panel.prototype.isClosed = function() {
+      var ref;
+      return (ref = this._$dom) != null ? ref.hasClass("transition hidden") : void 0;
+    };
+
+    Panel.prototype.open = function() {
+      if (!this.isClosed()) {
+        return;
+      }
+      return this.toggle();
+    };
+
+    Panel.prototype.close = function() {
+      if (this.isClosed()) {
+        return;
+      }
+      return this.toggle();
+    };
+
+    Panel.prototype.toggle = function() {
+      var beforeEvt, onEvt;
+      beforeEvt = "beforeOpen";
+      onEvt = "open";
+      if (!this.isClosed) {
+        beforeEvt = "beforeClose";
+        onEvt = "close";
+      }
+      if (this.fire(beforeEvt, this, {}) === false) {
+        return;
+      }
+      return this._$dom.transition({
+        animation: 'scale',
+        onComplete: (function(_this) {
+          return function() {
+            return _this.fire(onEvt, _this, {});
+          };
+        })(this)
+      });
+    };
+
+    Panel.prototype.getContentContainer = function() {
+      if (!this._dom) {
+        return null;
+      }
+      if (!this._doms.content) {
+        this._makeContentDom("content");
+      }
+      return this._doms.content;
+    };
+
+    Panel.prototype._initDom = function(dom) {
+      var headerContent, l, len1, node, nodes, template, toolsDom;
+      this._regDefaultTempaltes();
+      Panel.__super__._initDom.call(this, dom);
+      headerContent = $.xCreate({
+        tagName: "div",
+        "class": "content"
+      });
+      this._doms.icon = $.xCreate({
+        tagName: "i",
+        "class": "panel-icon"
+      });
+      headerContent.appendChild(this._doms.icon);
+      this._doms.caption = $.xCreate({
+        tagName: "span",
+        "class": "caption"
+      });
+      headerContent.appendChild(this._doms.caption);
+      template = this._getTemplate("tools");
+      cola.xRender(template, this._scope);
+      toolsDom = this._doms.tools = $.xCreate({
+        "class": "tools"
+      });
+      toolsDom.appendChild(template);
+      nodes = $.xCreate([
+        {
+          tagName: "i",
+          click: (function(_this) {
+            return function() {
+              return _this.collapsedChange();
+            };
+          })(this),
+          "class": "icon chevron down collapse-btn"
+        }, {
+          tagName: "i",
+          click: (function(_this) {
+            return function() {
+              return _this.toggle();
+            };
+          })(this),
+          "class": "icon close close-btn"
+        }
+      ]);
+      for (l = 0, len1 = nodes.length; l < len1; l++) {
+        node = nodes[l];
+        toolsDom.appendChild(node);
+      }
+      headerContent.appendChild(toolsDom);
+      this._render(headerContent, "header");
+      if (!this._doms.content) {
+        this._makeContentDom("content");
+      }
+    };
+
+    Panel.prototype._doRefreshDom = function() {
+      if (!this._dom) {
+        return;
+      }
+      Panel.__super__._doRefreshDom.call(this);
+      $fly(this._doms.caption).text(this._caption || "");
+      if (this._doms.icon._icon) {
+        $fly(this._doms.icon).show().removeClass(this._doms.icon._icon);
+      } else {
+        $fly(this._doms.icon).hide();
+      }
+      $fly(this._doms.icon).addClass("icon " + (this._icon || ""));
+      this._doms.icon._icon = this._icon;
+      $fly(this._doms.tools).find(".collapse-btn")[this._collapsible ? "show" : "hide"]();
+      return $fly(this._doms.tools).find(".close-btn")[this._closable ? "show" : "hide"]();
+    };
+
+    Panel.prototype._makeContentDom = function(target) {
+      var dom;
+      if (this._doms == null) {
+        this._doms = {};
+      }
+      dom = document.createElement("div");
+      dom.className = target;
+      if (target === "header") {
+        $(this._dom).prepend(dom);
+      } else {
+        this._dom.appendChild(dom);
+      }
+      this._doms[target] = dom;
+      return dom;
+    };
+
+    Panel.prototype._parseDom = function(dom) {
+      var $child, _parseChild, child;
+      if (this._doms == null) {
+        this._doms = {};
+      }
+      _parseChild = (function(_this) {
+        return function(node, target) {
+          var childNode, widget;
+          childNode = node.firstChild;
+          while (childNode) {
+            if (childNode.nodeType === 1) {
+              widget = cola.widget(childNode);
+              _this._addContentElement(widget || childNode, target);
+            }
+            childNode = childNode.nextSibling;
+          }
+        };
+      })(this);
+      child = dom.firstChild;
+      while (child) {
+        if (child.nodeType === 1) {
+          if (child.nodeName === "TEMPLATE") {
+            this._regTemplate(child);
+          } else {
+            $child = $(child);
+            if (!$child.hasClass("content")) {
+              child = child.nextSibling;
+              continue;
+            }
+            this._doms["content"] = child;
+            _parseChild(child, "content");
+            break;
+          }
+        }
+        child = child.nextSibling;
+      }
+    };
+
+    return Panel;
+
+  })(cola.AbstractContainer);
+
+  cola.Element.mixin(cola.Panel, cola.TemplateSupport);
+
+  cola.FieldSet = (function(superClass) {
+    extend(FieldSet, superClass);
+
+    function FieldSet() {
+      return FieldSet.__super__.constructor.apply(this, arguments);
+    }
+
+    FieldSet.CLASS_NAME = "panel fieldset";
+
+    return FieldSet;
+
+  })(cola.Panel);
+
+  cola.GroupBox = (function(superClass) {
+    extend(GroupBox, superClass);
+
+    function GroupBox() {
+      return GroupBox.__super__.constructor.apply(this, arguments);
+    }
+
+    GroupBox.CLASS_NAME = "panel groupbox";
+
+    return GroupBox;
+
+  })(cola.Panel);
+
   cola.AbstractEditor = (function(superClass) {
     extend(AbstractEditor, superClass);
 
@@ -16983,10 +17284,10 @@
         return;
       }
       this._value = value;
-      this.fire("change", this, arg);
       if (value !== this._modelValue) {
         this.post();
       }
+      this.fire("change", this, arg);
       return true;
     };
 
@@ -17771,12 +18072,16 @@
         return function() {
           _this._inputFocused = true;
           _this._refreshInputValue(_this._value);
+          if (!_this._finalReadOnly) {
+            _this.addClass("focused");
+          }
           _this.fire("focus", _this);
         };
       })(this)).on("blur", (function(_this) {
         return function() {
           var entity, propertyDef, ref;
           _this._inputFocused = false;
+          _this.removeClass("focused");
           _this._refreshInputValue(_this._value);
           _this.fire("blur", _this);
           if ((_this._value == null) || _this._value === "" && ((ref = _this._bindInfo) != null ? ref.isWriteable : void 0)) {
@@ -19546,6 +19851,16 @@
 
   })(cola.AbstractDropdown);
 
+  oldErrorTemplate = $.fn.form.settings.templates.error;
+
+  $.fn.form.settings.templates.error = function(errors) {
+    var ref;
+    if (errors.length === 1 && ((ref = errors[0]) != null ? ref.form : void 0) instanceof cola.Form) {
+      errors = errors[0].form._errors;
+    }
+    return oldErrorTemplate.call(this, errors);
+  };
+
   cola.Form = (function(superClass) {
     extend(Form, superClass);
 
@@ -19588,6 +19903,7 @@
 
     function Form(config) {
       this._messageHolder = new cola.Entity.MessageHolder();
+      this._errors = [];
       Form.__super__.constructor.call(this, config);
     }
 
@@ -19600,9 +19916,33 @@
       this._inline = $dom.find(".ui.message").length === 0;
       cola.ready((function(_this) {
         return function() {
-          $dom.form({
+          $dom.xAppend({
+            tagName: "input",
+            type: "hidden",
+            "data-validate": "__mockField"
+          }).form({
             on: "_disabled",
-            inline: _this._inline
+            revalidate: false,
+            inline: _this._inline,
+            fields: {
+              __mockField: {
+                identifier: "__mockField",
+                rules: [
+                  {
+                    type: "empty",
+                    prompt: {
+                      form: _this,
+                      search: function() {
+                        return -1;
+                      },
+                      replace: function() {
+                        return this;
+                      }
+                    }
+                  }
+                ]
+              }
+            }
           });
         };
       })(this));
@@ -19615,7 +19955,7 @@
     Form.prototype._processDataMessage = function(path, type, arg) {
       var entity;
       entity = this._bindInfo.expression.evaluate(this._scope, "never");
-      if (entity && entity instanceof dorado.Entity) {
+      if (entity && entity instanceof cola.Entity) {
         this._resetEntityMessages();
       } else {
         entity = null;
@@ -19637,7 +19977,8 @@
       keyMessage = this._messageHolder.getKeyMessage();
       type = keyMessage != null ? keyMessage.type : void 0;
       if (type === "error" && !this._inline) {
-        errors = [];
+        errors = this._errors;
+        errors.length = 0;
         messages = this._messageHolder.findMessages(null, type);
         if (messages) {
           for (l = 0, len1 = messages.length; l < len1; l++) {
@@ -19647,7 +19988,6 @@
             }
           }
         }
-        this._$dom.form("add errors", errors);
         if (errors.length > 0) {
           this._$dom.form("add errors", errors);
           state = type;
@@ -19655,6 +19995,7 @@
           this._$dom.find(".error.message").empty();
         }
       }
+      this._$dom.form("set value", "__mockField", type === "error" ? "" : "mockValue");
       this.set("state", state);
     };
 
@@ -19677,7 +20018,7 @@
     Form.prototype.setMessages = function(messages) {
       var l, len1, message, messageHolder;
       messageHolder = this._messageHolder;
-      messageHolder.clear("$");
+      messageHolder.clear();
       if (messages) {
         for (l = 0, len1 = messages.length; l < len1; l++) {
           message = messages[l];
@@ -19881,6 +20222,558 @@
     return AbstractItemGroup;
 
   })(cola.Widget);
+
+  _getEntityId = cola.Entity._getEntityId;
+
+  cola.ItemsView = (function(superClass) {
+    extend(ItemsView, superClass);
+
+    function ItemsView() {
+      return ItemsView.__super__.constructor.apply(this, arguments);
+    }
+
+    ItemsView.ATTRIBUTES = {
+      allowNoCurrent: {
+        type: "boolean",
+        defaultValue: true
+      },
+      currentItem: {
+        getter: function() {
+          var item;
+          if (this._currentItemDom) {
+            item = cola.util.userData(this._currentItemDom, "item");
+          }
+          return item;
+        },
+        setter: function(currentItem) {
+          var currentItemDom;
+          if (currentItem) {
+            currentItemDom = this._itemDomMap[_getEntityId(currentItem)];
+          }
+          this._setCurrentItemDom(currentItemDom);
+        }
+      },
+      highlightCurrentItem: {
+        type: "boolean"
+      }
+    };
+
+    ItemsView.EVENTS = {
+      getItemTemplate: null,
+      renderItem: null,
+      itemClick: null,
+      itemDoubleClick: null,
+      itemPress: null
+    };
+
+    ItemsView.prototype._doSet = function(attr, attrConfig, value) {
+      if (attrConfig != null ? attrConfig.refreshItems : void 0) {
+        attrConfig.refreshDom = true;
+        this._refreshItemsScheduled = true;
+      }
+      return ItemsView.__super__._doSet.call(this, attr, attrConfig, value);
+    };
+
+    ItemsView.prototype._createDom = function() {
+      var dom;
+      if (this._doms == null) {
+        this._doms = {};
+      }
+      dom = $.xCreate({
+        tagName: "div",
+        content: {
+          tagName: "ul",
+          contextKey: "itemsWrapper"
+        }
+      }, this._doms);
+      return dom;
+    };
+
+    ItemsView.prototype._parseDom = function(dom) {
+      var child, itemsWrapper, next, nodeName;
+      if (!dom) {
+        return;
+      }
+      if (this._doms == null) {
+        this._doms = {};
+      }
+      child = dom.firstChild;
+      while (child) {
+        next = child.nextSibling;
+        nodeName = child.nodeName;
+        if (!itemsWrapper && nodeName === "UL") {
+          itemsWrapper = child;
+        } else if (nodeName === "TEMPLATE") {
+          this._regTemplate(child);
+        } else {
+          dom.removeChild(child);
+        }
+        child = next;
+      }
+      if (!itemsWrapper) {
+        itemsWrapper = document.createElement("ul");
+        dom.appendChild(itemsWrapper);
+      }
+      this._doms.itemsWrapper = itemsWrapper;
+    };
+
+    ItemsView.prototype._initDom = function(dom) {
+      var $itemsWrapper;
+      this._regDefaultTempaltes();
+      if (this._templateContext == null) {
+        this._templateContext = {};
+      }
+      $itemsWrapper = $fly(this._doms.itemsWrapper);
+      $itemsWrapper.addClass("items").delegate(".item", "click", (function(_this) {
+        return function(evt) {
+          return _this._onItemClick(evt);
+        };
+      })(this)).delegate(".item", "dblclick", (function(_this) {
+        return function(evt) {
+          return _this._onItemDoubleClick(evt);
+        };
+      })(this));
+      if (this._onItemsWrapperScroll) {
+        $itemsWrapper.on("scroll", (function(_this) {
+          return function(evt) {
+            _this._onItemsWrapperScroll(evt);
+            return true;
+          };
+        })(this));
+      }
+      this._$dom = $(dom);
+    };
+
+    ItemsView.prototype.getItems = function() {
+      return this._realItems;
+    };
+
+    ItemsView.prototype._doRefreshDom = function() {
+      if (!this._dom) {
+        return;
+      }
+      ItemsView.__super__._doRefreshDom.call(this);
+      if (this._refreshItemsScheduled) {
+        delete this._refreshItemsScheduled;
+        this._refreshItems();
+      }
+    };
+
+    ItemsView.prototype._getItemType = function(item) {
+      var ref, type;
+      type = this.fire("getItemTemplate", this, {
+        item: item
+      });
+      if (type) {
+        return type;
+      }
+      if (item != null ? item.isDataWrapper : void 0) {
+        return ((ref = item._data) != null ? ref._itemType : void 0) || "default";
+      } else {
+        return item._itemType || "default";
+      }
+    };
+
+    ItemsView.prototype._onItemsRefresh = function() {
+      return this._refreshItems();
+    };
+
+    ItemsView.prototype._onItemInsert = function(arg) {
+      var insertMode, item, itemDom, itemType, itemsWrapper, refDom, refEntityId;
+      if (this._realItems === this._realOriginItems) {
+        this._refreshEmptyItemDom();
+        item = arg.entity;
+        itemType = this._getItemType(item);
+        itemsWrapper = this._doms.itemsWrapper;
+        insertMode = arg.insertMode;
+        if (!insertMode || insertMode === "end") {
+          itemDom = this._createNewItem(itemType, item);
+          this._refreshItemDom(itemDom, item);
+          $fly(itemsWrapper).append(itemDom);
+        } else if (insertMode === "begin") {
+          itemDom = this._createNewItem(itemType, item);
+          this._refreshItemDom(itemDom, item);
+          $fly(itemsWrapper.firstChild).before(itemDom);
+        } else if (this._itemDomMap) {
+          refEntityId = _getEntityId(arg.refEntity);
+          if (refEntityId) {
+            refDom = this._itemDomMap[refEntityId] != null;
+            if (refDom) {
+              itemDom = this._createNewItem(itemType, item);
+              this._refreshItemDom(itemDom, item);
+              if (insertMode === "before") {
+                $fly(refDom).before(itemDom);
+              } else {
+                $fly(refDom).after(itemDom);
+              }
+            }
+          }
+        }
+      } else {
+        this._refreshItems();
+      }
+    };
+
+    ItemsView.prototype._onItemRemove = function(arg) {
+      var itemDom, itemId;
+      itemId = _getEntityId(arg.entity);
+      if (itemId) {
+        arg.itemsScope.unregItemScope(itemId);
+        itemDom = this._itemDomMap[itemId];
+        delete this._itemDomMap[itemId];
+        if (itemDom) {
+          $fly(itemDom).remove();
+          if (itemDom === this._currentItemDom) {
+            this._currentItemDom = null;
+          }
+        }
+      }
+      this._refreshEmptyItemDom();
+    };
+
+    ItemsView.prototype._showLoadingTip = function() {
+      var $itemsWrapper, $loaderContainer;
+      $loaderContainer = this._$loaderContainer;
+      if (!$loaderContainer) {
+        $itemsWrapper = $fly(this._doms.itemsWrapper);
+        $itemsWrapper.xAppend({
+          "class": "loader-container protected",
+          content: {
+            "class": "ui loader"
+          }
+        });
+        this._$loaderContainer = $loaderContainer = $itemsWrapper.find(">.loader-container");
+      } else {
+        $loaderContainer.remove();
+        $loaderContainer.appendTo(this._doms.itemsWrapper);
+      }
+      $loaderContainer.addClass("active");
+    };
+
+    ItemsView.prototype._hideLoadingTip = function() {
+      var ref;
+      if ((ref = this._$loaderContainer) != null) {
+        ref.removeClass("active");
+      }
+    };
+
+    ItemsView.prototype._onItemsLoadingStart = function(arg) {
+      this._showLoadingTip();
+    };
+
+    ItemsView.prototype._onItemsLoadingEnd = function(arg) {
+      this._hideLoadingTip();
+    };
+
+    ItemsView.prototype._setCurrentItemDom = function(currentItemDom) {
+      if (this._currentItemDom) {
+        $fly(this._currentItemDom).removeClass(cola.constants.COLLECTION_CURRENT_CLASS);
+      }
+      this._currentItemDom = currentItemDom;
+      if (currentItemDom && this._highlightCurrentItem) {
+        $fly(currentItemDom).addClass(cola.constants.COLLECTION_CURRENT_CLASS);
+      }
+    };
+
+    ItemsView.prototype._onCurrentItemChange = function(arg) {
+      var currentItemDom, itemId;
+      if (arg.current && this._itemDomMap) {
+        itemId = _getEntityId(arg.current);
+        if (itemId) {
+          currentItemDom = this._itemDomMap[itemId];
+          if (!currentItemDom) {
+            this._refreshItems();
+            return;
+          }
+        }
+      }
+      this._setCurrentItemDom(currentItemDom);
+    };
+
+    ItemsView.prototype._refreshItems = function() {
+      if (!this._dom) {
+        this._refreshItemsScheduled = true;
+        return;
+      }
+      return this._doRefreshItems(this._doms.itemsWrapper);
+    };
+
+    ItemsView.prototype._doRefreshItems = function(itemsWrapper) {
+      var currentItem, currentPageNo, documentFragment, itemDom, items, lastItem, nextItemDom, ref, ret;
+      if (this._itemDomMap == null) {
+        this._itemDomMap = {};
+      }
+      ret = this._getItems();
+      items = ret.items;
+      this._realOriginItems = ret.originItems;
+      if (this._convertItems && items) {
+        items = this._convertItems(items);
+      }
+      this._realItems = items;
+      if (items) {
+        documentFragment = null;
+        nextItemDom = itemsWrapper.firstChild;
+        currentItem = items.current;
+        if (this._currentItemDom) {
+          if (!currentItem) {
+            currentItem = cola.util.userData(this._currentItemDom, "item");
+          }
+          $fly(this._currentItemDom).removeClass(cola.constants.COLLECTION_CURRENT_CLASS);
+          delete this._currentItemDom;
+        }
+        this._currentItem = currentItem;
+        this._itemsScope.resetItemScopeMap();
+        if (typeof this._refreshEmptyItemDom === "function") {
+          this._refreshEmptyItemDom();
+        }
+        lastItem = null;
+        cola.each(items, (function(_this) {
+          return function(item) {
+            var _nextItemDom, itemDom, itemType;
+            lastItem = item;
+            itemType = _this._getItemType(item);
+            if (nextItemDom) {
+              while (nextItemDom) {
+                if (nextItemDom._itemType === itemType) {
+                  break;
+                } else {
+                  _nextItemDom = nextItemDom.nextSibling;
+                  if (!cola.util.hasClass(nextItemDom, "protected")) {
+                    itemsWrapper.removeChild(nextItemDom);
+                  }
+                  nextItemDom = _nextItemDom;
+                }
+              }
+              itemDom = nextItemDom;
+              if (nextItemDom) {
+                nextItemDom = nextItemDom.nextSibling;
+              }
+            } else {
+              itemDom = null;
+            }
+            if (itemDom) {
+              _this._refreshItemDom(itemDom, item);
+            } else {
+              itemDom = _this._createNewItem(itemType, item);
+              _this._refreshItemDom(itemDom, item);
+              if (documentFragment == null) {
+                documentFragment = document.createDocumentFragment();
+              }
+              documentFragment.appendChild(itemDom);
+            }
+          };
+        })(this), {
+          currentPage: this._currentPageOnly
+        });
+        if (nextItemDom) {
+          itemDom = nextItemDom;
+          while (itemDom) {
+            nextItemDom = itemDom.nextSibling;
+            if (!cola.util.hasClass(itemDom, "protected")) {
+              itemsWrapper.removeChild(itemDom);
+              if (itemDom._itemId) {
+                delete this._itemDomMap[itemDom._itemId];
+              }
+            }
+            itemDom = nextItemDom;
+          }
+        }
+        delete this._currentItem;
+        if (this._currentItemDom && this._highlightCurrentItem) {
+          $fly(this._currentItemDom).addClass(cola.constants.COLLECTION_CURRENT_CLASS);
+        }
+        if (documentFragment) {
+          itemsWrapper.appendChild(documentFragment);
+        }
+        if (!this._currentPageOnly && this._autoLoadPage && (items === this._realOriginItems || !this._realOriginItems) && items instanceof cola.EntityList && items.pageSize > 0) {
+          currentPageNo = lastItem != null ? (ref = lastItem._page) != null ? ref.pageNo : void 0 : void 0;
+          if (currentPageNo && (currentPageNo < items.pageCount || !items.pageCountDetermined)) {
+            if (!this._loadingNextPage && itemsWrapper.scrollHeight === itemsWrapper.clientHeight && (itemsWrapper.scrollTop = 0)) {
+              this._showLoadingTip();
+              items.loadPage(currentPageNo + 1, (function(_this) {
+                return function() {
+                  _this._hideLoadingTip();
+                };
+              })(this));
+            } else {
+              if (typeof this._appendTailDom === "function") {
+                this._appendTailDom(itemsWrapper);
+              }
+            }
+          }
+        }
+      }
+    };
+
+    ItemsView.prototype._refreshItemDom = function(itemDom, item, parentScope) {
+      var alias, itemId, itemScope, oldScope, originItem;
+      if (parentScope == null) {
+        parentScope = this._itemsScope;
+      }
+      if (item === this._currentItem) {
+        this._currentItemDom = itemDom;
+      } else if (!this._currentItemDom && !this._allowNoCurrent) {
+        this._currentItemDom = itemDom;
+      }
+      if (item != null ? item.isDataWrapper : void 0) {
+        originItem = item;
+        item = item._data;
+      } else {
+        originItem = item;
+      }
+      if (typeof item === "object") {
+        itemId = _getEntityId(item);
+      }
+      alias = item._alias;
+      if (!alias) {
+        alias = originItem != null ? originItem._alias : void 0;
+        if (alias == null) {
+          alias = this._alias;
+        }
+      }
+      this._templateContext.defaultPath = (typeof this._getDefaultBindPath === "function" ? this._getDefaultBindPath(originItem) : void 0) || alias;
+      itemScope = cola.util.userData(itemDom, "scope");
+      oldScope = cola.currentScope;
+      try {
+        if (!itemScope) {
+          itemScope = new cola.ItemScope(parentScope, alias);
+          cola.currentScope = itemScope;
+          itemScope.data.setTargetData(item, true);
+          cola.util.userData(itemDom, "scope", itemScope);
+          cola.util.userData(itemDom, "item", originItem);
+          if (typeof this._doRefreshItemDom === "function") {
+            this._doRefreshItemDom(itemDom, item, itemScope);
+          }
+          cola.xRender(itemDom, itemScope, this._templateContext);
+        } else {
+          cola.currentScope = itemScope;
+          if (itemScope.data.getTargetData() !== item) {
+            if (itemDom._itemId) {
+              delete this._itemDomMap[itemDom._itemId];
+            }
+            if (itemScope.data.alias !== alias) {
+              throw new cola.Exception("Repeat alias mismatch. Expect \"" + itemScope.alias + "\" but \"" + alias + "\".");
+            }
+            cola.util.userData(itemDom, "item", originItem);
+            itemScope.data.setTargetData(item);
+          }
+          if (typeof this._doRefreshItemDom === "function") {
+            this._doRefreshItemDom(itemDom, item, itemScope);
+          }
+        }
+        if (itemId) {
+          parentScope.regItemScope(itemId, itemScope);
+        }
+        if (this.getListeners("renderItem")) {
+          this.fire("renderItem", this, {
+            item: originItem,
+            dom: itemDom,
+            scope: itemScope
+          });
+        }
+      } finally {
+        cola.currentScope = oldScope;
+      }
+      if (itemId) {
+        itemDom._itemId = itemId;
+        this._itemDomMap[itemId] = itemDom;
+      }
+      return itemScope;
+    };
+
+    ItemsView.prototype.refreshItem = function(item) {
+      var itemDom, itemId;
+      itemId = _getEntityId(item);
+      itemDom = this._itemDomMap[itemId];
+      if (itemDom) {
+        if (typeof this._doRefreshItemDom === "function") {
+          this._doRefreshItemDom(itemDom, item, this._itemsScope);
+        }
+      }
+    };
+
+    ItemsView.prototype._onItemRefresh = function(arg) {
+      var item;
+      item = arg.entity;
+      if (typeof item === "object") {
+        this.refreshItem(item);
+      }
+    };
+
+    ItemsView.prototype._findItemDom = function(target) {
+      var itemDom;
+      while (target) {
+        if (target._itemType) {
+          itemDom = target;
+          break;
+        }
+        target = target.parentNode;
+      }
+      return itemDom;
+    };
+
+    ItemsView.prototype._onItemClick = function(evt) {
+      var item, itemDom;
+      itemDom = evt.currentTarget;
+      if (!itemDom) {
+        return;
+      }
+      item = cola.util.userData(itemDom, "item");
+      if (itemDom._itemType === "default") {
+        if (item) {
+          if (this._changeCurrentItem && item._parent instanceof cola.EntityList) {
+            item._parent.setCurrent(item);
+          } else {
+            this._setCurrentItemDom(itemDom);
+          }
+        }
+      }
+      this.fire("itemClick", this, {
+        event: evt,
+        item: item,
+        dom: itemDom
+      });
+    };
+
+    ItemsView.prototype._onItemDoubleClick = function(evt) {
+      var item, itemDom;
+      itemDom = evt.currentTarget;
+      if (!itemDom) {
+        return;
+      }
+      item = cola.util.userData(itemDom, "item");
+      this.fire("itemDoubleClick", this, {
+        event: evt,
+        item: item,
+        dom: itemDom
+      });
+    };
+
+    ItemsView.prototype._bindEvent = function(eventName) {
+      if (eventName === "itemPress") {
+        this._on("press", (function(_this) {
+          return function(self, arg) {
+            var itemDom;
+            itemDom = _this._findItemDom(arg.event.target);
+            if (itemDom) {
+              arg.itemDom = itemDom;
+              arg.item = cola.util.userData(itemDom, "item");
+              _this.fire("itemPress", list, arg);
+            }
+          };
+        })(this));
+      } else {
+        return ItemsView.__super__._bindEvent.call(this, eventName);
+      }
+    };
+
+    return ItemsView;
+
+  })(cola.Widget);
+
+  cola.Element.mixin(cola.ItemsView, cola.TemplateSupport);
+
+  cola.Element.mixin(cola.ItemsView, cola.DataItemsWidgetMixin);
 
   if (cola.breadcrumb == null) {
     cola.breadcrumb = {};
@@ -20421,10 +21314,12 @@
       parseItem = (function(_this) {
         return function(node) {
           var childNode;
-          _this._items = [];
           childNode = node.firstChild;
           while (childNode) {
             if (childNode.nodeType === 1) {
+              if (!_this._items) {
+                _this._items = [];
+              }
               _this.addItem(childNode);
             }
             childNode = childNode.nextSibling;
@@ -20501,7 +21396,7 @@
         this._doms.wrap.appendChild(template);
         cola.xRender(template, this._scope);
       }
-      if (this._items) {
+      if (this._getItems().items) {
         this._itemsRender();
         this.refreshIndicators();
       }
@@ -20546,6 +21441,16 @@
       }
     };
 
+    Carousel.prototype._getItems = function() {
+      if (this._items) {
+        return {
+          items: this._items
+        };
+      } else {
+        return Carousel.__super__._getItems.call(this);
+      }
+    };
+
     Carousel.prototype.setCurrentIndex = function(index) {
       var activeSpan, e, pos;
       this.fire("change", this, {
@@ -20575,9 +21480,14 @@
     };
 
     Carousel.prototype.refreshIndicators = function() {
-      var currentIndex, i, indicatorCount, itemsCount, ref, ref1, span;
-      itemsCount = (ref = this._items) != null ? ref.length : void 0;
-      if (!((ref1 = this._doms) != null ? ref1.indicators : void 0)) {
+      var currentIndex, i, indicatorCount, items, itemsCount, ref, span;
+      items = this._getItems().items;
+      if (items) {
+        itemsCount = items instanceof cola.EntityList ? items.entityCount : items.length;
+      } else {
+        itemsCount = 0;
+      }
+      if (!((ref = this._doms) != null ? ref.indicators : void 0)) {
         return;
       }
       indicatorCount = this._doms.indicators.children.length;
@@ -20607,10 +21517,11 @@
     };
 
     Carousel.prototype.next = function() {
-      var pos;
-      if (this._scroller) {
+      var items, pos;
+      items = this._getItems().items;
+      if (items && this._scroller) {
         pos = this._scroller.getPos();
-        if (pos === (this._items.length - 1)) {
+        if (pos === (items.length - 1)) {
           this.goTo(0);
         } else {
           this._scroller.next();
@@ -20620,11 +21531,12 @@
     };
 
     Carousel.prototype.previous = function() {
-      var pos;
-      if (this._scroller) {
+      var items, pos;
+      items = this._getItems().items;
+      if (items && this._scroller) {
         pos = this._scroller.getPos();
         if (pos === 0) {
-          this.goTo(this._items.length - 1);
+          this.goTo(_items.length - 1);
         } else {
           this._scroller.prev();
         }
@@ -21173,7 +22085,7 @@
       },
       showActivity: {
         type: "boolean",
-        defaultValue: true
+        defaultValue: false
       },
       rightItems: {
         setter: function(value) {
@@ -22519,7 +23431,7 @@
     Stack.duration = 200;
 
     Stack.prototype._initDom = function(dom) {
-      var itemsWrap;
+      var itemsWrap, width;
       if (this._doms == null) {
         this._doms = {};
       }
@@ -22545,10 +23457,25 @@
       this._prevItem = this._doms.prevItem;
       this._currentItem = this._doms.currentItem;
       this._nextItem = this._doms.nextItem;
+      width = this._currentItem.clientWidth;
       $fly(this._currentItem).css({
         display: "block"
       });
       this._bindTouch();
+      $fly(this._currentItem).css("transform", "translate(-" + width + "px,0)");
+      if (direction === "left") {
+        $fly(this._prevItem).css("display", "none");
+        $fly(this._nextItem).css({
+          transform: "translate(" + width + "px,0)",
+          display: "block"
+        });
+      } else {
+        $fly(this._nextItem).css("display", "none");
+        $fly(this._prevItem).css({
+          transform: "translate(" + (2 * width) + "px,0)",
+          display: "block"
+        });
+      }
     };
 
     Stack.prototype._parseDom = function(dom) {
@@ -22874,45 +23801,19 @@
 
   })(cola.Widget);
 
-  _getEntityId = cola.Entity._getEntityId;
+  cola.AbstractList = (function(superClass) {
+    extend(AbstractList, superClass);
 
-  cola.ItemsView = (function(superClass) {
-    extend(ItemsView, superClass);
-
-    function ItemsView() {
-      return ItemsView.__super__.constructor.apply(this, arguments);
+    function AbstractList() {
+      return AbstractList.__super__.constructor.apply(this, arguments);
     }
 
-    ItemsView.ATTRIBUTES = {
-      allowNoCurrent: {
-        type: "boolean",
-        defaultValue: true
-      },
-      currentItem: {
-        getter: function() {
-          var item;
-          if (this._currentItemDom) {
-            item = cola.util.userData(this._currentItemDom, "item");
-          }
-          return item;
-        },
-        setter: function(currentItem) {
-          var currentItemDom;
-          if (currentItem) {
-            currentItemDom = this._itemDomMap[_getEntityId(currentItem)];
-          }
-          this._setCurrentItemDom(currentItemDom);
-        }
-      },
-      highlightCurrentItem: {
-        type: "boolean"
-      },
+    AbstractList.ATTRIBUTES = {
       currentPageOnly: {
         type: "boolean"
       },
       autoLoadPage: {
-        type: "boolean",
-        defaultValue: true
+        type: "boolean"
       },
       changeCurrentItem: {
         type: "boolean"
@@ -22928,12 +23829,7 @@
       }
     };
 
-    ItemsView.EVENTS = {
-      getItemTemplate: null,
-      renderItem: null,
-      itemClick: null,
-      itemDoubleClick: null,
-      itemPress: null,
+    AbstractList.EVENTS = {
       pullStart: null,
       pullStep: null,
       pullComplete: null,
@@ -22943,116 +23839,21 @@
       }
     };
 
-    ItemsView.prototype.destroy = function() {
-      ItemsView.__super__.destroy.call(this);
+    AbstractList.prototype.destroy = function() {
+      AbstractList.__super__.destroy.call(this);
       delete this._emptyItemDom;
     };
 
-    ItemsView.prototype._doSet = function(attr, attrConfig, value) {
-      if (attrConfig != null ? attrConfig.refreshItems : void 0) {
-        attrConfig.refreshDom = true;
-        this._refreshItemsScheduled = true;
-      }
-      return ItemsView.__super__._doSet.call(this, attr, attrConfig, value);
-    };
-
-    ItemsView.prototype._createDom = function() {
-      var dom;
-      if (this._doms == null) {
-        this._doms = {};
-      }
-      dom = $.xCreate({
-        tagName: "div",
+    AbstractList.prototype._appendTailDom = function(itemsWrapper) {
+      $fly(itemsWrapper).xAppend({
+        "class": "tail-padding",
         content: {
-          tagName: "ul",
-          contextKey: "itemsWrapper"
+          "class": "ui loader"
         }
-      }, this._doms);
-      return dom;
+      });
     };
 
-    ItemsView.prototype._parseDom = function(dom) {
-      var child, itemsWrapper, next, nodeName;
-      if (!dom) {
-        return;
-      }
-      if (this._doms == null) {
-        this._doms = {};
-      }
-      child = dom.firstChild;
-      while (child) {
-        next = child.nextSibling;
-        nodeName = child.nodeName;
-        if (!itemsWrapper && nodeName === "UL") {
-          itemsWrapper = child;
-        } else if (nodeName === "TEMPLATE") {
-          this._regTemplate(child);
-        } else {
-          dom.removeChild(child);
-        }
-        child = next;
-      }
-      if (!itemsWrapper) {
-        itemsWrapper = document.createElement("ul");
-        dom.appendChild(itemsWrapper);
-      }
-      this._doms.itemsWrapper = itemsWrapper;
-    };
-
-    ItemsView.prototype._initDom = function(dom) {
-      var $itemsWrapper;
-      this._regDefaultTempaltes();
-      if (this._templateContext == null) {
-        this._templateContext = {};
-      }
-      $itemsWrapper = $fly(this._doms.itemsWrapper);
-      $itemsWrapper.addClass("items").delegate(".list.item", "click", (function(_this) {
-        return function(evt) {
-          return _this._onItemClick(evt);
-        };
-      })(this)).delegate(".list.item", "dblclick", (function(_this) {
-        return function(evt) {
-          return _this._onItemDoubleClick(evt);
-        };
-      })(this));
-      if (this._onItemsWrapperScroll) {
-        $itemsWrapper.on("scroll", (function(_this) {
-          return function(evt) {
-            _this._onItemsWrapperScroll(evt);
-            return true;
-          };
-        })(this));
-      }
-      this._$dom = $(dom);
-    };
-
-    ItemsView.prototype._showLoadingTip = function() {
-      var $itemsWrapper, $loaderContainer;
-      $loaderContainer = this._$loaderContainer;
-      if (!$loaderContainer) {
-        $itemsWrapper = $fly(this._doms.itemsWrapper);
-        $itemsWrapper.xAppend({
-          "class": "loader-container protected",
-          content: {
-            "class": "ui loader"
-          }
-        });
-        this._$loaderContainer = $loaderContainer = $itemsWrapper.find(">.loader-container");
-      } else {
-        $loaderContainer.remove();
-        $loaderContainer.appendTo(this._doms.itemsWrapper);
-      }
-      $loaderContainer.addClass("active");
-    };
-
-    ItemsView.prototype._hideLoadingTip = function() {
-      var ref;
-      if ((ref = this._$loaderContainer) != null) {
-        ref.removeClass("active");
-      }
-    };
-
-    ItemsView.prototype._onItemsWrapperScroll = function() {
+    AbstractList.prototype._onItemsWrapperScroll = function() {
       var itemsWrapper, realItems;
       realItems = this._realItems;
       if (!this._currentPageOnly && this._autoLoadPage && !this._loadingNextPage && (realItems === this._realOriginItems || !this._realOriginItems)) {
@@ -23072,147 +23873,25 @@
       }
     };
 
-    ItemsView.prototype.getItems = function() {
-      return this._realItems;
-    };
-
-    ItemsView.prototype._doRefreshDom = function() {
-      if (!this._dom) {
-        return;
-      }
-      ItemsView.__super__._doRefreshDom.call(this);
-      if (this._refreshItemsScheduled) {
-        delete this._refreshItemsScheduled;
-        this._refreshItems();
-      }
-    };
-
-    ItemsView.prototype._getItemType = function(item) {
-      var ref, type;
-      type = this.fire("getItemTemplate", this, {
-        item: item
-      });
-      if (type) {
-        return type;
-      }
-      if (item != null ? item.isDataWrapper : void 0) {
-        return ((ref = item._data) != null ? ref._itemType : void 0) || "default";
-      } else {
-        return item._itemType || "default";
-      }
-    };
-
-    ItemsView.prototype._onItemsRefresh = function() {
-      return this._refreshItems();
-    };
-
-    ItemsView.prototype._onItemInsert = function(arg) {
-      var insertMode, item, itemDom, itemType, itemsWrapper, refDom, refEntityId;
-      if (this._realItems === this._realOriginItems) {
-        this._refreshEmptyItemDom();
-        item = arg.entity;
-        itemType = this._getItemType(item);
-        itemsWrapper = this._doms.itemsWrapper;
-        insertMode = arg.insertMode;
-        if (!insertMode || insertMode === "end") {
-          itemDom = this._createNewItem(itemType, item);
-          this._refreshItemDom(itemDom, item);
-          $fly(itemsWrapper).append(itemDom);
-        } else if (insertMode === "begin") {
-          itemDom = this._createNewItem(itemType, item);
-          this._refreshItemDom(itemDom, item);
-          $fly(itemsWrapper.firstChild).before(itemDom);
-        } else if (this._itemDomMap) {
-          refEntityId = _getEntityId(arg.refEntity);
-          if (refEntityId) {
-            refDom = this._itemDomMap[refEntityId] != null;
-            if (refDom) {
-              itemDom = this._createNewItem(itemType, item);
-              this._refreshItemDom(itemDom, item);
-              if (insertMode === "before") {
-                $fly(refDom).before(itemDom);
-              } else {
-                $fly(refDom).after(itemDom);
-              }
-            }
-          }
-        }
-      } else {
-        this._refreshItems();
-      }
-    };
-
-    ItemsView.prototype._onItemRemove = function(arg) {
-      var itemDom, itemId;
-      itemId = _getEntityId(arg.entity);
-      if (itemId) {
-        arg.itemsScope.unregItemScope(itemId);
-        itemDom = this._itemDomMap[itemId];
-        delete this._itemDomMap[itemId];
-        if (itemDom) {
-          $fly(itemDom).remove();
-          if (itemDom === this._currentItemDom) {
-            this._currentItemDom = null;
-          }
-        }
-      }
-      this._refreshEmptyItemDom();
-    };
-
-    ItemsView.prototype._onItemsLoadingStart = function(arg) {
-      this._showLoadingTip();
-    };
-
-    ItemsView.prototype._onItemsLoadingEnd = function(arg) {
-      this._hideLoadingTip();
-    };
-
-    ItemsView.prototype._setCurrentItemDom = function(currentItemDom) {
-      if (this._currentItemDom) {
-        $fly(this._currentItemDom).removeClass(cola.constants.COLLECTION_CURRENT_CLASS);
-      }
-      this._currentItemDom = currentItemDom;
-      if (currentItemDom && this._highlightCurrentItem) {
-        $fly(currentItemDom).addClass(cola.constants.COLLECTION_CURRENT_CLASS);
-      }
-    };
-
-    ItemsView.prototype._onCurrentItemChange = function(arg) {
-      var currentItemDom, itemId;
-      if (arg.current && this._itemDomMap) {
-        itemId = _getEntityId(arg.current);
-        if (itemId) {
-          currentItemDom = this._itemDomMap[itemId];
-          if (!currentItemDom) {
-            this._refreshItems();
-            return;
-          }
-        }
-      }
-      this._setCurrentItemDom(currentItemDom);
-    };
-
-    ItemsView.prototype._convertItems = function(items) {
+    AbstractList.prototype._convertItems = function(items) {
       var arg;
-      if (this._filterCriteria) {
-        if (this.getListeners("filterItem")) {
-          arg = {
-            filterCriteria: this._filterCriteria
+      if (this.getListeners("filterItem")) {
+        arg = {
+          filterCriteria: this._filterCriteria
+        };
+        items = cola._filterCollection(items, (function(_this) {
+          return function(item) {
+            arg.item = item;
+            return _this.fire("filterItem", _this, arg);
           };
-          items = cola.convertor.filter(items, (function(_this) {
-            return function(item) {
-              arg.item = item;
-              return _this.fire("filterItem", _this, arg);
-            };
-          })(this));
-        } else {
-          items = cola.convertor.filter(items, this._filterCriteria);
-        }
+        })(this));
+      } else if (this._filterCriteria) {
+        items = cola._filterCollection(items, this._filterCriteria);
       }
       return items;
     };
 
-    ItemsView.prototype._refreshEmptyItemDom = function() {
+    AbstractList.prototype._refreshEmptyItemDom = function() {
       var emptyItemDom, items, itemsWrapper;
       emptyItemDom = this._emptyItemDom = this._getTemplate("empty-item");
       if (emptyItemDom) {
@@ -23231,120 +23910,9 @@
       }
     };
 
-    ItemsView.prototype._refreshItems = function() {
-      if (!this._dom) {
-        this._refreshItemsScheduled = true;
-        return;
-      }
-      return this._doRefreshItems(this._doms.itemsWrapper);
-    };
-
-    ItemsView.prototype._doRefreshItems = function(itemsWrapper) {
-      var currentItem, currentPageNo, documentFragment, hasPullAction, itemDom, items, lastItem, nextItemDom, pullDownPane, pullUpPane, ref, ret;
-      if (this._itemDomMap == null) {
-        this._itemDomMap = {};
-      }
-      ret = this._getItems();
-      items = ret.items;
-      this._realOriginItems = ret.originItems;
-      if (this._convertItems && items) {
-        items = this._convertItems(items);
-      }
-      this._realItems = items;
-      if (items) {
-        documentFragment = null;
-        nextItemDom = itemsWrapper.firstChild;
-        currentItem = items.current;
-        if (this._currentItemDom) {
-          if (!currentItem) {
-            currentItem = cola.util.userData(this._currentItemDom, "item");
-          }
-          $fly(this._currentItemDom).removeClass(cola.constants.COLLECTION_CURRENT_CLASS);
-          delete this._currentItemDom;
-        }
-        this._currentItem = currentItem;
-        this._itemsScope.resetItemScopeMap();
-        this._refreshEmptyItemDom();
-        lastItem = null;
-        cola.each(items, (function(_this) {
-          return function(item) {
-            var _nextItemDom, itemDom, itemType;
-            lastItem = item;
-            itemType = _this._getItemType(item);
-            if (nextItemDom) {
-              while (nextItemDom) {
-                if (nextItemDom._itemType === itemType) {
-                  break;
-                } else {
-                  _nextItemDom = nextItemDom.nextSibling;
-                  if (!cola.util.hasClass(nextItemDom, "protected")) {
-                    itemsWrapper.removeChild(nextItemDom);
-                  }
-                  nextItemDom = _nextItemDom;
-                }
-              }
-              itemDom = nextItemDom;
-              if (nextItemDom) {
-                nextItemDom = nextItemDom.nextSibling;
-              }
-            } else {
-              itemDom = null;
-            }
-            if (itemDom) {
-              _this._refreshItemDom(itemDom, item);
-            } else {
-              itemDom = _this._createNewItem(itemType, item);
-              _this._refreshItemDom(itemDom, item);
-              if (documentFragment == null) {
-                documentFragment = document.createDocumentFragment();
-              }
-              documentFragment.appendChild(itemDom);
-            }
-          };
-        })(this), {
-          currentPage: this._currentPageOnly
-        });
-        if (nextItemDom) {
-          itemDom = nextItemDom;
-          while (itemDom) {
-            nextItemDom = itemDom.nextSibling;
-            if (!cola.util.hasClass(itemDom, "protected")) {
-              itemsWrapper.removeChild(itemDom);
-              if (itemDom._itemId) {
-                delete this._itemDomMap[itemDom._itemId];
-              }
-            }
-            itemDom = nextItemDom;
-          }
-        }
-        delete this._currentItem;
-        if (this._currentItemDom && this._highlightCurrentItem) {
-          $fly(this._currentItemDom).addClass(cola.constants.COLLECTION_CURRENT_CLASS);
-        }
-        if (documentFragment) {
-          itemsWrapper.appendChild(documentFragment);
-        }
-        if (!this._currentPageOnly && this._autoLoadPage && (items === this._realOriginItems || !this._realOriginItems) && items instanceof cola.EntityList && items.pageSize > 0) {
-          currentPageNo = lastItem != null ? (ref = lastItem._page) != null ? ref.pageNo : void 0 : void 0;
-          if (currentPageNo && (currentPageNo < items.pageCount || !items.pageCountDetermined)) {
-            if (!this._loadingNextPage && itemsWrapper.scrollHeight === itemsWrapper.clientHeight && (itemsWrapper.scrollTop = 0)) {
-              this._showLoadingTip();
-              items.loadPage(currentPageNo + 1, (function(_this) {
-                return function() {
-                  _this._hideLoadingTip();
-                };
-              })(this));
-            } else {
-              $fly(itemsWrapper).xAppend({
-                "class": "tail-padding",
-                content: {
-                  "class": "ui loader"
-                }
-              });
-            }
-          }
-        }
-      }
+    AbstractList.prototype._doRefreshItems = function(itemsWrapper) {
+      var hasPullAction, pullDownPane, pullUpPane;
+      AbstractList.__super__._doRefreshItems.call(this, itemsWrapper);
       if (this._pullAction === void 0) {
         this._pullAction = null;
         if (this._pullDown) {
@@ -23373,169 +23941,7 @@
       }
     };
 
-    ItemsView.prototype._refreshItemDom = function(itemDom, item, parentScope) {
-      var alias, itemId, itemScope, oldScope, originItem;
-      if (parentScope == null) {
-        parentScope = this._itemsScope;
-      }
-      if (item === this._currentItem) {
-        this._currentItemDom = itemDom;
-      } else if (!this._currentItemDom && !this._allowNoCurrent) {
-        this._currentItemDom = itemDom;
-      }
-      if (item != null ? item.isDataWrapper : void 0) {
-        originItem = item;
-        item = item._data;
-      } else {
-        originItem = item;
-      }
-      if (typeof item === "object") {
-        itemId = _getEntityId(item);
-      }
-      alias = item._alias;
-      if (!alias) {
-        alias = originItem != null ? originItem._alias : void 0;
-        if (alias == null) {
-          alias = this._alias;
-        }
-      }
-      this._templateContext.defaultPath = (typeof this._getDefaultBindPath === "function" ? this._getDefaultBindPath(originItem) : void 0) || alias;
-      itemScope = cola.util.userData(itemDom, "scope");
-      oldScope = cola.currentScope;
-      try {
-        if (!itemScope) {
-          itemScope = new cola.ItemScope(parentScope, alias);
-          cola.currentScope = itemScope;
-          itemScope.data.setTargetData(item, true);
-          cola.util.userData(itemDom, "scope", itemScope);
-          cola.util.userData(itemDom, "item", originItem);
-          if (typeof this._doRefreshItemDom === "function") {
-            this._doRefreshItemDom(itemDom, item, itemScope);
-          }
-          cola.xRender(itemDom, itemScope, this._templateContext);
-        } else {
-          cola.currentScope = itemScope;
-          if (itemScope.data.getTargetData() !== item) {
-            if (itemDom._itemId) {
-              delete this._itemDomMap[itemDom._itemId];
-            }
-            if (itemScope.data.alias !== alias) {
-              throw new cola.Exception("Repeat alias mismatch. Expect \"" + itemScope.alias + "\" but \"" + alias + "\".");
-            }
-            cola.util.userData(itemDom, "item", originItem);
-            itemScope.data.setTargetData(item);
-          }
-          if (typeof this._doRefreshItemDom === "function") {
-            this._doRefreshItemDom(itemDom, item, itemScope);
-          }
-        }
-        if (itemId) {
-          parentScope.regItemScope(itemId, itemScope);
-        }
-        if (this.getListeners("renderItem")) {
-          this.fire("renderItem", this, {
-            item: originItem,
-            dom: itemDom,
-            scope: itemScope
-          });
-        }
-      } finally {
-        cola.currentScope = oldScope;
-      }
-      if (itemId) {
-        itemDom._itemId = itemId;
-        this._itemDomMap[itemId] = itemDom;
-      }
-      return itemScope;
-    };
-
-    ItemsView.prototype.refreshItem = function(item) {
-      var itemDom, itemId;
-      itemId = _getEntityId(item);
-      itemDom = this._itemDomMap[itemId];
-      if (itemDom) {
-        if (typeof this._doRefreshItemDom === "function") {
-          this._doRefreshItemDom(itemDom, item, this._itemsScope);
-        }
-      }
-    };
-
-    ItemsView.prototype._onItemRefresh = function(arg) {
-      var item;
-      item = arg.entity;
-      if (typeof item === "object") {
-        this.refreshItem(item);
-      }
-    };
-
-    ItemsView.prototype._findItemDom = function(target) {
-      var itemDom;
-      while (target) {
-        if (target._itemType) {
-          itemDom = target;
-          break;
-        }
-        target = target.parentNode;
-      }
-      return itemDom;
-    };
-
-    ItemsView.prototype._onItemClick = function(evt) {
-      var item, itemDom;
-      itemDom = evt.currentTarget;
-      if (!itemDom) {
-        return;
-      }
-      item = cola.util.userData(itemDom, "item");
-      if (itemDom._itemType === "default") {
-        if (item) {
-          if (this._changeCurrentItem && item._parent instanceof cola.EntityList) {
-            item._parent.setCurrent(item);
-          } else {
-            this._setCurrentItemDom(itemDom);
-          }
-        }
-      }
-      this.fire("itemClick", this, {
-        event: evt,
-        item: item,
-        dom: itemDom
-      });
-    };
-
-    ItemsView.prototype._onItemDoubleClick = function(evt) {
-      var item, itemDom;
-      itemDom = evt.currentTarget;
-      if (!itemDom) {
-        return;
-      }
-      item = cola.util.userData(itemDom, "item");
-      this.fire("itemDoubleClick", this, {
-        event: evt,
-        item: item,
-        dom: itemDom
-      });
-    };
-
-    ItemsView.prototype._bindEvent = function(eventName) {
-      if (eventName === "itemPress") {
-        this._on("press", (function(_this) {
-          return function(self, arg) {
-            var itemDom;
-            itemDom = _this._findItemDom(arg.event.target);
-            if (itemDom) {
-              arg.itemDom = itemDom;
-              arg.item = cola.util.userData(itemDom, "item");
-              _this.fire("itemPress", list, arg);
-            }
-          };
-        })(this));
-      } else {
-        return ItemsView.__super__._bindEvent.call(this, eventName);
-      }
-    };
-
-    ItemsView.prototype._createPullAction = function() {
+    AbstractList.prototype._createPullAction = function() {
       this._pullAction = new cola.PullAction(this._doms.itemsWrapper, {
         pullDownPane: this._doms.pullDownPane,
         pullUpPane: this._doms.pullUpPane,
@@ -23607,13 +24013,9 @@
       });
     };
 
-    return ItemsView;
+    return AbstractList;
 
-  })(cola.Widget);
-
-  cola.Element.mixin(cola.ItemsView, cola.TemplateSupport);
-
-  cola.Element.mixin(cola.ItemsView, cola.DataItemsWidgetMixin);
+  })(cola.ItemsView);
 
   SAFE_PULL_EFFECT = cola.os.android && !cola.browser.chrome;
 
@@ -24950,7 +25352,7 @@
 
     return ListView;
 
-  })(cola.ItemsView);
+  })(cola.AbstractList);
 
   _getEntityId = cola.Entity._getEntityId;
 
@@ -26002,7 +26404,6 @@
             } else if (node.get("hasChild") !== false) {
               _this.expand(node);
             }
-
             return false;
           }
         };
@@ -26064,7 +26465,7 @@
     };
 
     Tree.prototype._createNewItem = function(itemType, node) {
-      var contentDom, itemDom, l, len1, nodeDom, span, templ, template;
+      var contentDom, itemDom, nodeDom, template;
       template = this._getTemplate(itemType);
       itemDom = this._cloneTemplate(template);
       $fly(itemDom).addClass("tree item " + itemType);
@@ -26073,15 +26474,6 @@
       if (nodeDom && cola.util.hasClass(nodeDom, "node")) {
         template = this._getTemplate("node-" + itemType, "node");
         if (template) {
-          if (template instanceof Array) {
-            span = document.createElement("span");
-            for (l = 0, len1 = template.length; l < len1; l++) {
-              templ = template[l];
-              span.appendChild(templ);
-            }
-            template = span;
-            this._regTemplate("node-" + itemType, template);
-          }
           contentDom = this._cloneTemplate(template);
           $fly(contentDom).addClass("node-content");
           nodeDom.appendChild(contentDom);
@@ -26451,7 +26843,7 @@
 
     return Tree;
 
-  })(cola.ItemsView);
+  })(cola.AbstractList);
 
   cola.Element.mixin(cola.Tree, cola.TreeSupportMixin);
 
@@ -26603,7 +26995,7 @@
 
     TableSelectColumn.ATTRIBUTES = {
       width: {
-        defaultValue: "34px"
+        defaultValue: "42px"
       },
       align: {
         defaultValue: "center"
@@ -27031,7 +27423,7 @@
 
     return AbstractTable;
 
-  })(cola.ItemsView);
+  })(cola.AbstractList);
 
   cola.Table = (function(superClass) {
     extend(Table, superClass);
@@ -27061,6 +27453,9 @@
 
     Table.prototype._doRefreshItems = function() {
       var col, colInfo, colgroup, column, columnConfigs, i, l, len1, len2, n, nextCol, propertyDef, ref, ref1, tbody, tfoot, thead;
+      if (!this._columnsInfo) {
+        return;
+      }
       if (!this._columnsInfo.dataColumns.length && this._dataType && this._dataType instanceof cola.EntityDataType) {
         columnConfigs = [];
         ref = this._dataType.getProperties().elements;
@@ -27222,19 +27617,16 @@
           contentWrapper = cell.firstChild;
           this._refreshHeaderCell(contentWrapper, colInfo, isNew);
         }
-        while (row.lastChild !== cell) {
+        while (row.lastChild && row.lastChild !== cell) {
           row.removeChild(row.lastChild);
         }
+        cola.xRender(row, this._scope);
         i++;
       }
-      while (row.lastChild !== cell) {
-        row.removeChild(row.lastChild);
-      }
-      cola.xRender(row, this._scope);
       if (fragment) {
         thead.appendChild(fragment);
       }
-      while (thead.lastChild !== row) {
+      while (thead.lastChild && thead.lastChild !== row) {
         thead.removeChild(thead.lastChild);
       }
     };
@@ -27242,6 +27634,7 @@
     Table.prototype._refreshHeaderCell = function(dom, columnInfo, isNew) {
       var caption, column, dataType, propertyDef, template, templateName;
       column = columnInfo.column;
+      dom.style.textAlign = column._align || "left";
       if (column.renderHeader) {
         if (column.renderHeader(dom) !== true) {
           return;
@@ -27334,6 +27727,7 @@
     Table.prototype._refreshFooterCell = function(dom, columnInfo, isNew) {
       var column, template, templateName;
       column = columnInfo.column;
+      dom.style.textAlign = column._align || "left";
       if (column.renderFooter) {
         if (column.renderFooter(dom) !== true) {
           return;
@@ -27410,7 +27804,7 @@
           contentWrapper = cell.firstChild;
           this._refreshCell(contentWrapper, item, colInfo, itemScope, isNew);
         }
-        while (itemDom.lastChild !== cell) {
+        while (itemDom.lastChild && itemDom.lastChild !== cell) {
           itemDom.removeChild(itemDom.lastChild);
         }
       }
@@ -27796,6 +28190,18 @@
       Pager.__super__.constructor.call(this, config);
     }
 
+    Pager.prototype._parseDom = function(dom) {
+      Pager.__super__._parseDom.call(this, dom);
+      if (this._items) {
+        if (this._items.length === 0) {
+          return this.addItem("pages");
+        }
+      } else {
+        this._items = [];
+        return this.addItem("pages");
+      }
+    };
+
     Pager.prototype._parsePageItem = function(childNode, right) {
       var beforeChild, itemConfig, itemDom, l, len1, menuItem, pageCode, pageItem, pageItemKey, propName, results;
       pageCode = $fly(childNode).attr("page-code");
@@ -28067,5 +28473,69 @@
   })(cola.Menu);
 
   cola.Element.mixin(cola.Pager, cola.DataItemsWidgetMixin);
+
+  cola.TimeLine = (function(superClass) {
+    extend(TimeLine, superClass);
+
+    function TimeLine() {
+      return TimeLine.__super__.constructor.apply(this, arguments);
+    }
+
+    TimeLine.CLASS_NAME = "time-line";
+
+    TimeLine.ATTRIBUTES = {
+      bind: {
+        refreshItems: true,
+        setter: function(bindStr) {
+          return this._bindSetter(bindStr);
+        }
+      }
+    };
+
+    TimeLine.TEMPLATES = {
+      "default": {
+        tagName: "li"
+      },
+      "content": {
+        tagName: "div",
+        "c-bind": "$default.content"
+      },
+      "icon": {
+        tagName: "i",
+        "c-class": "'icon '+$default.icon"
+      },
+      "time": {
+        tagName: "div",
+        "c-bind": "$default.time"
+      }
+    };
+
+    TimeLine.prototype._createNewItem = function(itemType, item) {
+      var container, contentDom, itemDom, l, len1, name, ref, template;
+      template = this._getTemplate(itemType);
+      itemDom = this._cloneTemplate(template);
+      $fly(itemDom).addClass("item " + itemType);
+      itemDom._itemType = itemType;
+      ref = ["content", "icon", "time"];
+      for (l = 0, len1 = ref.length; l < len1; l++) {
+        name = ref[l];
+        template = this._getTemplate(name);
+        contentDom = this._cloneTemplate(template, true);
+        container = $.xCreate({
+          tagName: "div",
+          "class": name
+        });
+        container.appendChild(contentDom);
+        itemDom.appendChild(container);
+      }
+      if (!this._currentItem) {
+        this._setCurrentNode(item);
+      }
+      return itemDom;
+    };
+
+    return TimeLine;
+
+  })(cola.AbstractList);
 
 }).call(this);
