@@ -1,0 +1,72 @@
+/* 主色调定义 */
+@primaryColor: #18a689;
+@lightPrimaryColor: lighten(@primaryColor, 10%);
+@darkPrimaryColor: darken(@primaryColor, 15%);
+
+@secondaryColor: #e59f52;
+@lightSecondaryColor: lighten(@secondaryColor, 10%);
+@darkSecondaryColor: darken(@secondaryColor, 15%);
+
+@tertiaryColor: #293846;
+@lightTertiaryColor: lighten(@tertiaryColor, 4%);
+@darkTertiaryColor: darken(@tertiaryColor, 8%);
+
+@fourthlyColor: #23c6c8;
+@lightFourthlyColor: lighten(@fourthlyColor, 4%);
+@darkFourthlyColor: darken(@fourthlyColor, 8%);
+
+/* 文字内容色调定义 */
+@fontColor: rgb(103, 106, 108);
+@invertedFontColor: rgba(255, 255, 255, 0.9);
+
+@linkFontColor: rgb(51, 122, 183);
+@primaryColorLinkFontColor: @linkFontColor;
+@secondaryLinkFontColor: rgb(35, 198, 200);
+@tertiaryLinkFontColor: @lightPrimaryColor;
+
+@descriptionFontColor: fadeout(@fontColor, 30%);
+@secondaryDescriptionFontColor: fadeout(@primaryColor, 40%);
+@tertiaryDescriptionFontColor: fadeout(@secondaryColor, 40%);
+/* 背景色调定义 */
+@backgroundColor: #f3f3f4;
+@contentBackgroundColor: #fff;
+@lightBackgroundColor: lighten(@backgroundColor, 3%);
+@darkBackgroundColor: darken(@backgroundColor, 3%);
+
+/* 边框色调定义 */
+@dividerBorderColor: #e0e0e0;
+@lightDividerBorderColor: #ededed;
+@borderColor: @dividerBorderColor;
+@lightBorderColor: @lightDividerBorderColor;
+
+/* 主题色定义 */
+@positiveColor           : #21ba45;
+@positiveBackgroundColor : #FCFFF5;
+@positiveBorderColor     : #A3C293;
+@positiveHeaderColor     : #1A531B;
+@positiveTextColor       : #2C662D;
+
+@negativeColor           : #ed5565;
+@negativeBackgroundColor : #FFF6F6;
+@negativeBorderColor     : #E0B4B4;
+@negativeHeaderColor     : #ed5565;
+@negativeTextColor       : #ed5565;
+
+@infoColor              : #31CCEC;
+@infoBackgroundColor    : #F8FFFF;
+@infoBorderColor        : #A9D5DE;
+@infoHeaderColor        : #0E566C;
+@infoTextColor          : #276F86;
+
+@warningColor           : #F2C037;
+@warningBorderColor     : #C9BA9B;
+@warningBackgroundColor : #FFFAF3;
+@warningHeaderColor     : #794B02;
+@warningTextColor       : #573A08;
+
+@nprogressColor: @primaryColor;
+
+@subtleShadow: 0px 1px 2px 0 @borderColor;
+@floatingShadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
+
+

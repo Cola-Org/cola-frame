@@ -1,11 +1,10 @@
-/*---   Neutrals  ---*/
-/*--- Colored Backgrounds ---*/
-/*--- Colored Headers ---*/
-/*--- Colored Text ---*/
-/*-------------------
-       Accents
---------------------*/
-/* Differentiating Layers */
+/* 主色调定义 */
+/* 文字内容色调定义 */
+/* 背景色调定义 */
+/* 边框色调定义 */
+/* 主题色定义 */
+/* Input */
+/* main page */
 .icon-animated-bell {
   display: inline-block;
   -webkit-animation: ringing 2s 5 ease 1s;
@@ -539,11 +538,140 @@
   content: "\e60b";
 }
 .positive-text {
-  color: #21BA45;
+  color: #21ba45;
 }
 .negative-text {
-  color: #9F3A38;
+  color: #ed5565;
 }
 .error-page > h1 {
-  color: #808080;
+  color: rgba(103, 106, 108, 0.7);
+}
+html {
+  font-size: 12px !important;
+}
+html body {
+  color: #676a6c;
+}
+html body h1,
+html body h2,
+html body h3,
+html body h4,
+html body h5 {
+  font-weight: inherit;
+}
+html body h1 {
+  font-size: 1.8rem;
+}
+html body h2 {
+  font-size: 1.6rem;
+}
+html body h3 {
+  font-size: 1.4rem;
+}
+html body h4 {
+  font-size: 1.2rem;
+}
+html body a,
+html body .link {
+  color: #337ab7;
+  cursor: pointer;
+}
+html body a.primary,
+html body .link.primary {
+  color: #337ab7;
+}
+html body a.primary:hover,
+html body .link.primary:hover,
+html body a.primary:active,
+html body .link.primary:active,
+html body a.primary:focus,
+html body .link.primary:focus {
+  color: #285f8f;
+}
+html body a.secondary,
+html body .link.secondary {
+  color: #23c6c8;
+}
+html body a.secondary:hover,
+html body .link.secondary:hover,
+html body a.secondary:active,
+html body .link.secondary:active,
+html body a.secondary:focus,
+html body .link.secondary:focus {
+  color: #1b9b9d;
+}
+html body a.tertiary,
+html body .link.tertiary {
+  color: #66ccac;
+}
+html body a.tertiary:hover,
+html body .link.tertiary:hover,
+html body a.tertiary:active,
+html body .link.tertiary:active,
+html body a.tertiary:focus,
+html body .link.tertiary:focus {
+  color: #1b9b9d;
+}
+html body small {
+  font-size: 0.85rem;
+}
+.primary-background {
+  background-color: #40bf97;
+}
+.light-primary-background {
+  background-color: #66ccac;
+}
+.dark-primary-background {
+  background-color: #36a07f;
+}
+.secondary-background {
+  background-color: #d93e50;
+}
+.light-secondary-background {
+  background-color: #e0606f;
+}
+.dark-secondary-background {
+  background-color: #c7273a;
+}
+.tertiary-background {
+  background-color: #293846;
+}
+.light-tertiary-background {
+  background-color: #314253;
+}
+.dark-tertiary-background {
+  background-color: #1a232c;
+}
+.fourthly-background {
+  background-color: #23c6c8;
+}
+.light-fourthly-background {
+  background-color: #26d7d9;
+}
+.dark-fourthly-background {
+  background-color: #1da4a5;
+}
+.fifthly-background {
+  background-color: #e59f52;
+}
+.light-fifthly-background {
+  background-color: #ecb87e;
+}
+.dark-fifthly-background {
+  background-color: #cc791f;
+}
+.floating {
+  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
+}
+.default-background {
+  background-color: #f3f3f4;
+}
+.light-background {
+  background-color: #fbfbfb;
+}
+.dark-background {
+  background-color: #ebebed;
+}
+.content-background {
+  background-color: #fff;
 }

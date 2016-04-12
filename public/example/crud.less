@@ -1,0 +1,100 @@
+@import "../.global.less";
+
+body {
+	background-color: @backgroundColor;
+	padding: 0.8em;
+}
+
+.ui.panel {
+	background-color: #fff;
+	> .header {
+		> .content {
+			background-color: transparent;
+			font-size: 0.9em;
+			border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+		}
+	}
+	> .content {
+		padding: 0.6em;
+	}
+}
+
+.ui.form .field > label {
+	font-weight: initial;
+}
+
+.ui.form {
+	.ui.input {
+		input {
+			border-radius: 0;
+		}
+	}
+}
+
+.ui.segment {
+	//padding: 0px;
+	border-radius: 0px;
+	> .ui.menu {
+		margin: 0px;
+	}
+}
+
+.ui.menu {
+	border-radius: 0px;
+}
+
+.form.ui.cn {
+	list-style: none;
+	padding: 1em;
+	margin: 0;
+	display: inline-block;
+	background-color: @contentBackgroundColor;
+	> li {
+		float: left;
+		margin: 0.4em;
+		padding: 0 0.6em;
+		label {
+			display: inline-block;
+			min-width: 4em;
+			margin-right: 1em;
+		}
+	}
+}
+
+.ui.items-view.widget-table {
+	font-size: @fontSize;
+}
+
+.ui.button:not(.circular) {
+	border-radius: 0px !important;
+}
+
+.ui.data-pilot {
+	> .control.item {
+		padding: 0;
+	}
+}
+
+.ui.layer.basic {
+	.v-box {
+		background-color: @contentBackgroundColor;
+		>.header {
+			background-color: @darkBackgroundColor;
+			padding: 0.8em;
+		}
+		>.flex-box{
+			>div{
+				padding: 1em;
+			}
+		}
+		>.box{
+			overflow: hidden;
+		}
+	}
+}
+
+.h-box{
+	.box{
+		overflow: hidden;
+	}
+}

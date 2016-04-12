@@ -26,12 +26,12 @@ block body
 						#frameworkSidebar.ui.accordion
 							div(c-repeat="menu in menus").item.active
 								div.title.menu-item
-									i(c-classname="menu.icon")
+									i(c-class="menu.icon")
 									span(c-bind="menu.label")
 									i.icon.angle.left.dropdown-icon(c-display="dropdownIconVisible(menu)")
 								div.content
 									div.menu-item(c-repeat="item in menu.menus" c-onclick="menuItemClick(item)")
-										i(c-classname="item.icon")
+										i(c-class="item.icon")
 										span(c-bind="item.label")
 										i.icon.angle.left.dropdown-icon(c-display="dropdownIconVisible(item)")
 				.flex-box

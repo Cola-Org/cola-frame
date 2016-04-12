@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta charset="UTF-8">
     <title>Cola-UI 客户端框架</title>
-    <base href="/">
+    <base href="/cola-frame/">
     <link rel="stylesheet" type="text/css" href="./resources/nprogress/nprogress.css">
     <script src="./resources/nprogress/nprogress.js"></script>
     <link rel="stylesheet" type="text/css" href="./resources/cola-ui/semantic.css">
@@ -31,9 +31,9 @@
               <div c-onclick="toggleSidebar()" class="bar"><i class="iconfont icon-sidebar"></i></div>
               <div id="frameworkSidebar" class="ui accordion">
                 <div c-repeat="menu in menus" class="item active">
-                  <div class="title menu-item"><i c-classname="menu.icon"></i><span c-bind="menu.label"></span><i c-display="dropdownIconVisible(menu)" class="icon angle left dropdown-icon"></i></div>
+                  <div class="title menu-item"><i c-class="menu.icon"></i><span c-bind="menu.label"></span><i c-display="dropdownIconVisible(menu)" class="icon angle left dropdown-icon"></i></div>
                   <div class="content">
-                    <div c-repeat="item in menu.menus" c-onclick="menuItemClick(item)" class="menu-item"><i c-classname="item.icon"></i><span c-bind="item.label"></span><i c-display="dropdownIconVisible(item)" class="icon angle left dropdown-icon"></i></div>
+                    <div c-repeat="item in menu.menus" c-onclick="menuItemClick(item)" class="menu-item"><i c-class="item.icon"></i><span c-bind="item.label"></span><i c-display="dropdownIconVisible(item)" class="icon angle left dropdown-icon"></i></div>
                   </div>
                 </div>
               </div>

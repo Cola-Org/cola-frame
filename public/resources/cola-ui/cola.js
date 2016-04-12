@@ -21396,7 +21396,7 @@
         this._doms.wrap.appendChild(template);
         cola.xRender(template, this._scope);
       }
-      if (this._getItems().items) {
+      if (this._getDataItems().items) {
         this._itemsRender();
         this.refreshIndicators();
       }
@@ -21412,7 +21412,7 @@
           }
         });
       }, 0);
-      if (this._controls) {
+      if (cola.device.desktop && this._controls) {
         dom.appendChild($.xCreate({
           tagName: "div",
           "class": "controls",
@@ -21441,13 +21441,13 @@
       }
     };
 
-    Carousel.prototype._getItems = function() {
+    Carousel.prototype._getDataItems = function() {
       if (this._items) {
         return {
           items: this._items
         };
       } else {
-        return Carousel.__super__._getItems.call(this);
+        return Carousel.__super__._getDataItems.call(this);
       }
     };
 
@@ -21481,7 +21481,7 @@
 
     Carousel.prototype.refreshIndicators = function() {
       var currentIndex, i, indicatorCount, items, itemsCount, ref, span;
-      items = this._getItems().items;
+      items = this._getDataItems().items;
       if (items) {
         itemsCount = items instanceof cola.EntityList ? items.entityCount : items.length;
       } else {
@@ -21518,7 +21518,7 @@
 
     Carousel.prototype.next = function() {
       var items, pos;
-      items = this._getItems().items;
+      items = this._getDataItems().items;
       if (items && this._scroller) {
         pos = this._scroller.getPos();
         if (pos === (items.length - 1)) {
@@ -21532,7 +21532,7 @@
 
     Carousel.prototype.previous = function() {
       var items, pos;
-      items = this._getItems().items;
+      items = this._getDataItems().items;
       if (items && this._scroller) {
         pos = this._scroller.getPos();
         if (pos === 0) {

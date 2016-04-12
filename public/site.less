@@ -1,0 +1,63 @@
+@import ".global.less";
+
+ul.colors {
+	display: inline-block;
+	list-style: none;
+	> li {
+		margin-left: 1em;
+		float: left;
+		div {
+			display: inline-block;
+			height: 3em;
+			width: 2em;
+		}
+	}
+}
+
+.link-color {
+	> * {
+		display: block;
+	}
+}
+
+body {
+	padding: 2em;
+}
+
+ul.background-colors {
+	display: inline-block;
+	list-style: none;
+	> li {
+		float: left;
+		padding: 0.5em;
+		div {
+			display: inline-block;
+			width: 20em;
+			height: 10em;
+			&.default {
+				background-color: @backgroundColor;
+			}
+			&.light {
+				background-color: @lightBackgroundColor;
+			}
+			&.dark {
+				background-color: @darkBackgroundColor;
+			}
+			&.content {
+				background-color: @contentBackgroundColor;
+			}
+		}
+	}
+}
+
+.description {
+	color: @descriptionFontColor;
+}
+
+.secondary-description {
+	color: @secondaryDescriptionFontColor;
+}
+
+.tertiary-description {
+	color: @tertiaryDescriptionFontColor;
+}

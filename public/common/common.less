@@ -11,7 +11,137 @@
 }
 
 .error-page {
-	>h1{
+	> h1 {
 		color: @descriptionFontColor;
 	}
 }
+
+html {
+	font-size: @fontSize !important;
+	body {
+		color: @fontColor;
+		h1, h2, h3, h4, h5 {
+			font-weight: inherit;
+		}
+		h1 {
+			font-size: 1.8rem;
+		}
+		h2 {
+			font-size: 1.6rem;
+		}
+		h3 {
+			font-size: 1.4rem;
+		}
+		h4 {
+			font-size: 1.2rem;
+		}
+		a, .link {
+			color: @linkFontColor;
+			cursor: pointer;
+			&.primary {
+				color: @primaryColorLinkFontColor;
+				&:hover, &:active, &:focus {
+					color: darken(@primaryColorLinkFontColor, 10%);
+				}
+			}
+			&.secondary {
+				color: @secondaryLinkFontColor;
+				&:hover, &:active, &:focus {
+					color: darken(@secondaryLinkFontColor, 10%);
+				}
+			}
+			&.tertiary {
+				color: @tertiaryLinkFontColor;
+				&:hover, &:active, &:focus {
+					color: darken(@secondaryLinkFontColor, 10%);
+				}
+			}
+		}
+
+		small {
+			font-size: 0.85rem;
+		}
+	}
+}
+
+.primary-background {
+	background-color: @primaryColor;
+}
+
+.light-primary-background {
+	background-color: @lightPrimaryColor;
+}
+
+.dark-primary-background {
+	background-color: @darkPrimaryColor;
+}
+
+.secondary-background {
+	background-color: @secondaryColor;
+}
+
+.light-secondary-background {
+	background-color: @lightSecondaryColor;
+}
+
+.dark-secondary-background {
+	background-color: @darkSecondaryColor;
+}
+
+.tertiary-background {
+	background-color: @tertiaryColor;
+}
+
+.light-tertiary-background {
+	background-color: @lightTertiaryColor;
+}
+
+.dark-tertiary-background {
+	background-color: @darkTertiaryColor;
+}
+
+.fourthly-background {
+	background-color: @fourthlyColor;
+}
+
+.light-fourthly-background {
+	background-color: @lightFourthlyColor;
+}
+
+.dark-fourthly-background {
+	background-color: @darkFourthlyColor;
+}
+
+.fifthly-background {
+	background-color: @fifthlyColor;
+}
+
+.light-fifthly-background {
+	background-color: @lightFifthlyColor;
+}
+
+.dark-fifthly-background {
+	background-color: @darkFifthlyColor;
+}
+
+.floating {
+	box-shadow: @floatingShadow;
+}
+
+.default-background {
+	background-color: @backgroundColor;
+}
+
+.light-background {
+	background-color: @lightBackgroundColor;
+}
+
+.dark-background {
+	background-color: @darkBackgroundColor;
+}
+
+.content-background {
+	background-color: @contentBackgroundColor;
+}
+
+

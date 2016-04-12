@@ -20,8 +20,8 @@ router.post '/account/login', (req, res, next) ->
 router.post '/account/logout', (req, res, next) ->
 	req.session.authenticated = false
 	res.send({
-		type:true
-		message:"已安全退出！"
+		type: true
+		message: "已安全退出！"
 	})
 router.get("/menus", (req, res, next)->
 	res.send(require("./data/menus"))
@@ -29,19 +29,20 @@ router.get("/menus", (req, res, next)->
 router.get("/message/pull", (req, res, next)->
 	res.send([
 		{
-			type:"message",
-			content:8
+			type: "message",
+			content: 8
 		},
 		{
-			type:"task",
-			content:22
+			type: "task",
+			content: 22
 		}
 	])
 )
 router.get("/products", (req, res, next)->
-	res.send(require("./data/data"))
+	data = require("./data/data")
+	res.send({$entityCount: 20, $data: data})
 )
-router.get("/user/detail",(req,res,next)->
+router.get("/user/detail", (req, res, next)->
 	res.send({
 		id: "u0001"
 		name: "Alex Tong"

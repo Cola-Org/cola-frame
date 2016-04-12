@@ -4,22 +4,27 @@ module.exports = [
 		label: "全局设置",
 		menus: [
 			{
-				icon: "iconfont icon-zhuye",
-				label: "系统管理",
-				type: "newWindow",
-				path: "/frame/main",
-				target: "",
+				icon: "icon setting",
+				label: "权限配置",
+				type: "subWindow",
+				path: "/frame/security/parser",
 				closeable: true
 			}, {
 				icon: "iconfont icon-shoudan",
 				label: "催收管理",
 				type: "subWindow",
 				path: "/example/product",
-				target: "",
 				closeable: true
 			}, {
 				icon: "iconfont icon-ic10",
-				label: "站点功能"
+				label: "时间线",
+				type: "subWindow",
+				path: "/example/time-line"
+			},{
+				icon: "iconfont icon-ic10",
+				label: "产品维护",
+				type: "subWindow",
+				path: "/example/crud"
 			}, {
 				icon: "iconfont icon-neirongshezhi",
 				label: "内容设置",

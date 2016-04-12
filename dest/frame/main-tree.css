@@ -1,11 +1,10 @@
-/*---   Neutrals  ---*/
-/*--- Colored Backgrounds ---*/
-/*--- Colored Headers ---*/
-/*--- Colored Text ---*/
-/*-------------------
-       Accents
---------------------*/
-/* Differentiating Layers */
+/* 主色调定义 */
+/* 文字内容色调定义 */
+/* 背景色调定义 */
+/* 边框色调定义 */
+/* 主题色定义 */
+/* Input */
+/* main page */
 .page-header.ui.menu .logo img {
   margin-right: 0.6em;
 }
@@ -43,7 +42,7 @@
 #userSidebar {
   width: 16em;
   left: auto;
-  background-color: #394555;
+  background-color: #314253;
 }
 #userSidebar .box {
   padding: 3em 1em;
@@ -68,10 +67,10 @@
   color: rgba(255, 255, 255, 0.8);
 }
 #userSidebar .flex-box a.msg i.icon.alarm {
-  color: #A333C8;
+  color: #e59f52;
 }
 #userSidebar .flex-box a.msg i.icon.mail {
-  color: #00B5AD;
+  color: #40bf97;
 }
 #userSidebar .sign-out-btn {
   box-shadow: 0px 0px 0px 1px #40bf97 inset !important;
@@ -85,6 +84,9 @@
   border-top-left-radius: 2px;
   line-height: 36px;
   font-size: 0.92em;
+}
+#viewTab > .tab-bar > .tabs > .tab-button.active {
+  box-shadow: inset 0 2px 0 #40bf97;
 }
 #viewTab > .contents {
   padding: 0;
@@ -125,7 +127,7 @@ body {
 .menu-tree.ui.tree {
   height: 100%;
   font-size: 0.92em;
-  background-color: #28303a;
+  background-color: #293846;
 }
 .menu-tree.ui.tree .child-nodes {
   overflow: visible;
@@ -135,7 +137,7 @@ body {
   padding-left: 0;
 }
 .menu-tree.ui.tree .tree.item {
-  background-color: #28303a;
+  background-color: #293846;
   position: relative;
 }
 .menu-tree.ui.tree .tree.item:before {

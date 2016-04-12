@@ -1,0 +1,65 @@
+extends .cola
+append head
+	link(rel="stylesheet", type="text/css", href="site.css")
+
+block body
+	h2 Colors
+	ul.colors
+		li
+			div.primary-background
+			div.light-primary-background
+			div.dark-primary-background
+		li
+			div.secondary-background
+			div.light-secondary-background
+			div.dark-secondary-background
+		li
+			div.tertiary-background
+			div.light-tertiary-background
+			div.dark-tertiary-background
+		li
+			div.fourthly-background
+			div.light-fourthly-background
+			div.dark-fourthly-background
+		li
+			div.fifthly-background
+			div.light-fifthly-background
+			div.dark-fifthly-background
+	br
+	h2 Font
+	.font-color
+		div 文字基本大小
+		h1 头部内容1
+		h2 头部内容2
+		h3 头部内容3
+		h4 头部内容4
+		small small标签小字体
+	br
+	h2 Link 链接定义
+	.link-color
+		a.primary 普通链接
+		a.secondary 高亮链接
+		a.tertiary 对称高亮链接
+	br
+
+	h2 背景色定义
+	ul.background-colors
+		li
+			div.default 普通背景
+		li
+			div.light 浅背景
+		li
+			div.dark 深背景
+		li
+			div.content 内容区域背景
+	br
+	h2 描述文本颜色
+	p.description.
+		赋予了动态语言的特性，如 变量， 继承， 运算， 函数. LESS 既可以在 客户端 上运行 (支持IE 6+, Webkit, Firefox)，也可以借助Node.js或者Rhino在服务端运行。
+	p.secondary-description.
+		LESS 将 CSS 赋予了动态语言的特性，如 变量， 继承， 运算， 函数. LESS 既可以在 客户端 上运行 (支持IE 6+, Webkit, Firefox)，也可以借助Node.js或者Rhino在服务端运行。
+	p.tertiary-description.
+		LESS 将 CSS 赋予了动态语言的特性，如 变量， 继承， 运算， 函数. LESS 既可以在 客户端 上运行 (支持IE 6+, Webkit, Firefox)，也可以借助Node.js或者Rhino在服务端运行。
+
+
+

@@ -17,7 +17,8 @@
     "coffee-middleware": "^0.3.0",
     "less": "^2.5.1",
     "less-middleware": "1.0.x",
-    "express-session":"~1.13.0"
+    "express-session":"~1.13.0",
+    "http-proxy": "~1.13.2"
   },
   "devDependencies": {
     "grunt-contrib-clean": "^0.6.0",
