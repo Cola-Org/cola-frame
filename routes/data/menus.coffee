@@ -3,13 +3,14 @@ module.exports = [
 		icon: "iconfont icon-zhandianshezhi",
 		label: "全局设置",
 		menus: [
+#			{
+#				icon: "icon setting",
+#				label: "权限配置",
+#				type: "subWindow",
+#				path: "/frame/security/parser",
+#				closeable: true
+#			},
 			{
-				icon: "icon setting",
-				label: "权限配置",
-				type: "subWindow",
-				path: "/frame/security/parser",
-				closeable: true
-			}, {
 				icon: "iconfont icon-shoudan",
 				label: "催收管理",
 				type: "subWindow",
