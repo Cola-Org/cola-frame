@@ -30,8 +30,11 @@ block body
 			div#productTable
 				template(name="operations")
 					div
-						div(c-widget="button;icon:trash outline;class:red basic;size:mini;click:{{del(item)}}")
-						div(c-widget="button;icon:edit;class:orange basic;size:mini;click:{{edit(item)}}")
+						.ui.buttons.icon.basic.mini
+							.ui.button
+								i.red.icon.trash.outline(c-onclick="del(item)")
+							.ui.button
+								i.red.icon.edit(c-onclick="edit(item)")
 			.secondary(c-widget="pager; bind:products;")
 				.control.item
 					.ui.basic.segment
@@ -40,16 +43,13 @@ block body
 					a.item(page-code="pages")
 
 	#editLayer.default-background
-		.h-box(style={height: "4em"}).dark-background
-			.flex-box
-				.ui.segment.basic
-					h4.dark-background
-						i.edit.icon
-						span 产品信息维护
-			.box
-				.ui.basic.segment
-					div.basic.circular(c-widget="button; icon:angle right; iconPosition:right; caption:返回; " +
-					"click:cancel")
+		.caption-bar
+
+			i.edit.icon
+			span.caption 产品信息维护
+			.tools
+				div.basic.circular(c-widget="button; icon:angle right; iconPosition:right; caption:返回; " +
+				"click:cancel")
 
 		.content.content-background
 			.ui.segment.basic
@@ -125,8 +125,8 @@ block body
 
 			div.ui.segment.basic
 
-					div.negative.large(c-widget="button;icon:remove; caption:取消; click:cancel")
-					div.positive.large(c-widget="button;icon:checkmark; caption:提交; click:ok")
+				div.negative.large(c-widget="button;icon:remove; caption:取消; click:cancel")
+				div.positive.large(c-widget="button;icon:checkmark; caption:提交; click:ok")
 
 
 
