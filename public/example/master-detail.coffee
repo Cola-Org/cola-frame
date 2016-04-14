@@ -80,6 +80,9 @@ cola((model)->
 #				})
 	})
 	model.widgetConfig({
+		productLayer:{
+			$type:"Layer"
+		}
 		categoryList: {
 			$type: "table",
 			bind: "item in categorys",

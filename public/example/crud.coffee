@@ -1,27 +1,67 @@
 cola((model)->
 	$(".ui.accordion").accordion({exclusive: false})
 
-	model.describe("items", {
+	model.describe("products", {
+		dataType:
+			name: "Product",
+			properties:
+				id:
+					validators: ["required"]
+				name:
+					validators: ["required"]
+				price:
+					dataType: "number"
 		provider:
-			url: "/service/products"
+			url: "/service/shoes"
 			pageSize: 4
-	})
-	model.set("customItem", {})
+			beforeSend:(self,arg)->
+				data=arg.options.data
+				condition=model.get("condition")
+				if condition
+					condition=condition.toJSON()
+					for key,value of condition
+						if value
+							data[key]=value
+				
 
+	})
+	model.set("condition",{})
+	model.describe("editItem", "Product");
 	model.action({
 		getColor: (status)->
 			if status is "完成"
 				return "positive-text"
 			else
 				return "negative-text"
-		add: ()->
-			newItem = model.get("items").insert()
+		search:()->
+			model.get("products").flush()
 
+		add: ()->
+			model.set("editItem", {})
 			cola.widget("editLayer").show()
 		edit: ()->
+			item = model.get("products").current;
+			model.set("editItem", item.toJSON());
 			cola.widget("editLayer").show()
-		back:()->
+		cancel: ()->
 			cola.widget("editLayer").hide()
+		ok: ()->
+			editItem = model.get("editItem")
+			if editItem.validate()
+				id = editItem.get("id")
+				data = editItem.toJSON()
+#				NProgress.start()
+#				$.ajax("./service/product/", {
+#					data: JSON.stringify(data),
+#					type: if data.id then "PUT" else "POST",
+#					contentType: "application/json",
+#					complete: ()->
+#						cola.widget("editLayer").hide();
+#						NProgress.done()
+#				})
+		del: (item)->
+			item.remove();
+#			此处编写调用后台直接删除
 	})
 	model.widgetConfig({
 		editLayer: {
@@ -33,61 +73,22 @@ cola((model)->
 				$("#mainView").show()
 		}
 		productTable: {
-			$type: "table",
-			bind: "item in items",
-			showHeader: true,
-			height: 500
+			$type: "table", showHeader: true,
+			bind: "item in products",
+			highlightCurrentItem: true,
+			currentPageOnly: true,
 			columns: [{
-				$type: "select"
+				bind: ".id", caption: "产品编号"
 			}, {
-				caption: "已跟次数",
-				template: "ygCount"
+				bind: ".name", caption: "产品名称"
 			}, {
-				caption: "催收状态",
-				template: "csStatus"
+				bind: "formatNumber(item.originalPrice, '¥#,##0.00')", caption: "原价", align: "right"
 			}, {
-				caption: "待跟进日",
-				template: "dgDate"
+				bind: "formatNumber(item.price, '¥#,##0.00')", caption: "价格", align: "right"
 			}, {
-				caption: "委托方",
-				template: "wtf"
+				bind: ".shop", caption: "经营商"
 			}, {
-				caption: "受理方",
-
-				template: "slf"
-			}, {
-				caption: "委案日期",
-				template: "waDate"
-			}, {
-				caption: "剩余天数",
-				template: "syDay"
-			}, {
-				caption: "委案金额",
-				template: "waje"
-			}, {
-				caption: "已还金额",
-				template: "yhje"
-			}, {
-				caption: "期数",
-				template: "qs"
-			}, {
-				caption: "姓名",
-				template: "name"
-			}, {
-				caption: "证件号",
-				template: "id"
-			}, {
-				caption: "卡号",
-				template: "cardNo"
-			}, {
-				caption: "地区",
-				template: "region"
-			}, {
-				caption: "催收组",
-				template: "csz"
-			}, {
-				caption: "催收员",
-				template: "csy"
+				caption: "操作", align: "center", template: "operations"
 			}]
 		}
 	});

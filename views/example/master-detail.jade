@@ -2,8 +2,6 @@ extends ../.cola
 append head
 	link(rel="stylesheet", type="text/css", href="./example/master-detail.css")
 block body
-
-
 	.ui.segment(style="height:40%")
 		#categoryPager.secondary
 			div.control.item
@@ -19,62 +17,62 @@ block body
 				a.item(page-code="pages")
 		#productList
 
-#productLayer(c-widget="Layer").content-background
-	.caption-bar
-		i.icon.user
-		span.caption 产品信息维护
-		.tools
-			div.basic.circular(c-widget="button; caption:返回; click:productCancel; icon:angle right; " +
-			"iconPosition:right")
-	.ui.segment.basic
-		.ui.time-line
-			.items
-				.item
-					.time Category Information
-					.icon
-						i.icon.cube
-					.content
-						.ui.form
-							.fields
-								.field.three.wide
-									label Category ID
-									div(c-widget="Input; bind:categorys.id; readOnly:true")
-								.field.three.wide
-									label Category Name
-									div(c-widget="Input; bind:categorys.categoryName;readOnly:true")
-				.item
-					.time Basic Information
-					.icon
-						i.icon.cube
-					.content
-						.ui.form
-							.fields
-								.field.three.wide
-									label Product Name
-									div(c-widget="Input; bind:customProduct.productName;")
-							.fields
-								.field.three.wide
-									label quantityPerUnit
-									div(c-widget="Input; bind:customProduct.quantityPerUnit;")
-				.item
-					.time Other Information
-					.icon
-						i.icon.cube
-					.content
-						.ui.form
-							.fields
-								.field.three.wide
-									label Unit Price
-									div(c-widget="Input; bind:customProduct.unitPrice;")
-								.field.three.wide
-									label Units In Stock
-									div(c-widget="Input; bind:customProduct.unitsInStock;")
-								.field.three.wide
-									label Units On Order
-									div(c-widget="Input; bind:customProduct.unitsOnOrder;")
-	.ui.segment.basic
-		div.big.positive.circular(c-widget="button; caption:Save; icon:checkmark; click:productSave")
-		div.big.negative.circular(c-widget="button; caption:Cancel; icon:remove; click:productCancel")
+	#productLayer.content-background
+		.caption-bar
+			i.icon.user
+			span.caption 产品信息维护
+			.tools
+				div.basic.circular(c-widget="button; caption:返回; click:productCancel; icon:angle right; " +
+				"iconPosition:right")
+		.ui.segment.basic
+			.ui.time-line
+				.items
+					.item
+						.time Category Information
+						.icon
+							i.icon.cube
+						.content
+							.ui.form
+								.fields
+									.field.three.wide
+										label Category ID
+										div(c-widget="Input; bind:categorys.id; readOnly:true")
+									.field.three.wide
+										label Category Name
+										div(c-widget="Input; bind:categorys.categoryName;readOnly:true")
+					.item
+						.time Basic Information
+						.icon
+							i.icon.cube
+						.content
+							.ui.form
+								.fields
+									.field.three.wide
+										label Product Name
+										div(c-widget="Input; bind:customProduct.productName;")
+								.fields
+									.field.three.wide
+										label quantityPerUnit
+										div(c-widget="Input; bind:customProduct.quantityPerUnit;")
+					.item
+						.time Other Information
+						.icon
+							i.icon.cube
+						.content
+							.ui.form
+								.fields
+									.field.three.wide
+										label Unit Price
+										div(c-widget="Input; bind:customProduct.unitPrice;")
+									.field.three.wide
+										label Units In Stock
+										div(c-widget="Input; bind:customProduct.unitsInStock;")
+									.field.three.wide
+										label Units On Order
+										div(c-widget="Input; bind:customProduct.unitsOnOrder;")
+		.ui.segment.basic
+			div.big.positive.circular(c-widget="button; caption:Save; icon:checkmark; click:productSave")
+			div.big.negative.circular(c-widget="button; caption:Cancel; icon:remove; click:productCancel")
 
 
 
