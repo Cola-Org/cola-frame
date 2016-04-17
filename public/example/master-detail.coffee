@@ -1,5 +1,6 @@
 cola((model)->
 	$(".ui.accordion").accordion({exclusive: false})
+
 	model.dataType({
 		name: "Product",
 		properties: {
@@ -31,12 +32,11 @@ cola((model)->
 			products: {
 				dataType: "Product",
 				provider: {
-					url: "/service/product/?categoryId={id}",
+					url: "/service/product/",
 					pageSize: 5
 					beforeSend: (self, arg)->
+						arg.options.data.categoryId=arg.model.get("categorys.id")
 						NProgress.start();
-					success: (self, arg)->
-						model.set("products", model.get("categorys").current.get("products"))
 					complete: (sefl, arg)->
 						NProgress.done();
 				}
@@ -80,8 +80,8 @@ cola((model)->
 #				})
 	})
 	model.widgetConfig({
-		productLayer:{
-			$type:"Layer"
+		productLayer: {
+			$type: "Layer"
 		}
 		categoryList: {
 			$type: "table",
@@ -91,55 +91,58 @@ cola((model)->
 			columns: [
 				{
 					bind: ".id"
+					caption: "分类编号"
 				},
 				{
 					bind: ".categoryName"
+					caption:"分类名"
 				},
 				{
 					bind: ".description"
+					caption: "描述信息"
 				}
 			],
 			currentPageOnly: true,
 			autoLoadPage: false,
-			highlightCurrentItem: true,
-			renderRow: (self, arg)->
-				$fly(arg.dom).click(()->
-					products = arg.item.get("products")
-					model.get("categorys").setCurrent(arg.item);
-					products = products or []
-					model.set("products", products)
-				)
+			changeCurrentItem: true,
+			highlightCurrentItem: true
 		}
 		productList: {
 			$type: "table",
-			bind: "item in products",
+			bind: "item in categorys.products",
 			showHeader: true,
 			columns: [
 				{
 					bind: ".id"
+					caption:"编号"
 				},
 				{
 					bind: ".productName"
+					caption:"产品名称"
 				},
 				{
 					bind: ".quantityPerUnit"
+					caption:"规格"
 				},
 				{
 					bind: ".unitPrice"
+					caption:"单价"
 				},
 				{
 					bind: ".unitsInStock"
+					caption:"库存"
 				},
 				{
 					bind: ".unitsOnOrder"
+					caption:"订单量"
 				}
 			]
 		}
 		productPager: {
 			$type: "pager"
-			bind: "products"
+			bind: "categorys.products"
 		}
-		categoryPager:{
+		categoryPager: {
 			$type: "pager"
 			bind: "categorys"
 		}

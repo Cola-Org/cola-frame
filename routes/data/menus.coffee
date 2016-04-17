@@ -28,7 +28,7 @@ module.exports = [
 				label: "时间线",
 				type: "subWindow",
 				path: "/example/time-line"
-			},{
+			}, {
 				icon: "iconfont icon-ic10",
 				label: "产品维护",
 				type: "subWindow",
@@ -53,9 +53,6 @@ module.exports = [
 							}, {
 								icon: "iconfont icon-zhucerenzheng",
 								label: "职位管理"
-							}, {
-								icon: "iconfont icon-zhandianshezhi",
-								label: "批量邀请"
 							}
 						]
 					}, {
@@ -66,6 +63,50 @@ module.exports = [
 			}, {
 				icon: "iconfont icon-1305quanxianshezhi",
 				label: "用户权限"
+				menus: [
+					{
+						icon: "iconfont icon-zhandianshezhi",
+						label: "批量邀请"
+					},
+					{
+						icon: "iconfont icon-yonghuliebiao",
+						label: "用户列表"
+					}, {
+						icon: "iconfont icon-yonghuguanli",
+						label: "用户组"
+					}, {
+						icon: "iconfont icon-zhucerenzheng",
+						label: "职位管理"
+					}, {
+						icon: "iconfont icon-zhandianshezhi",
+						label: "批量邀请"
+					}, {
+						icon: "iconfont icon-yonghuliebiao",
+						label: "用户列表"
+					}, {
+						icon: "iconfont icon-yonghuguanli",
+						label: "用户组"
+					}, {
+						icon: "iconfont icon-zhucerenzheng",
+						label: "职位管理"
+					}, {
+						icon: "iconfont icon-zhandianshezhi",
+						label: "批量邀请"
+					}, {
+						icon: "iconfont icon-yonghuliebiao",
+						label: "用户列表"
+					}, {
+						icon: "iconfont icon-yonghuguanli",
+						label: "用户组"
+					}, {
+						icon: "iconfont icon-zhucerenzheng",
+						label: "职位管理"
+					}, {
+						icon: "iconfont icon-zhandianshezhi",
+						label: "批量邀请"
+					}
+				]
+
 			}, {
 				icon: "iconfont icon-mail-setting",
 				label: "邮件设置"

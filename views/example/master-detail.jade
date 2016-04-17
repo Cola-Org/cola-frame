@@ -2,19 +2,22 @@ extends ../.cola
 append head
 	link(rel="stylesheet", type="text/css", href="./example/master-detail.css")
 block body
-	.ui.segment(style="height:40%")
+	.ui.segment
+
 		#categoryPager.secondary
+			.header.item 产品分类
 			div.control.item
-				div.basic.green(c-widget="button;icon:plus;caption:添加; click:addCategory")
+				div.teal(c-widget="button;icon:plus;caption:添加; click:addCategory")
 			.right.menu
-				a.item(page-code="pages")
+				.item(page-code="pages")
 		#categoryList
 	.ui.segment
 		#productPager.secondary
+			.header.item 产品列表
 			div.control.item
-				div.basic(c-widget="button;icon:plus;caption:添加; click:addProduct")
+				div.teal(c-widget="button;icon:plus;caption:添加; click:addProduct")
 			.right.menu
-				a.item(page-code="pages")
+				.item(page-code="pages")
 		#productList
 
 	#productLayer.content-background
@@ -28,7 +31,7 @@ block body
 			.ui.time-line
 				.items
 					.item
-						.time Category Information
+						.label Category Information
 						.icon
 							i.icon.cube
 						.content
@@ -41,7 +44,7 @@ block body
 										label Category Name
 										div(c-widget="Input; bind:categorys.categoryName;readOnly:true")
 					.item
-						.time Basic Information
+						.label Basic Information
 						.icon
 							i.icon.cube
 						.content
@@ -55,7 +58,7 @@ block body
 										label quantityPerUnit
 										div(c-widget="Input; bind:customProduct.quantityPerUnit;")
 					.item
-						.time Other Information
+						.label Other Information
 						.icon
 							i.icon.cube
 						.content

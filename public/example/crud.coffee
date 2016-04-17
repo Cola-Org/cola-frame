@@ -12,6 +12,7 @@ cola((model)->
 				price:
 					dataType: "number"
 		provider:
+			name: "provider1"
 			url: "/service/shoes"
 			pageSize: 4
 			beforeSend:(self,arg)->
@@ -22,8 +23,6 @@ cola((model)->
 					for key,value of condition
 						if value
 							data[key]=value
-				
-
 	})
 	model.set("condition",{})
 	model.describe("editItem", "Product");

@@ -63,7 +63,7 @@ router.get("/shoes", (req, res, next)->
 			$entityCount: items.length
 			$data: items.slice(from, limit)
 		})
-	res.send({$entityCount: data.length, $data: data})
+
 )
 router.get("/user/detail", (req, res, next)->
 	res.send({

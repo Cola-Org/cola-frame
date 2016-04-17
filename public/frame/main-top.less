@@ -1,0 +1,244 @@
+@import "../.global.less";
+@import "./frame.less";
+
+@menuLineHeight: 2.6em;
+@shopMenuWidth: 14em;
+@shopMenuDropDownWidth: 40em;
+@subMenuFontColor: #666;
+.main-top {
+	.p-header {
+		.item.control.logo {
+			> div {
+				.display(flex);
+				-webkit-box-align: center;
+				-webkit-align-items: center;
+				-ms-flex-align: center;
+				align-items: center;
+			}
+		}
+		> .top-menu{
+			font-size: 1.15em;
+			line-height: 2.6em;
+			i {
+				font-size: 1.65em;
+				margin-right: 0.2em;
+			}
+		}
+	}
+	.page-header {
+			position: relative;
+			.left-container {
+				.display(flex);
+				-webkit-box-align: center;
+				-webkit-align-items: center;
+				-ms-flex-align: center;
+				align-items: center;
+				padding-left: 1em;
+				.item.logo.header {
+					margin-right:0.4em;
+
+				}
+				.title{
+					margin-right:0.8em;
+				}
+				.top-menu.control.item {
+					padding: 0px;
+					a{
+						>i{
+							font-size: 1.5em;
+							margin-bottom: 0.5em;
+						}
+						font-size: 1em;
+					}
+				}
+			}
+			.right.menu {
+			position: absolute;
+			right: 0px;
+			height: 100%;
+			top: 0px;
+			> .ui.menu {
+				height: 100%;
+				border-top: 0px;
+				border-bottom: 0px;
+
+			}
+		}
+	}
+}
+
+.shop-menu.wrapper {
+	background-color: @tertiaryColor;
+	width: @shopMenuWidth;
+	position: relative;
+	height: 100%;
+	.transition(width 0.2s ease-out);
+	> ul {
+		position: relative;
+		list-style: none;
+		padding: 0px;
+		margin: 0px;
+		> li {
+			line-height: @menuLineHeight;
+			> * {
+				line-height: inherit;
+			}
+			> a {
+				color: @invertedFontColor;
+				line-height: @menuLineHeight;
+				padding-left: 1.2em;
+				> i:not(.dropdown-icon) {
+					margin-right: 0.6em;
+					font-size: 1.2em;
+					&:before {
+						.transition(font-size 0.2s ease-out);
+					}
+				}
+				> .dropdown-icon {
+					float: right;
+				}
+				> span {
+					white-space: nowrap;
+					.transition(color 0.2s ease-out);
+					font-size: 12px;
+				}
+			}
+			> .dropdown {
+				min-height: 32em;
+				width: @shopMenuDropDownWidth;
+				line-height: initial;
+				position: absolute;
+				top: -24px;
+				left: @shopMenuWidth;
+				background-color: transparent;
+
+				z-index: -1;
+
+				display: none;
+				> .dropdown_left {
+					border: 1px solid @tertiaryColor;
+					border-top: none;
+					border-left: none;
+					background-color: @contentBackgroundColor;
+
+					> .channel {
+					}
+					padding: 0.4em 0.8em;
+					> .sub-menu {
+						> dl {
+							margin: 0;
+							.display(flex);
+							> dt {
+								line-height: @menuLineHeight*0.8;
+								color: @fontColor;
+								min-width: 6em;
+								text-align: right;
+								a {
+									white-space: nowrap;
+									font-size: 12px;
+									font-weight: bold;
+									color: @subMenuFontColor;
+								}
+
+								i.dropdown-icon {
+									float: right;
+									visibility: hidden;
+									&.visible {
+										visibility: visible;
+									}
+								}
+
+							}
+							> dd {
+								margin-left: 1em;;
+								> a {
+									margin-top: 0.4em;
+									margin-bottom: 0.4em;
+									text-decoration: none;
+									font-size: 12px;
+									color: @subMenuFontColor;
+									border-left: 1px solid #CCC;
+									text-align: center;
+									padding-left: 5px;
+									white-space: nowrap;
+									display: inline-block;
+									margin-right: 5px;
+								}
+
+								border-bottom: 1px solid rgba(204, 204, 204, 0.36);
+							}
+						}
+					}
+
+					a:hover {
+						color: @primaryColor !important;
+					}
+				}
+			}
+			&.hover {
+				background-color: @contentBackgroundColor;
+				> a {
+					color: @tertiaryColor;
+				}
+				> .dropdown {
+					display: block;
+					z-index: 1;
+				}
+			}
+		}
+
+	}
+
+}
+
+@collapsedWidth: 4em;
+#frameworkSidebarBox {
+	> .bar {
+		//line-height: 1.4em;
+		height: 24px;
+		background-color: @sideBarPrimaryColor;
+		text-align: center;
+		cursor: pointer;
+		padding-top: 4px;
+		i {
+			display: inline-block;
+			color: @sideBarItemTextColor;
+			&:before {
+				font-size: 14px;
+			}
+		}
+	}
+	&.collapsed {
+		> .bar {
+			i {
+				.transform(rotate(90deg));
+			}
+		}
+
+		.shop-menu.wrapper {
+			width: @collapsedWidth;
+			> ul {
+				> li {
+					> a {
+						span {
+							color: transparent;
+							display: none;
+						}
+						> .dropdown-icon {
+							color: transparent;
+							display: none;
+						}
+						> i {
+							&:before {
+								font-size: 22px;
+							}
+						}
+					}
+					> .dropdown {
+						left: @collapsedWidth;
+					}
+				}
+			}
+		}
+	}
+}

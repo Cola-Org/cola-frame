@@ -8,27 +8,40 @@ body {
 .ui.menu {
 	border-radius: 0px;
 }
-.form.ui.cn {
+
+.fluid-layout {
 	list-style: none;
 	padding: 1em;
 	margin: 0;
 	display: inline-block;
 	background-color: @contentBackgroundColor;
-	> li {
+	width: 100%;
+	> * {
 		float: left;
-		margin: 0.4em;
+		.display(flex);
 		padding: 0 0.6em;
+		margin: 0.4em 0;
+		-webkit-box-align: center;
+		-webkit-align-items: center;
+		-ms-flex-align: center;
+		align-items: center;
 		label {
+			margin: 0 .85714286em 0 0;
 			display: inline-block;
-			min-width: 4em;
-			margin-right: 1em;
+			width: 5em;
+			vertical-align: baseline;
+			font-size: .92857143em;
+
+			text-align: right;
+			color: rgba(0, 0, 0, .87);
+			text-transform: none;
 		}
 	}
 }
+
 .ui.items-view.widget-table {
 	font-size: @fontSize;
 }
-
 
 //.ui.layer.basic {
 //	.v-box {
@@ -48,8 +61,8 @@ body {
 //	}
 //}
 
-.h-box{
-	.box{
+.h-box {
+	.box {
 		overflow: hidden;
 	}
 }
