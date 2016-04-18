@@ -1,2 +1,90 @@
 extends .cola
 block body
+	.ui.segment.basic.padded
+		.ui.time-line
+			.items
+				.item
+					.label 服务启动
+					.icon
+						i.icon.circle
+					.content
+						strong 配置Context
+						pre.
+							本示例Context为/
+
+							所以请将jetty或者tomcat的context选项设定为/
+
+
+				.item
+					.label 相关配置
+					.icon
+						i.icon.circle
+					.content
+						strong 配置菜单
+						pre.
+							请将服务的修改对应配置
+							properties = {
+									mainView: "./frame/main", //系统主框架界面
+									loginPath: "./login", //登录界面路径
+									longPollingTimeout: 0,
+									longPollingInterval: 2000, //框架长轮询周期
+									"service.messagePull": "./service/message/pull", //消息接口
+									"service.login": "./service/account/login",  //登录接口
+									"service.logout": "./service/account/logout", //登出接口
+									"service.menus": "./service/menus", //系统菜单接口
+									"service.user.detail": "./service/user/detail"  //获得当前用户详细信息接口
+								};
+							菜单接口数据规范:
+								[
+									{
+										icon: "iconfont icon-neirongshezhi",
+										label: "内容设置",
+										menus: [
+											{
+												icon: "iconfont icon-yonghuliebiao",
+												label: "导航设置",
+												path:"./setting.html"
+											},
+											{
+												icon: "iconfont icon-yonghuguanli",
+												label: "分类管理",
+												menus: [
+													{
+														icon: "iconfont icon-yonghuliebiao",
+														label: "用户列表"
+														path:"./users.html"
+													},
+													{
+														icon: "iconfont icon-yonghuguanli",
+														label: "用户组",
+														path:"./user-group.html"
+													}
+												]
+											}
+										]
+									}
+								]
+							消息接口数据规范:
+								[
+									{
+										type: "message",
+										content: 8
+									},
+									{
+										type: "task",
+										content: 22
+									}
+								]
+				.item
+					.label 示例中心
+					.icon
+						i.icon.circle
+					.content
+						strong 参考示例
+						p
+							a(href="./example/employee.html") 员工信息维护（单表增删改查）
+							br
+							a(href="./example/master-detail.html") 主从表信息维护
+
+
+

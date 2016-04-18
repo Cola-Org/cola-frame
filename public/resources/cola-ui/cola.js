@@ -20372,6 +20372,9 @@
         $dom.css("height", height);
       }
       $dom.removeClass(direction === "down" ? "direction-up" : "direction-down").addClass("direction-" + direction).toggleClass("x-over", boxWidth > dropdownDom.offsetWidth).css("left", left).css("top", top).css("min-width", dropdownDom.offsetWidth).css("max-width", document.body.clientWidth);
+      $dom.css({
+        zIndex: cola.floatWidget.zIndex()
+      });
       this._animation = "fade";
       DropBox.__super__.show.call(this, options, callback);
     };
@@ -21193,12 +21196,16 @@
       var format, inputType;
       inputType = this._inputType;
       if (value instanceof Date) {
-        if (inputType === "date") {
-          format = DEFAULT_DATE_DISPLAY_FORMAT;
-        } else if (inputType === "time") {
-          format = DEFAULT_TIME_DISPLAY_FORMAT;
+        if (value.toDateString() === "Invalid Date") {
+          value = "";
+        } else {
+          if (inputType === "date") {
+            format = DEFAULT_DATE_DISPLAY_FORMAT;
+          } else if (inputType === "time") {
+            format = DEFAULT_TIME_DISPLAY_FORMAT;
+          }
+          value = (new XDate(value)).toString(format);
         }
-        value = (new XDate(value)).toString(format);
       }
       return DatePicker.__super__._refreshInputValue.call(this, value);
     };
@@ -21223,6 +21230,13 @@
       DatePicker.__super__.open.call(this);
       value = this.get("value");
       if (!value) {
+        value = new Date();
+      } else {
+        if (!(value instanceof Date)) {
+          value = Date.parse(value);
+        }
+      }
+      if (value.toDateString() === "Invalid Date") {
         value = new Date();
       }
       return this._dataGrid.setCurrentDate(value);

@@ -19,6 +19,26 @@ block body
 			.right.menu
 				.item(page-code="pages")
 		#productList
+	#categoryLayer.content-background
+		.caption-bar
+			i.icon.user
+			span.caption 产品分类维护
+			.tools
+				div.basic.circular(c-widget="button; caption:返回; click:categoryCancel; icon:angle right; " +
+				"iconPosition:right")
+		.ui.segment.basic
+			.ui.form
+				.fields
+					.field.three.wide
+						label Category Name
+						div(c-widget="Input; bind:customCategory.categoryName; ")
+				.fields
+					.field.three.wide
+						label Category Description
+						textarea(c-bind="customCategory.description")
+		.ui.segment.basic
+			div.big.positive.circular(c-widget="button; caption:Save; icon:checkmark; click:categorySave")
+			div.big.negative.circular(c-widget="button; caption:Cancel; icon:remove; click:categoryCancel")
 
 	#productLayer.content-background
 		.caption-bar

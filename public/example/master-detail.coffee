@@ -1,6 +1,4 @@
 cola((model)->
-	$(".ui.accordion").accordion({exclusive: false})
-
 	model.dataType({
 		name: "Product",
 		properties: {
@@ -29,13 +27,14 @@ cola((model)->
 	model.dataType({
 		name: "Category",
 		properties: {
+			categoryName: {validators: ["required"]},
 			products: {
 				dataType: "Product",
 				provider: {
 					url: "/service/product/",
 					pageSize: 5
 					beforeSend: (self, arg)->
-						arg.options.data.categoryId=arg.model.get("categorys.id")
+						arg.options.data.categoryId = arg.model.get("categorys.id")
 						NProgress.start();
 					complete: (sefl, arg)->
 						NProgress.done();
@@ -50,9 +49,14 @@ cola((model)->
 			pageSize: 5
 	})
 	model.describe("customProduct", "Product")
+	model.describe("customCategory", "Category")
 	model.describe("products", [])
 	model.action({
 		addCategory: ()->
+			model.set("customCategory", {
+			})
+			cola.widget("categoryLayer").show()
+
 		addProduct: ()->
 			current = model.get("categorys").current;
 			model.set("customProduct", {
@@ -65,22 +69,44 @@ cola((model)->
 		productSave: ()->
 			product = model.get("customProduct")
 			result = product.validate()
-			console.log(result)
+
 			if result
 				data = product.toJSON()
-#				NProgress.start()
-#				$.ajax("./service/product/", {
-#					data: JSON.stringify(data),
-#					type: if data.id then "PUT" else "POST",
-#					contentType: "application/json",
-#					complete: ()->
-#						model.get("categorys").current.get("products").flush();
-#						cola.widget("productLayer").hide();
-#						NProgress.done()
-#				})
+				NProgress.start()
+				$.ajax("./service/product/", {
+					data: JSON.stringify(data),
+					type: if data.id then "PUT" else "POST",
+					contentType: "application/json",
+					complete: ()->
+						model.get("categorys").current.get("products").flush();
+						cola.widget("productLayer").hide();
+						NProgress.done()
+				})
+		categoryCancel: ()->
+			model.set("customCategory", {})
+			cola.widget("categoryLayer").hide()
+		categorySave: ()->
+			category = model.get("customCategory")
+			result = category.validate()
+			if result
+				data = category.toJSON()
+				console.log(data)
+				NProgress.start()
+				$.ajax("./service/category/", {
+					data: JSON.stringify(data),
+					type: if data.id then "PUT" else "POST",
+					contentType: "application/json",
+					complete: ()->
+						cola.widget("categoryLayer").hide();
+						NProgress.done()
+				})
+
 	})
 	model.widgetConfig({
 		productLayer: {
+			$type: "Layer"
+		}
+		categoryLayer: {
 			$type: "Layer"
 		}
 		categoryList: {
@@ -95,7 +121,7 @@ cola((model)->
 				},
 				{
 					bind: ".categoryName"
-					caption:"分类名"
+					caption: "分类名"
 				},
 				{
 					bind: ".description"
@@ -114,27 +140,27 @@ cola((model)->
 			columns: [
 				{
 					bind: ".id"
-					caption:"编号"
+					caption: "编号"
 				},
 				{
 					bind: ".productName"
-					caption:"产品名称"
+					caption: "产品名称"
 				},
 				{
 					bind: ".quantityPerUnit"
-					caption:"规格"
+					caption: "规格"
 				},
 				{
 					bind: ".unitPrice"
-					caption:"单价"
+					caption: "单价"
 				},
 				{
 					bind: ".unitsInStock"
-					caption:"库存"
+					caption: "库存"
 				},
 				{
 					bind: ".unitsOnOrder"
-					caption:"订单量"
+					caption: "订单量"
 				}
 			]
 		}

@@ -6,151 +6,134 @@ block body
 		.item
 			.title.active
 				.dropdown.icon
-				i.icon.sitemap
-				span 组织结构
-			.content.active
-				.ui.form
-					.fields
-						.field
-							label 公司
-							div.mini(c-widget="input")
-						.field
-							label 部门
-							div.mini(c-widget="input")
-						.field
-							label 催收组
-							div.mini(c-widget="input")
-						.field
-							label 催收员
-							div.mini(c-widget="input")
-		.item
-			.title
-				i.icon.payment
-				.dropdown.icon
-				span 案件信息
-			.content
-				.ui.form
-					.fields
-						.field
-							label 委托方
-							div.mini(c-widget="input")
-						.field
-							label 批次号
-							div.mini(c-widget="input")
-						.field
-							label 委案日期
-							div.mini(c-widget="input")
-						.field
-							label 结案日期
-							div.mini(c-widget="input")
-						.field
-							label 地区
-							div.mini(c-widget="input")
-						.field
-							label 案件状态
-							div.mini(c-widget="input")
-					.fields
-						.field
-							label 末次跟进日期
-							div.mini(c-widget="input")
-						.field
-							label 待跟进日期
-							div.mini(c-widget="input")
-						.field
-							label 跟进次数
-							div.mini(c-widget="input")
-						.field
-							label 催收状态
-							div.mini(c-widget="input")
-						.field
-							label 案件金额
-							div.mini(c-widget="input")
-		.item
-			.title.active
-				.dropdown.icon
-				i.icon.marker
-				span 精确查询
+				i.icon.search
+				span 过滤条件
+			.content.active.condition-container
+				.fluid-layout.condition
+					.field
+						label 公司
+						div.mini(c-widget="input")
+					.field
+						label 部门
+						div.mini(c-widget="input")
+					.field
+						label 催收组
+						div.mini(c-widget="input")
+					.field
+						label 催收员
+						div.mini(c-widget="input")
+				.ui.divider.fitted.dashed
+				.fluid-layout.condition
+					.field
+						label 委托方
+						div.mini(c-widget="input")
+					.field
+						label 批次号
+						div.mini(c-widget="input")
+					.field
+						label 委案日期
+						div.mini(c-widget="datePicker")
+					.field
+						label 结案日期
+						div.mini(c-widget="datePicker")
+					.field
+						label 地区
+						div.mini(c-widget="input")
+					.field
+						label 案件状态
+						div.mini(c-widget="input")
 
-			.content.active
-				.ui.form
-					.fields
-						.field
-							label 证件号后四位
-							div.mini(c-widget="input")
-						.field
-							label 姓名
-							div.mini(c-widget="input")
-						.field
-							label 电话号码后四位
-							div.mini(c-widget="input")
-						.field
-							label 卡号后四位
-							div.mini(c-widget="input")
-						.field
-							label 案件编号
-							div.mini(c-widget="input")
-	.blue(c-widget="Button; icon:search; caption:查询")
+
+					.field
+						label 末次跟进日期
+						div.mini(c-widget="datePicker")
+					.field
+						label 待跟进日期
+						div.mini(c-widget="datePicker")
+					.field
+						label 跟进次数
+						div.mini(c-widget="input")
+					.field
+						label 催收状态
+						div.mini(c-widget="input")
+					.field
+						label 案件金额
+						div.mini(c-widget="input")
+				.ui.divider.fitted.dashed
+				.fluid-layout.condition
+					.field
+						label 证件号后四位
+						div.mini(c-widget="input")
+					.field
+						label 姓名
+						div.mini(c-widget="input")
+					.field
+						label 电话号码后四位
+						div.mini(c-widget="input")
+					.field
+						label 卡号后四位
+						div.mini(c-widget="input")
+					.field
+						label 案件编号
+						div.mini(c-widget="input")
+				.ui.divider.fitted.dashed
+				div(style="padding:1em")
+					.blue.mini(c-widget="Button; icon:search; caption:查询")
 
 	.ui.segment
 		.ui.top.attached.label 结果统计
 		div
-			.ui.label.red
+			.ui.label.basic.red
 				span BP金额:
 				a.detail 2789.00元
-			.ui.label.orange
+			.ui.label.basic.orange
 				span 已还金额:
 				a.detail 1821.00元
-			.ui.label.yellow
+			.ui.label.basic.yellow
 				span PTP金额:
 				a.detail 82.00元
-			.ui.label.olive
+			.ui.label.basic.olive
 				span CP金额:
 				a.detail 169.00元
-			.ui.label.green
+			.ui.label.basic.green
 				span 案件数量:
 				a.detail 67
-			.ui.label.teal
+			.ui.label.basic.teal
 				span 有偿件:
 				a.detail 32
-			.ui.label
+			.ui.label.basic
 				span 委案金额:
 				a.detail 389.20元
 
 	.ui.segment.result-list
+		div(style="padding:4px").operation-buttons
+			.ui.mini.basic.button 自动分案
+			div.divider
+			.ui.mini.basic.button 退案
+			.ui.mini.basic.button 暂停
+			.ui.mini.basic.button 恢复
+			.ui.mini.basic.button 会战
+			div.divider
 
+			.ui.mini.basic.button 外访派案
+			div.divider
+
+			.ui.mini.basic.button 导出
+			.ui.mini.basic.button 赔案
+			.ui.mini.basic.button 备注
+			div.divider
+			.ui.mini.basic.button 拨号
+			.ui.mini.basic.button 短信
+			.ui.mini.basic.button 邮件
+			div.divider
+			.ui.mini.basic.button.right.labeled.icon
+				span 表色
+				i.icon.dropdown
 		div#productTable
-			template(name="ygCount")
-				div.num(c-bind="item.ygCount+'次'")
+
 			template(name="csStatus")
 				div.status(c-bind="item.csStatus" c-classname="getColor(item.csStatus)+' status'")
-			template(name="dgDate")
-				div.date(c-bind="item.dgDate")
-			template(name="wtf")
-				div.fang(c-bind="item.wtf")
-			template(name="slf")
-				div.fang(c-bind="item.slf")
-			template(name="waDate")
-				div.date(c-bind="item.waDate")
-			template(name="syDay")
-				div.num(c-bind="item.syDay+'天'")
-			template(name="waje")
-				div.amount(c-bind="item.waje")
-			template(name="yhje")
-				div.amount(c-bind="formatNumber(item.yhje,'¥##,###.00')")
-			template(name="qs")
-				div.num(c-bind="item.qs+'期'")
-			template(name="name")
-				div.name(c-bind="item.name")
-			template(name="id")
-				div.id(c-bind="item.id")
-			template(name="cardNo")
-				div.card-no(c-bind="item.cardNo")
-			template(name="region")
-				div.region(c-bind="item.region")
-			template(name="csz")
-				div.csz(c-bind="item.csz")
-			template(name="csy")
-				div.csy(c-bind="item.csy")
+
 
 
 

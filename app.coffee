@@ -37,7 +37,7 @@ app.use '/service', service
 app.use '/example', example
 httpProxy = require("http-proxy")
 proxy = httpProxy.createProxy({
-	target: 'http://localhost:8080/cola-ui-spring-rest-example'
+	target: 'http://localhost:8080'
 })
 
 # catch 404 and forward to error handler

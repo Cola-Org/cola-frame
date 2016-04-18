@@ -43,9 +43,6 @@ block body
 								.ui.orange.basic.button
 									i.icon.trash.outline(c-onclick="del(item)")
 
-
-
-
 	#editLayer.default-background
 		.v-box
 			.caption-bar.box
@@ -88,10 +85,10 @@ block body
 											.fields
 												.field.three.wide
 													label 生产日期
-													div(c-widget="input; bind:editItem.pd")
+													div(c-widget="datePicker; bind:editItem.pd")
 												.field.three.wide
 													label 代理商
-													div(c-widget="input; bind:editItem.shop")
+													#shopDropDown
 											.fields
 												.field.three.wide
 													label 原材料

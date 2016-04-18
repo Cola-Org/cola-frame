@@ -23,53 +23,55 @@ cola((model)->
 				$type: "select"
 			}, {
 				caption: "已跟次数",
-				template: "ygCount"
+				bind: "item.ygCount+'次'"
+
 			}, {
 				caption: "催收状态",
 				template: "csStatus"
+				align:"center"
 			}, {
 				caption: "待跟进日",
-				template: "dgDate"
+				bind: ".dgDate"
 			}, {
 				caption: "委托方",
-				template:"wtf"
+				bind: ".wtf"
 			},{
 				caption: "受理方",
 
-				template:"slf"
+				bind: ".slf"
 			},{
 				caption: "委案日期",
-				template:"waDate"
+				bind: ".waDate"
 			},{
 				caption: "剩余天数",
-				template:"syDay"
+				bind: "item.syDay+'天'"
 			},{
 				caption: "委案金额",
-				template:"waje"
+				bind: "formatNumber(item.waje,'¥##,###.00')"
 			},{
 				caption: "已还金额",
-				template:"yhje"
+				bind: "formatNumber(item.yhje,'¥##,###.00')"
 			},{
 				caption: "期数",
-				template:"qs"
+				bind: "item.qs+'期'"
 			},{
 				caption: "姓名",
-				template:"name"
+				bind: ".name"
 			},{
 				caption: "证件号",
-				template:"id"
+				bind: ".id"
 			},{
 				caption: "卡号",
-				template:"cardNo"
+				bind: ".cardNo"
 			},{
 				caption: "地区",
-				template:"region"
+				bind: ".region"
 			},{
 				caption: "催收组",
-				template:"csz"
+				bind: ".csz"
 			},{
 				caption: "催收员",
-				template:"csy"
+				bind: ".csy"
 			}]
 		}
 	});

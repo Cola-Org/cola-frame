@@ -165,3 +165,38 @@ html {
 .ui.form .field > label {
 	font-weight: initial;
 }
+
+.fluid-layout {
+	list-style: none;
+	padding: 1em;
+	margin: 0;
+	display: inline-block;
+	background-color: @contentBackgroundColor;
+	width: 100%;
+	> * {
+		float: left;
+		.display(flex);
+		padding: 0 0.6em;
+		margin: 0.4em 0;
+		-webkit-box-align: center;
+		-webkit-align-items: center;
+		-ms-flex-align: center;
+		align-items: center;
+		label {
+			margin: 0 .85714286em 0 0;
+			display: inline-block;
+			width: 5em;
+			vertical-align: baseline;
+			font-size: .92857143em;
+
+			text-align: right;
+			color: rgba(0, 0, 0, .87);
+			text-transform: none;
+		}
+	}
+}
+
+
+.ui.mini.button{
+	padding: 0.7em 0.8em;
+}

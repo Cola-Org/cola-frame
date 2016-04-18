@@ -12,5 +12,8 @@ router.get ['/','/frame/main'], (req, res, next) ->
 router.get ['/site'], (req, res, next) ->
 		res.render '.site',
 			title: 'Cola-Frame'
+router.get ['/readme'], (req, res, next) ->
+	res.render 'index',
+		title: 'Cola-Frame'
 
 module.exports = router

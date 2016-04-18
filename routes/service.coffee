@@ -72,5 +72,4 @@ router.get("/user/detail", (req, res, next)->
 		avatar: "/resources/images/avatars/alex.png"
 	})
 )
-
 module.exports = router

@@ -1,12 +1,9 @@
 cola((model)->
-	$(".ui.accordion").accordion({exclusive: false})
-
 	model.describe("products", {
 		dataType:
 			name: "Product",
 			properties:
-				id:
-					validators: ["required"]
+
 				name:
 					validators: ["required"]
 				price:
@@ -15,16 +12,25 @@ cola((model)->
 			name: "provider1"
 			url: "/service/shoes"
 			pageSize: 4
-			beforeSend:(self,arg)->
-				data=arg.options.data
-				condition=model.get("condition")
+			beforeSend: (self, arg)->
+				data = arg.options.data
+				condition = model.get("condition")
 				if condition
-					condition=condition.toJSON()
+					condition = condition.toJSON()
 					for key,value of condition
 						if value
-							data[key]=value
+							data[key] = value
 	})
-	model.set("condition",{})
+
+	model.set("shops", [
+		{name: "京东商城"},
+		{name: "天猫超市"},
+		{name: "亚马逊"},
+		{name: "聚美优品"},
+		{name: "国美电器"}
+	])
+
+	model.set("condition", {})
 	model.describe("editItem", "Product");
 	model.action({
 		getColor: (status)->
@@ -32,7 +38,7 @@ cola((model)->
 				return "positive-text"
 			else
 				return "negative-text"
-		search:()->
+		search: ()->
 			model.get("products").flush()
 
 		add: ()->
@@ -45,19 +51,22 @@ cola((model)->
 		cancel: ()->
 			cola.widget("editLayer").hide()
 		ok: ()->
+			debugger
 			editItem = model.get("editItem")
-			if editItem.validate()
+			validate=editItem.validate()
+			console.log(validate)
+			if validate
 				id = editItem.get("id")
 				data = editItem.toJSON()
-#				NProgress.start()
-#				$.ajax("./service/product/", {
-#					data: JSON.stringify(data),
-#					type: if data.id then "PUT" else "POST",
-#					contentType: "application/json",
-#					complete: ()->
-#						cola.widget("editLayer").hide();
-#						NProgress.done()
-#				})
+				NProgress.start()
+				$.ajax("./service/product/", {
+					data: JSON.stringify(data),
+					type: if data.id then "PUT" else "POST",
+					contentType: "application/json",
+					complete: ()->
+						cola.widget("editLayer").hide();
+						NProgress.done()
+				})
 		del: (item)->
 			item.remove();
 #			此处编写调用后台直接删除
@@ -70,6 +79,14 @@ cola((model)->
 				$("#mainView").hide()
 			beforeHide: ()->
 				$("#mainView").show()
+		}
+		shopDropDown: {
+			$type: "dropdown",
+			class: "error",
+			openMode: "drop",
+			items: "{{shop in shops}}",
+			valueProperty: "name",
+			bind:"editItem.shop"
 		}
 		productTable: {
 			$type: "table", showHeader: true,

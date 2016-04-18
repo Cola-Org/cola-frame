@@ -1,11 +1,53 @@
 @import "../.global.less";
-@captionBarBGColor:#f8f8f8;
+
+@captionBarBGColor: #f8f8f8;
 body {
-	//background-color: @backgroundColor;
+	.ui.divider.dashed {
+		border-top-style: dashed !important;
+	}
+	background-color: @backgroundColor;
 	padding: 0.8em;
 	.ui.form .field > label {
 		font-weight: inherit;
 		font-size: 0.828571em;
+
+	}
+	.condition {
+		padding: 0px !important;
+		.field {
+			> label {
+				width: 7em;
+				text-align: right;
+			}
+			.ui.input{
+				input{
+					//padding: 0.54em 1em;
+				}
+				width: 148px;
+			}
+		}
+	}
+
+	.operation-buttons {
+		.ui.button {
+			font-weight: bold;
+		}
+		div.divider {
+			display: inline-block;
+			height: 100%;
+			padding: 0 0.4em;
+			content: "";
+			position: relative;
+			&:before {
+				position: absolute;
+				left: 50%;
+				right: 50%;
+				height: 100%;
+				width: 1px;
+				background-color: @lightBackgroundColor;
+				content: "";
+			}
+		}
 	}
 	.ui.segment, .ui.vertical.accordion.menu {
 		border-radius: 0 !important;
@@ -15,53 +57,33 @@ body {
 		#productTable {
 			table {
 				table-layout: auto;
-				font-size: 12.8px;
+				font-size: 12px;
 				th {
 					font-weight: inherit;
-					color: rgba(0,0,0,0.6);
+					color: rgba(0, 0, 0, 0.6);
 				}
-				.status{
-					min-width: 80px;
+				.status {
+					min-width: 20px;
 					text-align: center;
-				}
-				.num{
-					text-align: right;
-					min-width: 80px;
-				}
-				.amount{
-					text-align: right;
-					min-width: 80px;
-				}
-				.fang{
-					text-align: center;
-					min-width: 120px;
-				}
-				.date,.name,.region,.csz,.csy{
-					text-align: center;
-					min-width: 100px;
-				}
-				.card-no,.id{
-					text-align: center;
-					min-width: 120px;
 				}
 
 			}
 		}
 	}
-.ui.segment{
-	>.ui.top.attached.label{
-		background-color: @captionBarBGColor;
-		&:before{
-			position: absolute;
-			left: 0;
-			width: 2px;
-			top:0;
-			content: "";
-			bottom: 0;
-			background-color: @primaryColor;
+	.ui.segment {
+		> .ui.top.attached.label {
+			background-color: @captionBarBGColor;
+			&:before {
+				position: absolute;
+				left: 0;
+				width: 2px;
+				top: 0;
+				content: "";
+				bottom: 0;
+				background-color: @primaryColor;
+			}
 		}
 	}
-}
 	.ui.vertical.accordion.menu {
 		//border-color: rgba(205, 217, 229, 0.15);
 		> .item {
@@ -70,11 +92,11 @@ body {
 			.title {
 				//padding-left: 1em;
 				position: relative;
-				&:before{
+				&:before {
 					position: absolute;
 					left: 0;
 					width: 2px;
-					top:0;
+					top: 0;
 					content: "";
 					bottom: 0;
 					background-color: @lightSecondaryColor;
