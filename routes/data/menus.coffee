@@ -10,13 +10,13 @@ module.exports = [
 #				path: "/frame/security/parser",
 #				closeable: true
 #			},
-#			{
-#				icon: "icon setting",
-#				label: "主从表示例",
-#				type: "subWindow",
-#				path: "/example/master-detail",
-#				closeable: true
-#			},
+			{
+				icon: "icon setting",
+				label: "主从表示例",
+				type: "subWindow",
+				path: "/example/master-detail",
+				closeable: true
+			},
 			{
 				icon: "iconfont icon-shoudan",
 				label: "催收管理",

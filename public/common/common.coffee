@@ -102,4 +102,31 @@ language = $.cookie("_language") || window.navigator.language;
 if language
 	document.write("<script src=\"resources/cola-ui/i18n/#{language}/cola.js\"></script>");
 	document.write("<script src=\"resources/i18n/#{language}/common.js\"></script>");
+
 $(NProgress.done)
+getAjaxID = (event)->
+	id = ""
+	for key,value of event
+		if key.indexOf("jQuery") == 0
+			id = key
+			break
+	if id
+		unless parseInt(id.replace("jQuery", "")) > 0
+			id = ""
+	return id
+
+startedAjaxList = [];
+
+$(document).ajaxStart((event)->
+	id = getAjaxID(event)
+	startedAjaxList.push(id)
+	unless NProgress.isStarted()
+		NProgress.start()
+)
+$(document).ajaxComplete((event)->
+	id = getAjaxID(event)
+	index = startedAjaxList.indexOf(id)
+	if index > -1 then startedAjaxList.splice(index, 1)
+	if startedAjaxList.length == 0 then NProgress.done()
+)
+
