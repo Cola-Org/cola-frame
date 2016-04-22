@@ -20,6 +20,7 @@ unless rootApp
 		"service.logout": "./service/account/logout"
 		"service.menus": "./service/menus"
 		"service.user.detail": "./service/user/detail"
+		title: ""
 
 App = window.App =
 	_tabs: {}
@@ -62,7 +63,19 @@ App = window.App =
 		else
 			login(callback)
 
-
+	setTitle: (title)->
+		document.title = title
+	setFavicon: (path)->
+		for rel in ["icon", "shortcut icon"]
+			icon = $("link[rel='#{rel}']")
+			if icon.length > 0
+				icon.attr("href", path)
+			else
+				document.head.appendChild($.xCreate({
+					tagName: "link"
+					rel: "icon"
+					href: path
+				}))
 	refreshMessage: ()->
 		if rootApp
 			rootApp.refreshMessage()
@@ -79,7 +92,8 @@ App = window.App =
 		else
 			properties[key] = value
 
-
+title = App.getTitle("title")
+if title then App.setTitle(title)
 cola.defaultAction("setting", (key)->
 	return App.prop(key)
 )
