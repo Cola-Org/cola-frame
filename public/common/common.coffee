@@ -64,18 +64,26 @@ App = window.App =
 			login(callback)
 
 	setTitle: (title)->
-		document.title = title
+		if rootApp
+			rootApp.setTitle(path)
+		else
+			document.title = title
+
 	setFavicon: (path)->
-		for rel in ["icon", "shortcut icon"]
-			icon = $("link[rel='#{rel}']")
-			if icon.length > 0
-				icon.attr("href", path)
-			else
-				document.head.appendChild($.xCreate({
-					tagName: "link"
-					rel: "icon"
-					href: path
-				}))
+		if rootApp
+			rootApp.setFavicon(path, config)
+		else
+			for rel in ["icon", "shortcut icon"]
+				icon = $("link[rel='#{rel}']")
+				if icon.length > 0
+					icon.attr("href", path)
+				else
+					document.head.appendChild($.xCreate({
+						tagName: "link"
+						rel: "icon"
+						href: path
+					}))
+
 	refreshMessage: ()->
 		if rootApp
 			rootApp.refreshMessage()
