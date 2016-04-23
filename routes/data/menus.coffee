@@ -10,13 +10,13 @@ module.exports = [
 #				path: "/frame/security/parser",
 #				closeable: true
 #			},
-			{
-				icon: "icon setting",
-				label: "主从表示例",
-				type: "subWindow",
-				path: "/example/master-detail",
-				closeable: true
-			},
+#			{
+#				icon: "icon setting",
+#				label: "主从表示例",
+#				type: "subWindow",
+#				path: "/example/master-detail",
+#				closeable: true
+#			},
 			{
 				icon: "iconfont icon-shoudan",
 				label: "催收管理",
@@ -28,12 +28,13 @@ module.exports = [
 				label: "时间线",
 				type: "subWindow",
 				path: "/example/time-line"
-			}, {
-				icon: "iconfont icon-ic10",
-				label: "产品维护",
-				type: "subWindow",
-				path: "/example/crud"
 			},
+#			{
+#				icon: "iconfont icon-ic10",
+#				label: "产品维护",
+#				type: "subWindow",
+#				path: "/example/crud"
+#			},
 			{
 				icon: "iconfont icon-neirongshezhi",
 				label: "内容设置",

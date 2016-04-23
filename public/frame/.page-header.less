@@ -1,0 +1,47 @@
+@import "../.global.less";
+
+.page-header.ui.menu {
+	.logo {
+		img {
+			margin-right: 0.6em;
+		}
+	}
+	.item.msg {
+		padding-right: 0.52857143em;
+		padding-left: 0.52857143em;
+		position: relative;
+		i {
+			font-size: 1.25em;
+		}
+		span.badge {
+			border-radius: 3px;
+			position: relative;
+			top: -8px;
+			left: 2px;
+			font-size: 0.8em;
+			background-color: #d93e50;
+			color: @invertedFontColor;
+			padding: 0.2em 0.2em 0.1em 0.2em;
+			min-width: 16px;
+			text-align: center;
+			display: inline-block;
+			font-weight: bold;
+		}
+
+		&.mail {
+			span.badge {
+				background-color: #2f886e;
+			}
+		}
+	}
+	.user.item {
+		i {
+			margin: 0em 0em 0em 0.5em;
+		}
+		.avatar {
+			margin: 0;
+		}
+
+	}
+}
+

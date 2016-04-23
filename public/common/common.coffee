@@ -20,7 +20,7 @@ unless rootApp
 		"service.logout": "./service/account/logout"
 		"service.menus": "./service/menus"
 		"service.user.detail": "./service/user/detail"
-		title: ""
+		title: "Cola-Frame"
 
 App = window.App =
 	_tabs: {}
@@ -91,16 +91,19 @@ App = window.App =
 			refreshMessage?()
 
 	prop: (key, value)->
-		if arguments.length == 1
-			if typeof  key == "string"
-				return properties[key]
-			else if key
-				for p in key
-					if key.hasOwnProperty(p) then properties[p] = key[p]
+		if rootApp
+			rootApp.prop(key, value)
 		else
-			properties[key] = value
+			if arguments.length == 1
+				if typeof  key == "string"
+					return properties[key]
+				else if key
+					for p in key
+						if key.hasOwnProperty(p) then properties[p] = key[p]
+			else
+				properties[key] = value
 
-title = App.getTitle("title")
+title = App.prop("title")
 if title then App.setTitle(title)
 cola.defaultAction("setting", (key)->
 	return App.prop(key)

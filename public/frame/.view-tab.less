@@ -1,0 +1,28 @@
+@import "../.global.less";
+
+#viewTab {
+	> .tab-bar {
+		height: 36px;
+		> .tabs {
+			> .tab-button {
+				border-top-right-radius: 2px;
+				border-top-left-radius: 2px;
+				line-height: 36px;
+				font-size: 0.92em;
+				&.active {
+					box-shadow: inset 0 2px 0 @primaryColor;
+				}
+
+			}
+		}
+	}
+	> .contents {
+		padding: 0;
+		.item {
+			height: 100%;
+			> * {
+				height: inherit;
+			}
+		}
+	}
+}

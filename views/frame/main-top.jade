@@ -2,20 +2,18 @@ extends ../.cola
 append head
 	link(rel="stylesheet", type="text/css", href="./frame/main-top.css")
 block body
-	.v-box.main-top
+	.v-box
 		.box.page-header
-
-			.left-container
-				.item.logo.header
-					img.ui.mini.image(src="./resources/images/logo.png")
+			.brand
+				//img.ui.mini.image(src="./resources/images/logo.png")
 				span.title Cola-UI Client Framework
-				.control.item.top-menu
-					.ui.menu.secondary.labeled.icon.pointing
-						a.item.icon(c-repeat="menu in menus")
-							i(c-class="menu.icon")
-							span(c-bind="menu.label")
-			.right.menu
-				.ui.menu.attached
+
+			.top-menu
+				a.item.icon(c-repeat="menu in menus" c-onclick="changeMain(menu)")
+					i(c-class="menu.icon")
+					span(c-bind="menu.label")
+			.right-floated
+				.ui.menu.secondary
 					a.item.msg.icon.mail
 						i.icon.mail
 						span.badge 5
@@ -25,9 +23,43 @@ block body
 					a.item.icon.user(c-onclick="showUserSidebar()")
 						img.ui.image.avatar(src="./resources/images/avatars/alex.png")
 						i.icon.dropdown
-
 		.flex-box
 			.h-box
+				.h-box
+					#frameworkSidebarBox.box.main-menu.ui.segment.inverted.basic.vertical
+						.side-accordion
+							.bar(c-onclick="toggleSidebar()")
+								i.iconfont.icon-sidebar
+							#frameworkSidebar.ui.accordion
+								div(c-repeat="menu in menus.menus").item.active
+									div.title.menu-item
+										i(c-class="menu.icon")
+										span(c-bind="menu.label")
+										i.icon.angle.left.dropdown-icon(c-display="dropdownIconVisible(menu)")
+									div.content
+										div.menu-item(c-repeat="item in menu.menus" c-onclick="menuItemClick(item)")
+											i(c-class="item.icon")
+											span(c-bind="item.label")
+											i.icon.angle.left.dropdown-icon(c-display="dropdownIconVisible(item)")
+					.flex-box
+						#rightContainer
+							.layer-dimmer
+							#subMenuLayer(c-widget="Layer; animation:slide right")
+								div.title
+									span(c-bind="currentMenu.label")
+								#subMenuTree
+									template(name="node-default")
+										div
+											i(c-classname="menu.hasChild ? 'icon folder outline' : 'icon file'")
+											span(c-bind="menu.label")
+								#subMenuNavbar(c-onclick="hideSubMenuLayer()")
+									div
+										i.iconfont.icon-weibiaoti26
+							#viewTab(c-widget="Tab; height:100%")
+								nav.tab-bar
+									ul.tabs
+								ul.contents
+
 
 
 	#userSidebar(c-widget="Sidebar; modalOpacity:0; direction:right")
@@ -67,4 +99,4 @@ block body
 				.field
 					.ui.message.error
 append scripts
-	script(src="./frame/main-shop.js")
+	script(src="./frame/main-top.js")

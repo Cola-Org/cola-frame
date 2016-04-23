@@ -1,0 +1,116 @@
+@import "../.global.less";
+
+
+#subMenuLayer {
+	overflow: hidden;
+	width: 16em;
+	.transition(width 0.2s ease-out);
+
+	&.collapsed {
+		width: 1.2em;
+		> .title {
+			> * {
+				display: none;
+			}
+		}
+		#subMenuTree {
+			display: none;
+		}
+	}
+
+	#subMenuNavbar {
+		cursor: pointer;
+		display: inline-block;
+		position: absolute;
+		overflow: hidden;
+		top: 50%;
+		right: 0;
+		height: 48px;
+		margin-top: -24px;
+		background-color: transparent;
+		width: 12px;
+		padding: 12px 0;
+		&:hover {
+			width: 14px;
+		}
+		> div {
+			display: inline-block;
+			height: 24px;
+			padding-top: 2px;
+			padding-left: 2px;
+
+			&:before {
+				position: absolute;
+				right: 0;
+				content: "";
+				width: 0;
+				top: 0px;
+				left: 0px;
+				height: 0;
+				border-bottom: 12px solid #ffffff;;
+				border-left: 14px solid transparent;
+			}
+			&:after {
+				position: absolute;
+				content: "";
+				left: 0px;
+				width: 0;
+				height: 0;
+				bottom: 0px;
+				border-top: 12px solid #ffffff;;
+				border-left: 14px solid transparent;
+			}
+			background-color: #ffffff;
+			i {
+
+				line-height: 24px;
+
+			}
+			color: @lightTertiaryColor;
+		}
+
+	}
+	> .title {
+		height: 65px;
+		i {
+			font-size: 1.2em;
+			margin-right: 0.6em;
+			color: rgba(72, 179, 221, 0.81);
+		}
+
+		padding: 1em;
+		background-color: #D9DEE4;
+		line-height: 2.7em;
+		color: #000000;
+	}
+	#subMenuTree {
+		height: 100%;
+		background-color: @backgroundColor;
+		.child-nodes {
+			overflow: visible;
+			margin-left: 1.8em !important;
+		}
+	}
+	.tree.item {
+		background-color: @lightBackgroundColor;
+	}
+	.tree.node {
+		> .expand-button {
+			width: 1.2em;
+		}
+		> .node-content {
+			> i {
+				position: absolute;
+				color: #aeb9c2;
+				width: 1.4em;
+				text-align: center;
+			}
+
+			> span {
+				margin-left: 1.8em;
+				font-size: 0.95em;
+
+			}
+		}
+	}
+}
