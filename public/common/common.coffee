@@ -38,23 +38,25 @@ App = window.App =
 				viewTab.setCurrentTab(tab)
 				return
 			else
-				if config.type != "subWindow"
+				if !config.type or config.type == "subWindow"
+
+					tab = new cola.TabButton({
+						afterClose: (self, arg)=> @.close(self.get("name"))
+						content:
+							$type: "iFrame"
+							path: config.path
+						icon: config.icon
+						name: path
+						closeable: config.closeable or true
+						caption: config.label
+					})
+					viewTab = cola.widget("viewTab")
+					@_tabs[path] = tab
+					viewTab.addTab(tab)
+					viewTab.setCurrentTab(tab)
+				else
 					window.open(path)
 					return
-				tab = new cola.TabButton({
-					afterClose: (self, arg)=> @.close(self.get("name"))
-					content:
-						$type: "iFrame"
-						path: config.path
-					icon: config.icon
-					name: path
-					closeable: config.closeable or true
-					caption: config.label
-				})
-				viewTab = cola.widget("viewTab")
-				@_tabs[path] = tab
-				viewTab.addTab(tab)
-				viewTab.setCurrentTab(tab)
 	close: (path)->
 		delete @_tabs[path]
 	goLogin: (callback)->

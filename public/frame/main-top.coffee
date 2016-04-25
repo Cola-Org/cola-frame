@@ -188,7 +188,11 @@ cola((model)->
 			else
 				showLoginMessage("用户名或密码不能为空！")
 		dropdownIconVisible: (item)->
-			return !!item.get("menus")
+			menus = item.get("menus")
+			result = false
+			if menus and menus.entityCount > 0
+				result = true
+			return result
 		showUserSidebar: ()->
 			cola.widget("userSidebar").show()
 		logout: ()->

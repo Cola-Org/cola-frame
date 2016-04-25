@@ -111,7 +111,11 @@ cola((model)->
 			else
 				showLoginMessage("用户名或密码不能为空！")
 		dropdownIconVisible: (item)->
-			return !!item.get("menus")
+			menus = item.get("menus")
+			result = false
+			if menus and menus.entityCount > 0
+				result = true
+			return result
 		showUserSidebar: ()->
 			cola.widget("userSidebar").show()
 		logout: ()->
@@ -130,11 +134,12 @@ cola((model)->
 			data = item.toJSON()
 			menus = data.menus
 			recursive = (d)->
-				if d.menus
+				if d.menus and d.menus.length > 0
 					recursive(item) for item in d.menus
 				else
+					d.menus=null
 					d.hasChild = false
-			if menus
+			if menus and menus.length > 0
 				recursive(data) for menu in menus
 				model.set("subMenu", menus)
 				model.set("currentMenu", data)

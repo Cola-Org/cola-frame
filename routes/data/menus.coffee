@@ -1,6 +1,6 @@
 module.exports = [
 	{
-		icon: "iconfont icon-zhandianshezhi",
+		icon: "icon browser",
 		label: "全局设置",
 		menus: [
 #			{
