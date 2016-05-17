@@ -162,6 +162,14 @@ cola((model)->
 				child:
 					recursive: true
 					expression: "menu in menu.menus"
+			itemClick: (self, arg)->
+				data = arg.item.get("data").toJSON()
+				menus = data.menus
+				if menus and menus.length > 0
+					return
+				else
+					App.open(data.path, data)
+					cola.widget("subMenuLayer").hide()
 		subMenuLayer:
 			beforeShow: ()->
 				$("#viewTab").parent().addClass("lock")
