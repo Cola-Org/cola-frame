@@ -1,0 +1,17 @@
+extends ../.cola
+
+block body
+	div(c-widget="button; caption:Open; click:open")
+append scripts
+	script.
+		cola(function (model) {
+			model.action({
+				open: function () {
+					App.open("/example/time-line", {
+						icon: "iconfont icon-yonghuliebiao",
+						label: "时间线", type: "subWindow",
+						closeable: true
+					})
+				}
+			})
+		});

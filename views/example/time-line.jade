@@ -1,15 +1,17 @@
 extends ../.cola
 
 block body
-	.circular.log(c-widget="timeLine; bind:item in items; width:400")
-		template(name="content")
-			strong(c-bind="item.content.title")
-			p(c-bind="item.content.description")
-		template(name="icon")
-			i(c-classname="'icon '+item.icon")
-		template(name="time")
-			div(c-bind="item.time.date" class="date")
-			div(c-bind="item.time.time" class="date-time")
+	div(c-widget="panel")
+		.content
+			.circular.log(c-widget="timeLine; bind:item in items; width:400")
+				template(name="content")
+					strong(c-bind="item.content.title")
+					p(c-bind="item.content.description")
+				template(name="icon")
+					i(c-classname="'icon '+item.icon")
+				template(name="time")
+					div(c-bind="item.time.date" class="date")
+					div(c-bind="item.time.time" class="date-time")
 append scripts
 	script.
 		cola(function (model) {

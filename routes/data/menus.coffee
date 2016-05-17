@@ -29,12 +29,18 @@ module.exports = [
 				type: "subWindow",
 				path: "/example/time-line"
 			},
-#			{
-#				icon: "iconfont icon-ic10",
-#				label: "产品维护",
-#				type: "subWindow",
-#				path: "/example/crud"
-#			},
+			{
+				icon: "iconfont icon-ic10",
+				label: "产品维护",
+				type: "subWindow",
+				path: "/example/crud"
+			},
+			{
+				icon: "iconfont icon-ic10",
+				label: "内部打开",
+				type: "subWindow",
+				path: "/example/inner-open"
+			},
 			{
 				icon: "iconfont icon-neirongshezhi",
 				label: "内容设置",
@@ -48,7 +54,7 @@ module.exports = [
 						menus: [
 							{
 								icon: "iconfont icon-yonghuliebiao",
-								label: "用户列表"
+								label: "用户列表",path: "/example/time-line"
 							}, {
 								icon: "iconfont icon-yonghuguanli",
 								label: "用户组"
