@@ -16,10 +16,10 @@ block body
 				.ui.menu.secondary
 					a.item.msg.icon.mail
 						i.icon.mail
-						span.badge 5
+						span.badge(c-bind="messages.message")
 					a.item.msg.icon
 						i.icon.alarm.icon-animated-bell
-						span.badge 22
+						span.badge(c-bind="messages.task")
 					a.item.icon.user(c-onclick="showUserSidebar()")
 						img.ui.image.avatar(src="./resources/images/avatars/alex.png")
 						i.icon.dropdown
