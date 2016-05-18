@@ -1,0 +1,60 @@
+extends ../.cola
+block body
+	.ui.fragment(style="height: 100%; ")
+		#TreeDemo
+
+append scripts
+	script.
+		cola(function (model) {
+			function generateNodes(node, deepth) {
+				deepth = deepth || 0;
+				var children = [];
+				var prefix = node ? node.name + "." : "";
+				var len = Math.random() * 3 + 3;
+				for (var i = 0; i < len; i++) {
+					var child = {
+						name: prefix + i,
+						checked: Math.random() > 0.5
+					};
+					if (deepth < 4) generateNodes(child, deepth + 1);
+					children.push(child);
+				}
+				if (node) {
+					node.nodes = children;
+				}
+				return children;
+			}
+
+			var nodes = generateNodes();
+			model.set("node", {
+				nodes: nodes
+			});
+
+			model.action({
+				remove: function (node) {
+					node.remove();
+				},
+				add: function () {
+					var nodes = model.get("currentNode.nodes");
+					if (!nodes) {
+						model.set("currentNode.nodes", []);
+						nodes = model.get("currentNode.nodes")
+					}
+					nodes.insert({
+						name: "New Node"
+					});
+				}
+			});
+
+			model.widgetConfig({
+				TreeDemo: {
+					$type: "tree",
+					bind: {
+						recursive: true,
+						checkedProperty: "checked",
+						textProperty: "name",
+						expression: "node in node.nodes"
+					}
+				}
+			});
+		});

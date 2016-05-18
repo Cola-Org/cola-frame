@@ -1,0 +1,14 @@
+extends ../.cola
+append head
+
+block body
+	.ui.fragment(style="height: 100%; ")
+		.ui.form(style="width:400px")
+			.two.fields
+				.field
+					#MappingDropDown
+				.field
+					div(c-widget="button; caption:测试; click:showValue")
+		#ProductTable
+append scripts
+	script(src="./example/mapping.js")

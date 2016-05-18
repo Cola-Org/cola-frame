@@ -1,0 +1,23 @@
+extends ../.cola
+append head
+	link(rel="stylesheet", type="text/css", href="./example/table.css")
+block body
+	.ui.fragment(style="height: 100%; ")
+		div.secondary(c-widget="menu")
+			a(c-widget="item; caption:获得已选列表; click:getSelections")
+		div#productTable
+			template(name="productName")
+				div.product-name
+					span(c-bind="item.name")
+			template(name="select")
+				div
+					div(c-widget="checkbox;class:in-cell;bind:item.selected;" c-display="!selectable(item)")
+			template(name="price")
+				div
+					div.mini(c-widget="input; bind:item.unitPrice; blur:blur")
+					span.btn
+						i.edit.icon
+					span(c-bind="formatNumber(item.unitPrice, '¥#,##0.00')")
+
+append scripts
+	script(src="./example/table.js")

@@ -13,80 +13,80 @@ cola((model)->
 			content: appName
 		}))
 
-	model.set("menus", [
-		{
-			icon: "iconfont icon-yonghuguanli",
-			label: "销售管理",
-			menus: [
-				{
-					icon: "iconfont icon-yonghuliebiao",
-					label: "销售订单",
-					menus: [
-						{
-							label: "全部订单"
-						},
-						{
-							label: "未完成订单"
-						},
-						{
-							label: "未收款订单"
-						}
-					]
-				}, {
-					icon: "iconfont icon-yonghuguanli",
-					label: "销售收款",
-					menus: [
-						{
-							label: "全部对账单"
-						},
-						{
-							label: "已收款对账单"
-						}
-					]
-				}, {
-					icon: "iconfont icon-zhucerenzheng",
-					label: "销售提成",
-					menus: [
-						{
-							label: "全部提成"
-						},
-						{
-							label: "未分配提成"
-						},
-						{
-							label: "已分配提成"
-						}
-					]
-				}
-			]
-		},
-		{
-			icon: "iconfont icon-yonghuguanli",
-			label: "用户管理",
-			menus: [
-				{
-					icon: "iconfont icon-yonghuliebiao",
-					label: "用户列表"
-				},
-				{
-					icon: "iconfont icon-yonghuguanli",
-					label: "用户组"
-				},
-				{
-					icon: "iconfont icon-zhucerenzheng",
-					label: "职位管理"
-				},
-				{
-					icon: "iconfont icon-03",
-					label: "批量邀请"
-				}
-			]
-		}])
+#	model.set("menus", [
+#		{
+#			icon: "iconfont icon-yonghuguanli",
+#			label: "销售管理",
+#			menus: [
+#				{
+#					icon: "iconfont icon-yonghuliebiao",
+#					label: "销售订单",
+#					menus: [
+#						{
+#							label: "全部订单"
+#						},
+#						{
+#							label: "未完成订单"
+#						},
+#						{
+#							label: "未收款订单"
+#						}
+#					]
+#				}, {
+#					icon: "iconfont icon-yonghuguanli",
+#					label: "销售收款",
+#					menus: [
+#						{
+#							label: "全部对账单"
+#						},
+#						{
+#							label: "已收款对账单"
+#						}
+#					]
+#				}, {
+#					icon: "iconfont icon-zhucerenzheng",
+#					label: "销售提成",
+#					menus: [
+#						{
+#							label: "全部提成"
+#						},
+#						{
+#							label: "未分配提成"
+#						},
+#						{
+#							label: "已分配提成"
+#						}
+#					]
+#				}
+#			]
+#		},
+#		{
+#			icon: "iconfont icon-yonghuguanli",
+#			label: "用户管理",
+#			menus: [
+#				{
+#					icon: "iconfont icon-yonghuliebiao",
+#					label: "用户列表"
+#				},
+#				{
+#					icon: "iconfont icon-yonghuguanli",
+#					label: "用户组"
+#				},
+#				{
+#					icon: "iconfont icon-zhucerenzheng",
+#					label: "职位管理"
+#				},
+#				{
+#					icon: "iconfont icon-03",
+#					label: "批量邀请"
+#				}
+#			]
+#		}])
 
-#	model.describe("menus", {
-#		provider:
-#			url: App.prop("service.menus")
-#	})
+	model.describe("menus", {
+		provider:
+			url: App.prop("service.menus")
+	})
 
 
 	model.describe("user", {

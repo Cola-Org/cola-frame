@@ -45,13 +45,14 @@ block body
 						#rightContainer
 							.layer-dimmer
 							#subMenuLayer(c-widget="Layer; animation:slide right")
-								div.title
-									span(c-bind="currentMenu.label")
-								#subMenuTree
-									template(name="node-default")
-										div
-											i(c-classname="menu.hasChild ? 'icon folder outline' : 'icon file'")
-											span(c-bind="menu.label")
+								.v-box
+									div.title.box
+										span(c-bind="currentMenu.label")
+									#subMenuTree.flex-box
+										template(name="node-default")
+											div
+												i(c-classname="menu.hasChild ? 'icon folder outline' : 'icon file'")
+												span(c-bind="menu.label")
 								#subMenuNavbar(c-onclick="hideSubMenuLayer()")
 									div
 										i.iconfont.icon-weibiaoti26
