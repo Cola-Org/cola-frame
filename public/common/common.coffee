@@ -20,6 +20,7 @@ unless rootApp
 		"service.logout": "./service/account/logout"
 		"service.menus": "./service/menus"
 		"service.user.detail": "./service/user/detail"
+		"menu.exclusive": false
 		"message.action":
 			path: "http://cola-ui.com"
 			type: "subWindow"

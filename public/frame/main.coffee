@@ -193,7 +193,7 @@ cola((model)->
 
 	})
 
-	$("#frameworkSidebar").accordion({exclusive: false}).delegate(".menu-item", "click", ()->
+	$("#frameworkSidebar").accordion({exclusive: App.prop("menu.exclusive")}).delegate(".menu-item", "click", ()->
 		$("#frameworkSidebar").find(".menu-item.current-item").removeClass("current-item");
 		$fly(@).addClass("current-item")
 	)
