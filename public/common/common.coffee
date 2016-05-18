@@ -20,6 +20,18 @@ unless rootApp
 		"service.logout": "./service/account/logout"
 		"service.menus": "./service/menus"
 		"service.user.detail": "./service/user/detail"
+		"message.action":
+			path: "http://cola-ui.com"
+			type: "subWindow"
+			label: "我的消息"
+			closeable: true
+		"task.action":
+			path: "http://cola-ui.com"
+			type: "subWindow"
+			label: "我的任务"
+			closeable: true
+		"app.logo.path": "./resources/images/logo.png"
+		"app.name": "Cola-UI Client Framework"
 		title: "Cola-Frame"
 
 App = window.App =

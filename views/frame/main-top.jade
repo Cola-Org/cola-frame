@@ -14,14 +14,14 @@ block body
 					span(c-bind="menu.label")
 			.right-floated
 				.ui.menu.secondary
-					a.item.msg.icon.mail
+					a.item.msg.icon.mail(c-onclick="messageBtnClick()")
 						i.icon.mail
 						span.badge(c-bind="messages.message")
-					a.item.msg.icon
+					a.item.msg.icon(c-onclick="taskBtnClick()")
 						i.icon.alarm.icon-animated-bell
 						span.badge(c-bind="messages.task")
 					a.item.icon.user(c-onclick="showUserSidebar()")
-						img.ui.image.avatar(src="./resources/images/avatars/alex.png")
+						img.ui.image.avatar(c-src="user.avatar")
 						i.icon.dropdown
 		.flex-box
 			.h-box

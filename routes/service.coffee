@@ -26,6 +26,33 @@ router.post '/account/logout', (req, res, next) ->
 router.get("/menus", (req, res, next)->
 	res.send(require("./data/menus"))
 )
+router.get("/shortcut-menus", (req, res, next)->
+	res.send({
+		label: "企业账户管理中心",
+		menus: [
+			{
+				icon: "iconfont icon-yonghuliebiao",
+				label: "标准定价",
+				path: "/example/time-line"
+			}, {
+				icon: "iconfont icon-yonghuguanli",
+				label: "特殊定价",
+				menus: [
+					{
+						icon: "iconfont icon-yonghuliebiao",
+						label: "用户列表", path: "/example/time-line"
+					}, {
+						icon: "iconfont icon-yonghuguanli",
+						label: "用户组"
+					}, {
+						icon: "iconfont icon-zhucerenzheng",
+						label: "职位管理"
+					}
+				]
+			}
+		]
+	})
+)
 router.get("/message/pull", (req, res, next)->
 	res.send([
 		{
@@ -50,7 +77,7 @@ router.get("/shoes", (req, res, next)->
 	from = (pageNo - 1) * pageSize
 	limit = from + pageSize
 
-	if query.id and query.id.length>0
+	if query.id and query.id.length > 0
 		result = []
 		for item in items
 			if item.id.toString().indexOf(query.id) >= 0 then result.push(item)
@@ -63,7 +90,6 @@ router.get("/shoes", (req, res, next)->
 			$entityCount: items.length
 			$data: items.slice(from, limit)
 		})
-
 )
 router.get("/user/detail", (req, res, next)->
 	res.send({

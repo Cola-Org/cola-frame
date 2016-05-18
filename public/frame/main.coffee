@@ -1,4 +1,19 @@
 cola((model)->
+	logo = App.prop("app.logo.path")
+	appName = App.prop("app.name")
+	if logo
+		$("#appHeader").append($.xCreate({
+			tagName: "img"
+			class: "img.ui.mini.image"
+			src: logo
+		}))
+	if appName
+		$("#appHeader").append($.xCreate({
+			tagName: "span"
+			content: appName
+		}))
+
+
 	model.describe("menus", {
 		provider:
 			url: App.prop("service.menus")
@@ -163,6 +178,19 @@ cola((model)->
 			className = "collapsed"
 			$dom = $("#frameworkSidebarBox")
 			$dom.toggleClass(className, !$dom.hasClass(className));
+		messageBtnClick: ()->
+			action = App.prop("message.action")
+			if action and typeof action is "object"
+				App.open(action.path, action)
+			return
+
+		taskBtnClick: ()->
+			action = App.prop("task.action")
+			if action and typeof action is "object"
+				App.open(action.path, action)
+
+			return
+
 	})
 
 	$("#frameworkSidebar").accordion({exclusive: false}).delegate(".menu-item", "click", ()->

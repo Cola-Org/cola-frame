@@ -4,18 +4,16 @@ append head
 block body
 	.v-box
 		.box.ui.menu.secondary.attached.page-header
-			.item.logo.header
-				img.ui.mini.image(src="./resources/images/logo.png")
-				span Cola-UI Client Framework
+			.item.logo.header#appHeader
 			.right.menu
-				a.item.msg.icon.mail
+				a.item.msg.icon.mail(c-onclick="messageBtnClick()")
 					i.icon.mail
 					span.badge(c-bind="messages.message")
-				a.item.msg.icon
+				a.item.msg.icon(c-onclick="taskBtnClick()")
 					i.icon.alarm.icon-animated-bell
 					span.badge(c-bind="messages.task")
 				a.item.icon.user(c-onclick="showUserSidebar()")
-					img.ui.image.avatar(src="./resources/images/avatars/alex.png")
+					img.ui.image.avatar(c-src="user.avatar")
 					i.icon.dropdown
 		.flex-box
 			.h-box
@@ -63,11 +61,11 @@ block body
 			.flex-box
 				div
 					.ui.segment.text-center.basic
-						a.msg
+						a.msg(c-onclick="messageBtnClick()")
 							i.icon.mail
 							span 消息
 							span.detail(c-bind="messages.message+'条'")
-						a.msg
+						a.msg(c-onclick="taskBtnClick()")
 							i.icon.alarm
 							span 任务
 							span.detail(c-bind="messages.task+'条'")
