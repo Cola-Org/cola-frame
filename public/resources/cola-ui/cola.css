@@ -1,4 +1,4 @@
-/*! Cola UI - 0.8.5
+/*! Cola UI - 0.9.1
  * Copyright (c) 2002-2016 BSTEK Corp. All rights reserved.
  *
  * This file is dual-licensed under the AGPLv3 (http://www.gnu.org/licenses/agpl-3.0.html)
@@ -336,6 +336,31 @@ template {
   margin-top: -10px;
   color: #db2828;
   transform: scale(0.5);
+}
+/* Text Area */
+textarea {
+  margin: 0em;
+  -webkit-appearance: none;
+  tap-highlight-color: rgba(255, 255, 255, 0);
+  padding: 0.78571429em 1em;
+  background: #FFFFFF;
+  border: 1px solid rgba(34, 36, 38, 0.15);
+  outline: none;
+  color: rgba(0, 0, 0, 0.87);
+  border-radius: 0.28571429rem;
+  box-shadow: 0em 0em 0em 0em transparent inset;
+  -webkit-transition: color 0.1s ease, border-color 0.1s ease;
+  transition: color 0.1s ease, border-color 0.1s ease;
+  font-size: 1em;
+  line-height: 1.2857;
+  resize: vertical;
+  vertical-align: top;
+  width: 100%;
+}
+textarea:not([rows]) {
+  height: 12em;
+  min-height: 8em;
+  max-height: 24em;
 }
 
 [class*="block-grid-"] {
@@ -3442,12 +3467,14 @@ template {
 }
 
 .ui.sub-view {
+  display: block;
   overflow: hidden;
 }
 .ui.sub-view > .content {
   height: 100%;
 }
 .ui.iframe {
+  display: block;
   position: relative;
 }
 .ui.iframe iframe {
@@ -3987,6 +4014,7 @@ template {
 }
 
 .ui.carousel {
+  display: block;
   overflow: hidden;
   position: relative;
 }

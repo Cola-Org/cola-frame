@@ -4,10 +4,7 @@ append head
 block body
 	.v-box
 		.box.page-header
-			.brand
-				//img.ui.mini.image(src="./resources/images/logo.png")
-				span.title Cola-UI Client Framework
-
+			.brand#appHeader
 			.top-menu
 				a.item.icon(c-repeat="menu in menus" c-onclick="changeMain(menu)")
 					i(c-class="menu.icon")

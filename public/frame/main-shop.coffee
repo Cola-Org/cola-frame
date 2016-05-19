@@ -5,7 +5,7 @@ cola((model)->
 	if logo
 		$("#appHeader").append($.xCreate({
 			tagName: "img"
-			class: "img.ui.mini.image"
+			class: "img ui mini image"
 			src: logo
 		}))
 	if appName

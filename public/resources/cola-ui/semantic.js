@@ -2891,7 +2891,9 @@ $.fn.checkbox = function(parameters) {
           }
           module.debug('Disabling checkbox');
           module.set.disabled();
-          settings.onDisabled.call(input);
+          if (settings.onDisabled) {
+            settings.onDisabled.call(input);
+          }
         },
 
         get: {

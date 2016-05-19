@@ -1,6 +1,9 @@
 @import "../.global.less";
 
 .main-menu.ui.segment.inverted {
+	&:hover {
+		overflow: auto;
+	}
 	.transition(width 0.2s ease-out);
 	padding: 0;
 	background-color: @tertiaryColor;
@@ -53,7 +56,11 @@
 					padding: 0 0 0 1em;
 				}
 			}
-
+			> .content .menu-item {
+				&:hover, &.current-item {
+					background-color: @lightTertiaryColor;
+				}
+			}
 			> .title, .menu-item {
 				position: relative;
 				white-space: nowrap;
@@ -70,7 +77,6 @@
 				}
 
 				&:hover, &.current-item {
-					background-color: @lightTertiaryColor;
 					&:before {
 						position: absolute;
 						left: 0;

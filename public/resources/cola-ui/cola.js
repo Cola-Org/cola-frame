@@ -1,4 +1,4 @@
-/*! Cola UI - 0.8.5
+/*! Cola UI - 0.9.2
  * Copyright (c) 2002-2016 BSTEK Corp. All rights reserved.
  *
  * This file is dual-licensed under the AGPLv3 (http://www.gnu.org/licenses/agpl-3.0.html)
@@ -352,10 +352,10 @@
   cola.util.isSimpleValue = function(value) {
     var type;
     if (value === null || value === void 0) {
-      return false;
+      return true;
     }
     type = typeof value;
-    return type !== "object" && type !== "function" || type instanceof Date;
+    return type !== "object" && type !== "function" || value instanceof Date || value instanceof Array;
   };
 
   cola.util.each = function(array, fn) {
@@ -516,6 +516,38 @@
       };
       subCallback.scope = subCallback;
       func(subCallback);
+    }
+  };
+
+  cola.util.formatDate = function(date, format) {
+    if (date == null) {
+      return "";
+    }
+    if (!(date instanceof XDate)) {
+      date = new XDate(date);
+    }
+    return date.toString(format || cola.setting("defaultDateFormat"));
+  };
+
+  cola.util.formatNumber = function(number, format) {
+    if (number == null) {
+      return "";
+    }
+    if (isNaN(number)) {
+      return number;
+    }
+    return formatNumber(format || cola.setting("defaultNumberFormat"), number);
+  };
+
+  cola.util.format = function(value, format) {
+    if (value instanceof Date) {
+      return cola.util.formatDate(value, format);
+    } else if (isFinite(value)) {
+      return cola.util.formatNumber(value, format);
+    } else if (value === null || value === void 0) {
+      return "";
+    } else {
+      return value;
     }
   };
 
@@ -742,7 +774,9 @@
 
   setting = {
     defaultCharset: "utf-8",
-    defaultDateFormat: "yyyy-mm-dd"
+    defaultNumberFormat: "#,##0.##",
+    defaultDateFormat: "yyyy-MM-dd",
+    defaultSubmitDateFormat: "yyyy-MM-dd'T'HH:mm:ss'T'"
   };
 
   cola.setting = function(key, value) {
@@ -1009,7 +1043,8 @@
     "cola.messageBox.error.title": "Error",
     "cola.messageBox.question.title": "Confirm",
     "cola.message.approve": "Ok",
-    "cola.message.deny": "Cancel"
+    "cola.message.deny": "Cancel",
+    "cola.pager.info": "Page:{0}\/{1}"
   });
 
   _toJSON = function(data) {
@@ -1018,6 +1053,8 @@
       if (typeof data === "object") {
         if (data instanceof cola.Entity || data instanceof cola.EntityList) {
           data = data.toJSON();
+        } else if (data instanceof Date) {
+          data = cola.util.formatDate(data, cola.setting("defaultSubmitDateFormat"));
         } else {
           rawData = data;
           data = {};
@@ -1052,6 +1089,8 @@
             v = rawData[p];
             data[p] = _toJSON(v);
           }
+        } else if (data instanceof Date) {
+          data = _toJSON(data);
         }
       } else if (typeof data === "function") {
         data = void 0;
@@ -1399,8 +1438,8 @@
             this.on(attr, function(self, arg) {
               expression.evaluate(scope, "never", {
                 vars: {
-                  self: self,
-                  arg: arg
+                  $self: self,
+                  $arg: arg
                 }
               });
             }, ignoreError);
@@ -2141,10 +2180,10 @@
       this.raw = exprStr;
       i = exprStr.indexOf(" on ");
       if ((0 < i && i < (exprStr.length - 1))) {
-        exprStr = exprStr.substring(0, i);
         watchPathStr = exprStr.substring(i + 4);
+        exprStr = exprStr.substring(0, i);
         watchPaths = [];
-        ref = watchPathStr.split(",");
+        ref = watchPathStr.split(/[,;]/);
         for (l = 0, len1 = ref.length; l < len1; l++) {
           path = ref[l];
           path = cola.util.trim(path);
@@ -5689,6 +5728,9 @@
         this.parent = parent;
       }
       this.data = new cola.DataModel(this);
+      if (parent) {
+        parent.data.bind("**", this);
+      }
       this.action = function(name, action) {
         var a, config, fn, n, scope, store;
         store = this.action;
@@ -5734,6 +5776,17 @@
       if (typeof (base = this.data).destroy === "function") {
         base.destroy();
       }
+    };
+
+    Model.prototype._processMessage = function(bindingPath, path, type, arg) {
+      return this.data._onDataMessage(path, type, arg);
+    };
+
+    Model.prototype.$ = function(selector) {
+      if (this._$dom == null) {
+        this._$dom = $(this._dom);
+      }
+      return this._$dom.find(selector);
     };
 
     return Model;
@@ -5921,15 +5974,17 @@
     };
 
     ItemsScope.prototype.setExpression = function(expression) {
-      var l, len1, path, paths, ref;
+      var l, len1, path, paths, ref, ref1;
       this.expression = expression;
       if (expression) {
         this.alias = expression.alias;
         paths = [];
-        ref = expression.paths;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-          path = ref[l];
-          paths.push(path.split("."));
+        if (expression.paths) {
+          ref = expression.paths;
+          for (l = 0, len1 = ref.length; l < len1; l++) {
+            path = ref[l];
+            paths.push(path.split("."));
+          }
         }
         this.expressionPath = paths;
         if (!expression.paths && expression.hasCallStatement) {
@@ -5941,7 +5996,7 @@
         this.alias = "item";
         this.expressionPath = [];
       }
-      if (expression && typeof expression.paths.length === 1 && !expression.hasCallStatement) {
+      if (expression && typeof ((ref1 = expression.paths) != null ? ref1.length : void 0) === 1 && !expression.hasCallStatement) {
         this.dataType = this.parent.data.getDataType(expression.paths[0]);
       }
     };
@@ -6665,8 +6720,31 @@
     };
 
     DataModel.prototype.getProperty = function(path) {
-      var ref;
-      return (ref = this._rootDataType) != null ? ref.getProperty(path) : void 0;
+      var dataModel, dataType, i, path1, path2, ref, ref1, rootDataType;
+      i = path.indexOf(".");
+      if (i > 0) {
+        path1 = path.substring(0, i);
+        path2 = path.substring(i + 1);
+      } else {
+        path1 = null;
+        path2 = path;
+      }
+      dataModel = this;
+      while (dataModel) {
+        rootDataType = dataModel._rootDataType;
+        if (rootDataType) {
+          if (path1) {
+            dataType = (ref = rootDataType.getProperty(path1)) != null ? ref.get("dataType") : void 0;
+          } else {
+            dataType = rootDataType;
+          }
+          if (dataType) {
+            break;
+          }
+        }
+        dataModel = (ref1 = dataModel.model.parent) != null ? ref1.data : void 0;
+      }
+      return dataType != null ? dataType.getProperty(path2) : void 0;
     };
 
     DataModel.prototype.getDataType = function(path) {
@@ -7331,37 +7409,11 @@
     return items;
   };
 
-  cola.defaultAction.formatDate = function(date, format) {
-    if (date == null) {
-      return "";
-    }
-    if (!(date instanceof XDate)) {
-      date = new XDate(date);
-    }
-    return date.toString(format);
-  };
+  cola.defaultAction.formatDate = cola.util.formatDate;
 
-  cola.defaultAction.formatNumber = function(number, format) {
-    if (number == null) {
-      return "";
-    }
-    if (isNaN(number)) {
-      return number;
-    }
-    return formatNumber(format, number);
-  };
+  cola.defaultAction.formatNumber = cola.util.formatNumber;
 
-  cola.defaultAction.format = function(value, format) {
-    if (value instanceof Date) {
-      return cola.defaultAction.formatDate(value, format);
-    } else if (isFinite(value)) {
-      return cola.defaultAction.formatNumber(value, format);
-    } else if (value === null || value === void 0) {
-      return "";
-    } else {
-      return value;
-    }
-  };
+  cola.defaultAction.format = cola.util.format;
 
   _numberWords = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen"];
 
@@ -7517,6 +7569,9 @@
         }
       }
       options.url = this.getUrl(context);
+      if (this._method) {
+        options.method = this._method;
+      }
       options.data = this._parameter;
       return options;
     };
@@ -7743,6 +7798,9 @@
         };
       }
       options.data = parameter;
+      if (options.dataType == null) {
+        options.dataType = "json";
+      }
       return options;
     };
 
@@ -8277,8 +8335,9 @@
   _cssCache = {};
 
   _loadCss = function(url, callback) {
-    var head, linkElement;
-    if (!_cssCache[url]) {
+    var head, linkElement, refNum;
+    linkElement = _cssCache[url];
+    if (!linkElement) {
       linkElement = $.xCreate({
         tagName: "link",
         rel: "stylesheet",
@@ -8300,20 +8359,32 @@
         });
       }
       head = document.querySelector("head") || document.documentElement;
+      linkElement.setAttribute("_refNum", "1");
       head.appendChild(linkElement);
       _cssCache[url] = linkElement;
       if (cola.os.android && cola.os.version < 4.4) {
         cola.callback(callback, true);
       }
+      return true;
     } else {
+      refNum = parseInt(linkElement.getAttribute("_refNum")) || 1;
+      linkElement.setAttribute("_refNum", (refNum + 1) + "");
       cola.callback(callback, true);
+      return false;
     }
   };
 
   _unloadCss = function(url) {
-    if (_cssCache[url]) {
-      $fly(_cssCache[url]).remove();
-      delete _cssCache[url];
+    var linkElement, refNum;
+    linkElement = _cssCache[url];
+    if (linkElement) {
+      refNum = parseInt(linkElement.getAttribute("_refNum")) || 1;
+      if (refNum > 1) {
+        linkElement.setAttribute("_refNum", (refNum - 1) + "");
+      } else {
+        delete _cssCache[url];
+        $fly(linkElement).remove();
+      }
     }
   };
 
@@ -8809,12 +8880,16 @@
 
     _EventFeature.prototype.init = function(domBinding) {
       domBinding.$dom.on(this.event, (function(_this) {
-        return function() {
+        return function(evt) {
           var oldScope;
           oldScope = cola.currentScope;
           cola.currentScope = domBinding.scope;
           try {
-            return _this.evaluate(domBinding, false, null, "never");
+            return _this.evaluate(domBinding, false, {
+              vars: {
+                $event: evt
+              }
+            }, "never");
           } finally {
             cola.currentScope = oldScope;
           }
@@ -9547,6 +9622,7 @@
       for (i = l = 0, len1 = holder.length; l < len1; i = ++l) {
         p = holder[i];
         if (p.path === path) {
+          this.scope.data.unbind(path, holder[i]);
           holder.splice(i, 1);
           break;
         }
@@ -9554,7 +9630,6 @@
       if (!holder.length) {
         delete this[feature.id];
       }
-      this.scope.data.unbind(path, pipe);
     };
 
     _DomBinding.prototype.refresh = function(force) {
@@ -9737,6 +9812,12 @@
       oldScope = cola.currentScope;
       cola.currentScope = model;
       try {
+        if (!model._dom) {
+          model._dom = dom;
+        } else {
+          model._dom = model._dom.concat(dom);
+        }
+        delete model._$dom;
         if (typeof fn === "function") {
           fn(model, param);
         }
@@ -10257,7 +10338,7 @@
 
 }).call(this);
 
-/*! Cola UI - 0.8.5
+/*! Cola UI - 0.9.2
  * Copyright (c) 2002-2016 BSTEK Corp. All rights reserved.
  *
  * This file is dual-licensed under the AGPLv3 (http://www.gnu.org/licenses/agpl-3.0.html)
@@ -10667,7 +10748,7 @@
       attrName = attr.name;
       if (attrName.indexOf("c-") === 0) {
         prop = attrName.slice(2);
-        if (widgetType.attributes.$has(prop) || widgetType.events.$has(prop)) {
+        if ((widgetType.attributes.$has(prop) || widgetType.events.$has(prop)) && prop !== "class") {
           config[prop] = cola._compileExpression(attr.value);
           if (removeAttrs == null) {
             removeAttrs = [];
@@ -10752,14 +10833,15 @@
       dom.removeAttribute("c-widget-config");
       config = (ref = context.widgetConfigs) != null ? ref[configKey] : void 0;
     } else {
-      widgetType = parentWidget != null ? (ref1 = parentWidget.childTagNames) != null ? ref1[tagName] : void 0 : void 0;
-      if (widgetType == null) {
-        widgetType = WIDGET_TAGS_REGISTRY[tagName];
-      }
-      if (widgetType) {
-        config = _compileWidgetDom(dom, widgetType);
-      } else {
-        config = _compileWidgetAttribute(scope, dom, context);
+      config = _compileWidgetAttribute(scope, dom, context);
+      if (!config) {
+        widgetType = parentWidget != null ? (ref1 = parentWidget.childTagNames) != null ? ref1[tagName] : void 0 : void 0;
+        if (widgetType == null) {
+          widgetType = WIDGET_TAGS_REGISTRY[tagName];
+        }
+        if (widgetType) {
+          config = _compileWidgetDom(dom, widgetType);
+        }
       }
     }
     if (!(config || jsonConfig)) {
@@ -10819,7 +10901,7 @@
 
   cola.registerType("widget", "_default", cola.Widget);
 
-  cola.widget = function(config, namespace) {
+  cola.widget = function(config, namespace, model) {
     var c, constr, e, ele, group, l, len1, len2, n, widget;
     if (!config) {
       return null;
@@ -10831,6 +10913,9 @@
       }
       if (ele.nodeType) {
         widget = cola.util.userData(ele, cola.constants.DOM_ELEMENT_KEY);
+        if (model && widget._scope !== model) {
+          widget = null;
+        }
         if (widget instanceof cola.Widget) {
           return widget;
         } else {
@@ -10841,14 +10926,16 @@
         for (l = 0, len1 = ele.length; l < len1; l++) {
           e = ele[l];
           widget = cola.util.userData(e, cola.constants.DOM_ELEMENT_KEY);
-          if (widget instanceof cola.Widget) {
+          if (widget instanceof cola.Widget && (!model || widget._scope === model)) {
             group.push(widget);
           }
         }
-        if (group.length) {
-          return cola.Element.createGroup(group);
-        } else {
+        if (!group.length) {
           return null;
+        } else if (group.length === 1) {
+          return group[0];
+        } else {
+          return cola.Element.createGroup(group);
         }
       }
     } else {
@@ -10856,11 +10943,14 @@
         group = [];
         for (n = 0, len2 = config.length; n < len2; n++) {
           c = config[n];
-          group.push(cola.widget(c));
+          group.push(cola.widget(c, namespace, model));
         }
         return cola.Element.createGroup(group);
       } else if (config.nodeType === 1) {
         widget = cola.util.userData(config, cola.constants.DOM_ELEMENT_KEY);
+        if (model && widget._scope !== model) {
+          widget = null;
+        }
         if (widget instanceof cola.Widget) {
           return widget;
         } else {
@@ -10868,6 +10958,9 @@
         }
       } else {
         constr = config.$constr || cola.resolveType(namespace || "widget", config, cola.Widget);
+        if (model && !config.scope) {
+          config.scope = model;
+        }
         return new constr(config);
       }
     }
@@ -10893,6 +10986,10 @@
       dom = dom.parentNode;
     }
     return null;
+  };
+
+  cola.Model.prototype.widget = function(config) {
+    return cola.widget(config, null, this);
   };
 
 
@@ -10977,8 +11074,16 @@
     cls.prototype._initDom = function(dom) {
       var attr, attrName, cssName, l, len1, ref1, templateDom;
       superCls.prototype._initDom.call(this, dom);
-      if (this._template && !this._domCreated) {
-        templateDom = this.xRender(this._template);
+      template = this._template;
+      if (template && !this._domCreated) {
+        if (typeof template === "string" && template.match(/^\#[\w\-\$]*$/)) {
+          this._template = document.getElementById(template.substring(1));
+          if (this._template) {
+            template = this._template.innerHTML;
+            $fly(this._template).remove();
+          }
+        }
+        templateDom = this.xRender(template);
         if (templateDom) {
           ref1 = dom.attributes;
           for (l = 0, len1 = ref1.length; l < len1; l++) {
@@ -11001,8 +11106,8 @@
         }
       }
     };
-    cls.prototype.xRender = function(template) {
-      return cola.xRender(template, this._widgetModel);
+    cls.prototype.xRender = function(template, context) {
+      return cola.xRender(template, this._widgetModel, context);
     };
     for (prop in definition) {
       def = definition[prop];
@@ -11484,6 +11589,10 @@
   PAN_VERTICAL_events = ["panUp", "panDown"];
 
   SWIPE_VERTICAL_events = ["swipeUp", "swipeDown"];
+
+  if (typeof document.documentElement.style.flex !== "string") {
+    $(document.documentElement).addClass("flex-unsupported");
+  }
 
 
   /*
@@ -12648,26 +12757,14 @@
     };
 
     Button.prototype._refreshIcon = function() {
-      var $dom, base, caption, icon, iconDom, iconPosition;
+      var base, caption, icon, iconDom, iconPosition;
       if (!this._dom) {
         return;
       }
-      $dom = this.get$Dom();
-      this._classNamePool.remove("right");
-      this._classNamePool.remove("left");
-      this._classNamePool.remove("labeled");
-      this._classNamePool.remove("icon");
       icon = this.get("icon");
       iconPosition = this.get("iconPosition");
       caption = this.get("caption");
       if (icon) {
-        if (caption) {
-          if (iconPosition === "right") {
-            this._classNamePool.add("right");
-          } else {
-
-          }
-        }
         this._classNamePool.add("icon");
         if ((base = this._doms).iconDom == null) {
           base.iconDom = document.createElement("i");
@@ -12675,9 +12772,18 @@
         iconDom = this._doms.iconDom;
         $fly(iconDom).addClass(icon + " icon");
         if (iconDom.parentNode !== this._dom) {
-          $dom.append(iconDom);
+          if (!this._doms.captionDom) {
+            this._dom.appendChild(iconDom);
+            return;
+          }
+          if (iconPosition === "right") {
+            $fly(this._doms.captionDom).after(iconDom);
+          } else {
+            $fly(this._doms.captionDom).before(iconDom);
+          }
         }
       } else if (this._doms.iconDom) {
+        this._classNamePool.remove("icon");
         $fly(this._doms.iconDom).remove();
       }
     };
@@ -14735,89 +14841,92 @@
         }
         cDom = $.xCreate({
           tagName: "div",
-          content: [
-            {
-              tagName: "div",
-              "class": "header",
-              contextKey: "header",
-              content: [
-                {
-                  tagName: "div",
-                  "class": "month",
-                  content: [
-                    {
-                      tagName: "span",
-                      "class": "button prev",
-                      contextKey: "prevMonthButton"
-                    }, {
-                      tagName: "span",
-                      "class": "button next",
-                      contextKey: "nextMonthButton"
-                    }, {
-                      tagName: "div",
-                      "class": "label",
-                      contextKey: "monthLabel"
-                    }
-                  ]
-                }, {
-                  tagName: "div",
-                  "class": "year",
-                  content: [
-                    {
-                      tagName: "span",
-                      "class": "button prev",
-                      contextKey: "prevYearButton"
-                    }, {
-                      tagName: "span",
-                      "class": "button next",
-                      contextKey: "nextYearButton"
-                    }, {
-                      tagName: "div",
-                      "class": "label",
-                      contextKey: "yearLabel"
-                    }
-                  ]
-                }
-              ]
-            }, {
-              tagName: "table",
-              cellPadding: 0,
-              cellSpacing: 0,
-              border: 0,
-              "class": "date-header",
-              contextKey: "dateHeader",
-              content: [
-                {
-                  tagName: "tr",
-                  "class": "header",
-                  content: [
-                    {
-                      tagName: "td",
-                      content: weeks[0]
-                    }, {
-                      tagName: "td",
-                      content: weeks[1]
-                    }, {
-                      tagName: "td",
-                      content: weeks[2]
-                    }, {
-                      tagName: "td",
-                      content: weeks[3]
-                    }, {
-                      tagName: "td",
-                      content: weeks[4]
-                    }, {
-                      tagName: "td",
-                      content: weeks[5]
-                    }, {
-                      tagName: "td",
-                      content: weeks[6]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
+          content: {
+            tagName: "div",
+            "class": "caption-panel",
+            content: [
+              {
+                tagName: "div",
+                "class": "header",
+                contextKey: "header",
+                content: [
+                  {
+                    tagName: "div",
+                    "class": "month",
+                    content: [
+                      {
+                        tagName: "span",
+                        "class": "button prev",
+                        contextKey: "prevMonthButton"
+                      }, {
+                        tagName: "span",
+                        "class": "button next",
+                        contextKey: "nextMonthButton"
+                      }, {
+                        tagName: "div",
+                        "class": "label",
+                        contextKey: "monthLabel"
+                      }
+                    ]
+                  }, {
+                    tagName: "div",
+                    "class": "year",
+                    content: [
+                      {
+                        tagName: "span",
+                        "class": "button prev",
+                        contextKey: "prevYearButton"
+                      }, {
+                        tagName: "span",
+                        "class": "button next",
+                        contextKey: "nextYearButton"
+                      }, {
+                        tagName: "div",
+                        "class": "label",
+                        contextKey: "yearLabel"
+                      }
+                    ]
+                  }
+                ]
+              }, {
+                tagName: "table",
+                cellPadding: 0,
+                cellSpacing: 0,
+                border: 0,
+                "class": "date-header",
+                contextKey: "dateHeader",
+                content: [
+                  {
+                    tagName: "tr",
+                    content: [
+                      {
+                        tagName: "td",
+                        content: weeks[0]
+                      }, {
+                        tagName: "td",
+                        content: weeks[1]
+                      }, {
+                        tagName: "td",
+                        content: weeks[2]
+                      }, {
+                        tagName: "td",
+                        content: weeks[3]
+                      }, {
+                        tagName: "td",
+                        content: weeks[4]
+                      }, {
+                        tagName: "td",
+                        content: weeks[5]
+                      }, {
+                        tagName: "td",
+                        content: weeks[6]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
         }, this._doms);
         picker = cal._datePicker = new cola.calendar.SwipePicker({
           className: "date-table-wrapper",
@@ -16593,7 +16702,7 @@
 
     Dialog.tagName = "c-dialog";
 
-    Dialog.CLASS_NAME = "dialog transition v-box hidden";
+    Dialog.CLASS_NAME = "dialog transition hidden";
 
     Dialog.attributes = {
       context: null,
@@ -16718,17 +16827,25 @@
     };
 
     Dialog.prototype._onShow = function() {
-      var actionsDom, actionsHeight, headerHeight, height, minHeight;
-      height = this._dom.offsetHeight;
-      actionsDom = this._doms.actions;
-      if (actionsDom) {
-        actionsHeight = actionsDom.offsetHeight;
-        headerHeight = 0;
-        if (this._doms.header) {
-          headerHeight = this._doms.header.offsetHeight;
+      var actionsDom, actionsHeight, css, headerHeight, height, minHeight, pHeight;
+      if (this._doms.content) {
+        height = this._dom.offsetHeight;
+        pHeight = $(window).height();
+        css = "min-height";
+        if (height > pHeight) {
+          height = pHeight;
+          css = "height";
         }
-        minHeight = height - actionsHeight - headerHeight;
-        $(this._doms.content).css("min-height", minHeight + "px");
+        actionsDom = this._doms.actions;
+        if (actionsDom) {
+          actionsHeight = actionsDom.offsetHeight;
+          headerHeight = 0;
+          if (this._doms.header) {
+            headerHeight = this._doms.header.offsetHeight;
+          }
+          minHeight = height - actionsHeight - headerHeight;
+          $(this._doms.content).css(css, minHeight + "px");
+        }
       }
       return Dialog.__super__._onShow.call(this);
     };
@@ -16756,7 +16873,7 @@
     };
 
     Dialog.prototype._makeContentDom = function(target) {
-      var afterEl, dom, flex;
+      var afterEl, dom;
       if (this._doms == null) {
         this._doms = {};
       }
@@ -16778,8 +16895,6 @@
       } else {
         this._dom.appendChild(dom);
       }
-      flex = target === "content" ? "flex-box" : "box";
-      $fly(dom).addClass(flex);
       this._doms[target] = dom;
       return dom;
     };
@@ -16829,7 +16944,7 @@
     };
 
     Dialog.prototype._showModalLayer = function() {
-      var _dimmerDom;
+      var _dimmerDom, container;
       if (this._doms == null) {
         this._doms = {};
       }
@@ -16847,7 +16962,15 @@
             };
           })(this));
         }
-        document.body.appendChild(_dimmerDom);
+        container = this._context || this._dom.parentNode;
+        if (typeof container === "string") {
+          if (container === "body") {
+            container = document.body;
+          } else if (container === "parent") {
+            container = this._dom.parentNode;
+          }
+        }
+        container.appendChild(_dimmerDom);
         this._doms.modalLayer = _dimmerDom;
       }
       $(_dimmerDom).css({
@@ -17645,6 +17768,8 @@
       return TabButton.__super__.constructor.apply(this, arguments);
     }
 
+    TabButton.tagName = "c-tabButton";
+
     TabButton.CLASS_NAME = "tab-button";
 
     TabButton.parentWidget = cola.Tab;
@@ -17744,18 +17869,33 @@
     };
 
     Panel.prototype.collapsedChange = function() {
-      var $dom, collapsed;
+      var $dom, collapsed, currentHeight, headerHeight, height, initialHeight;
       $dom = this._$dom;
       collapsed = this.isCollapsed();
       if (this.fire("beforeCollapsedChange", this, {}) === false) {
         return this;
       }
+      initialHeight = this.get("height");
+      if (!initialHeight) {
+        currentHeight = $dom.outerHeight();
+        $dom.css("height", "initial");
+        height = $dom.outerHeight();
+        $dom.css("height", currentHeight);
+      }
       $dom.toggleClass("collapsed", !collapsed);
-      setTimeout((function(_this) {
-        return function() {
-          return _this.fire("collapsedChange", _this, {});
-        };
-      })(this), 300);
+      headerHeight = $(this._headerContent).outerHeight();
+      $dom.transit({
+        duration: 300,
+        height: collapsed ? height || this.get("height") : headerHeight,
+        complete: (function(_this) {
+          return function() {
+            if (collapsed && !initialHeight) {
+              $dom.css("height", "initial");
+            }
+            return _this.fire("collapsedChange", _this, {});
+          };
+        })(this)
+      });
     };
 
     Panel.prototype.isCollapsed = function() {
@@ -17817,7 +17957,7 @@
       var headerContent, l, len1, node, nodes, template, toolsDom;
       this._regDefaultTempaltes();
       Panel.__super__._initDom.call(this, dom);
-      headerContent = $.xCreate({
+      this._headerContent = headerContent = $.xCreate({
         tagName: "div",
         "class": "content"
       });
@@ -20364,20 +20504,19 @@
       boxWidth = $dom.width();
       boxHeight = $dom.height();
       $dom.addClass("hidden");
-      rect = dropdownDom.getBoundingClientRect();
+      rect = $fly(dropdownDom).offset();
       clientWidth = document.body.offsetWidth;
       clientHeight = document.body.clientHeight;
       bottomSpace = clientHeight - rect.top - dropdownDom.clientHeight;
+      height = 0;
       if (bottomSpace >= boxHeight) {
         direction = "down";
       } else {
         topSpace = rect.top;
         if (topSpace > bottomSpace) {
           direction = "up";
-          height = topSpace;
         } else {
           direction = "down";
-          height = bottomSpace;
         }
       }
       if (direction === "down") {
@@ -20397,7 +20536,7 @@
       if (height) {
         $dom.css("height", height);
       }
-      $dom.removeClass(direction === "down" ? "direction-up" : "direction-down").addClass("direction-" + direction).toggleClass("x-over", boxWidth > dropdownDom.offsetWidth).css("left", left).css("top", top).css("min-width", dropdownDom.offsetWidth).css("max-width", document.body.clientWidth);
+      $dom.removeClass(direction === "down" ? "direction-up" : "direction-down").addClass("direction-" + direction).toggleClass("x-over", boxWidth > dropdownDom.offsetWidth).css("left", left).css("top", top).css("min-width", dropdownDom.offsetWidth).css("max-width", document.body.clientWidth).css("min-height", boxHeight);
       $dom.css({
         zIndex: cola.floatWidget.zIndex()
       });
@@ -20703,6 +20842,7 @@
       weeks = allWeeks.split(",");
       headerDom = $.xCreate({
         tagName: "div",
+        "class": "caption-panel",
         content: [
           {
             tagName: "div",
@@ -20769,7 +20909,6 @@
             content: [
               {
                 tagName: "tr",
-                "class": "header",
                 content: [
                   {
                     tagName: "td",
@@ -21114,6 +21253,8 @@
 
     DatePicker.tagName = "c-datepicker";
 
+    DatePicker.CLASS_NAME = "date input drop";
+
     DatePicker.attributes = {
       displayFormat: {
         defaultValue: DEFAULT_DATE_DISPLAY_FORMAT
@@ -21149,12 +21290,12 @@
           if (!readOnly) {
             value = $(_this._doms.input).val();
             inputFormat = _this._inputFormat || _this._displayFormat || DEFAULT_DATE_DISPLAY_FORMAT;
-            if (inputFormat) {
+            if (inputFormat && value) {
               value = inputFormat + "||" + value;
               xDate = new XDate(value);
               value = xDate.toDate();
-              _this.set("value", value);
             }
+            _this.set("value", value);
           }
         };
       })(this);
@@ -21293,7 +21434,387 @@
 
   })(cola.CustomDropdown);
 
+  cola.YearMonthGrid = (function(superClass) {
+    extend(YearMonthGrid, superClass);
+
+    function YearMonthGrid() {
+      return YearMonthGrid.__super__.constructor.apply(this, arguments);
+    }
+
+    YearMonthGrid.CLASS_NAME = "year-month-grid";
+
+    YearMonthGrid.tagName = "c-yearMonthGrid";
+
+    YearMonthGrid.attributes = {
+      value: {
+        refreshDom: true
+      },
+      autoSelect: {
+        defaultValue: true
+      }
+    };
+
+    YearMonthGrid.events = {
+      cellClick: null,
+      refreshCellDom: null
+    };
+
+    YearMonthGrid.prototype._initDom = function(dom) {
+      var headerDom, i, j, picker, table, td, tr;
+      picker = this;
+      if (this._doms == null) {
+        this._doms = {};
+      }
+      headerDom = $.xCreate({
+        tagName: "div",
+        "class": "header",
+        contextKey: "header",
+        content: [
+          {
+            tagName: "div",
+            "class": "year",
+            content: [
+              {
+                tagName: "div",
+                "class": "button prev",
+                contextKey: "prevYearButton",
+                click: function() {
+                  return picker.prevYear();
+                }
+              }, {
+                tagName: "div",
+                "class": "label",
+                contextKey: "yearLabel"
+              }, {
+                tagName: "div",
+                "class": "button next",
+                contextKey: "nextYearButton",
+                click: function() {
+                  return picker.nextYear();
+                }
+              }
+            ]
+          }
+        ]
+      }, this._doms);
+      table = $.xCreate({
+        tagName: "table",
+        cellSpacing: 0,
+        content: {
+          tagName: "tbody",
+          contextKey: "body"
+        }
+      }, this._doms);
+      i = 0;
+      while (i < 3) {
+        tr = document.createElement("tr");
+        j = 0;
+        while (j < 4) {
+          td = document.createElement("td");
+          this.doRenderCell(td, i, j);
+          tr.appendChild(td);
+          j++;
+        }
+        this._doms.body.appendChild(tr);
+        i++;
+      }
+      $fly(table).on("click", function(event) {
+        var cell, position;
+        position = cola.calendar.getCellPosition(event);
+        if (position && position.element) {
+          if (position.row >= picker._rowCount) {
+            return;
+          }
+          if (picker._autoSelect) {
+            cell = picker._doms.body.rows[position.row].cells[position.column];
+            picker.selectCell(cell);
+          }
+          return picker.fire("cellClick", picker, position);
+        }
+      });
+      dom.appendChild(headerDom);
+      this._doms.tableWrapper = $.xCreate({
+        tagName: "div",
+        "class": "table-wrapper"
+      });
+      this._doms.tableWrapper.appendChild(table);
+      dom.appendChild(this._doms.tableWrapper);
+      return dom;
+    };
+
+    YearMonthGrid.prototype.doFireRefreshEvent = function(eventArg) {
+      this.fire("refreshCellDom", this, eventArg);
+      return this;
+    };
+
+    YearMonthGrid.prototype.refreshHeader = function() {
+      var yearLabel;
+      if (this._doms) {
+        yearLabel = this._doms.yearLabel;
+        return $fly(yearLabel).text(this._year || "");
+      }
+    };
+
+    YearMonthGrid.prototype._doRefreshDom = function() {
+      var date, month, values;
+      date = new Date();
+      if (this._value) {
+        values = this._value.split("-");
+        this._year = parseInt(values[0]);
+        this._month = parseInt(values[1]);
+      } else {
+        if (this._year == null) {
+          this._year = date.getFullYear();
+        }
+        if (this._month == null) {
+          this._month = date.getMonth() + 1;
+        }
+        month = this._month < 10 ? "0" + this._month : this._month;
+        this._value = this._year + "-" + month;
+      }
+      YearMonthGrid.__super__._doRefreshDom.call(this);
+      if (!this._dom) {
+        return;
+      }
+      this.refreshHeader();
+      return this.refreshGrid();
+    };
+
+    YearMonthGrid.prototype.doRenderCell = function(cell, row, column) {
+      var content, monthNames;
+      content = column + 1 + row * 4;
+      monthNames = cola.resource("cola.date.monthNames");
+      $(cell).attr("month", content);
+      cell.appendChild($.xCreate({
+        tagName: "div",
+        content: monthNames.split(",")[content - 1]
+      }));
+    };
+
+    YearMonthGrid.prototype.selectCell = function(cell) {
+      var month, year;
+      month = $(cell).attr("month");
+      year = this._year;
+      if (parseInt(month) < 10) {
+        month = "0" + month;
+      }
+      return this.set("value", year + "-" + month);
+    };
+
+    YearMonthGrid.prototype.setState = function(year, month) {
+      var oldMonth, oldYear;
+      oldYear = this._year;
+      oldMonth = this._month;
+      if (oldYear !== year || oldMonth !== month) {
+        this._year = year;
+        this._month = month;
+        if (this._dom) {
+          this.refreshHeader();
+          return this.refreshGrid();
+        }
+      }
+    };
+
+    YearMonthGrid.prototype.refreshGrid = function() {
+      var $dom, month, values, year;
+      values = this._value.split("-");
+      year = parseInt(values[0]);
+      month = parseInt(values[1]);
+      $dom = $(this._dom);
+      $dom.find(".selected").removeClass("selected");
+      if (this._year === year) {
+        return $($dom.find("td[month='" + month + "']")[0]).addClass("selected");
+      }
+    };
+
+    YearMonthGrid.prototype.prevYear = function() {
+      var month, year;
+      year = this._year;
+      month = this._month;
+      if (year !== void 0 && month !== void 0) {
+        this.setState(year - 1, month);
+      }
+      return this;
+    };
+
+    YearMonthGrid.prototype.setYear = function(newYear) {
+      var month, year;
+      year = this._year;
+      month = this._month;
+      if (year !== void 0 && month !== void 0) {
+        return this.setState(newYear, month);
+      }
+    };
+
+    YearMonthGrid.prototype.nextYear = function() {
+      var month, year;
+      year = this._year;
+      month = this._month;
+      if (year !== void 0 && month !== void 0) {
+        this.setState(year + 1, month);
+      }
+      return this;
+    };
+
+    YearMonthGrid.prototype.onCalDateChange = function() {
+      if (!this._dom) {
+        return this;
+      }
+      return this;
+    };
+
+    return YearMonthGrid;
+
+  })(cola.RenderableElement);
+
+  cola.YearMonthDropDown = (function(superClass) {
+    extend(YearMonthDropDown, superClass);
+
+    function YearMonthDropDown() {
+      return YearMonthDropDown.__super__.constructor.apply(this, arguments);
+    }
+
+    YearMonthDropDown.tagName = "c-yearmonthdropdown";
+
+    YearMonthDropDown.CLASS_NAME = "year-month input date drop";
+
+    YearMonthDropDown.attributes = {
+      icon: {
+        defaultValue: "calendar"
+      }
+    };
+
+    YearMonthDropDown.events = {
+      focus: null,
+      blur: null,
+      keyDown: null,
+      keyPress: null
+    };
+
+    YearMonthDropDown.prototype._initDom = function(dom) {
+      var doPost;
+      YearMonthDropDown.__super__._initDom.call(this, dom);
+      doPost = (function(_this) {
+        return function() {
+          var readOnly, value;
+          readOnly = _this._readOnly;
+          if (!readOnly) {
+            value = $(_this._doms.input).val();
+            _this.set("value", value);
+          }
+        };
+      })(this);
+      $(this._doms.input).on("change", (function(_this) {
+        return function() {
+          doPost();
+        };
+      })(this)).on("focus", (function(_this) {
+        return function() {
+          _this._inputFocused = true;
+          _this._refreshInputValue(_this._value);
+          if (!_this._finalReadOnly) {
+            _this.addClass("focused");
+          }
+          _this.fire("focus", _this);
+        };
+      })(this)).on("blur", (function(_this) {
+        return function() {
+          var entity, propertyDef, ref;
+          _this._inputFocused = false;
+          _this.removeClass("focused");
+          _this._refreshInputValue(_this._value);
+          _this.fire("blur", _this);
+          if ((_this._value == null) || _this._value === "" && ((ref = _this._bindInfo) != null ? ref.isWriteable : void 0)) {
+            propertyDef = _this.getBindingProperty();
+            if ((propertyDef != null ? propertyDef._required : void 0) && propertyDef._validators) {
+              entity = _this._scope.get(_this._bindInfo.entityPath);
+              if (entity) {
+                entity.validate(_this._bindInfo.property);
+              }
+            }
+          }
+        };
+      })(this)).on("keydown", (function(_this) {
+        return function(event) {
+          var arg;
+          arg = {
+            keyCode: event.keyCode,
+            shiftKey: event.shiftKey,
+            ctrlKey: event.ctrlKey,
+            altlKey: event.altlKey,
+            event: event
+          };
+          return _this.fire("keyDown", _this, arg);
+        };
+      })(this)).on("keypress", (function(_this) {
+        return function(event) {
+          var arg;
+          arg = {
+            keyCode: event.keyCode,
+            shiftKey: event.shiftKey,
+            ctrlKey: event.ctrlKey,
+            altlKey: event.altlKey,
+            event: event
+          };
+          if (_this.fire("keyPress", _this, arg) === false) {
+            return;
+          }
+          if (event.keyCode === 13 && isIE11) {
+            return doPost();
+          }
+        };
+      })(this));
+    };
+
+    YearMonthDropDown.prototype._refreshInput = function() {
+      var $inputDom, ref;
+      $inputDom = $fly(this._doms.input);
+      if (this._name) {
+        $inputDom.attr("name", this._name);
+      }
+      $inputDom.attr("placeholder", this.get("placeholder"));
+      $inputDom.prop("readOnly", this._finalReadOnly);
+      if ((ref = this.get("actionButton")) != null) {
+        ref.set("disabled", this._finalReadOnly);
+      }
+      $inputDom.prop("type", "text").css("text-align", "left");
+      this._refreshInputValue(this._value);
+    };
+
+    YearMonthDropDown.prototype.open = function() {
+      var date, value;
+      YearMonthDropDown.__super__.open.call(this);
+      value = this.get("value");
+      if (!value) {
+        date = new Date();
+        value = (date.getFullYear()) + "-" + (date.getMonth() + 1);
+      }
+      return this._dataGrid.set("value", value);
+    };
+
+    YearMonthDropDown.prototype._getDropdownContent = function() {
+      var dateGrid, datePicker;
+      datePicker = this;
+      if (!this._dropdownContent) {
+        this._dataGrid = dateGrid = new cola.YearMonthGrid({
+          cellClick: (function(_this) {
+            return function(self, arg) {
+              return datePicker.close(self.get("value"));
+            };
+          })(this)
+        });
+        this._dropdownContent = dateGrid.getDom();
+      }
+      return this._dropdownContent;
+    };
+
+    return YearMonthDropDown;
+
+  })(cola.CustomDropdown);
+
   cola.registerWidget(cola.DatePicker);
+
+  cola.registerWidget(cola.YearMonthDropDown);
 
   oldErrorTemplate = $.fn.form.settings.templates.error;
 
@@ -21505,6 +22026,175 @@
   cola.Element.mixin(cola.Form, cola.DataWidgetMixin);
 
   cola.registerWidget(cola.Form);
+
+  isIE11 = /Trident\/7\./.test(navigator.userAgent);
+
+  cola.Textarea = (function(superClass) {
+    extend(Textarea, superClass);
+
+    function Textarea() {
+      return Textarea.__super__.constructor.apply(this, arguments);
+    }
+
+    Textarea.CLASS_NAME = "textarea";
+
+    Textarea.attributes = {
+      postOnInput: {
+        type: "boolean",
+        defaultValue: false
+      },
+      placeholder: {
+        refreshDom: true
+      },
+      value: {
+        setter: function(value) {
+          if (this._dataType) {
+            value = this._dataType.parse(value);
+          }
+          return this._setValue(value);
+        }
+      }
+    };
+
+    Textarea.events = {
+      focus: null,
+      blur: null,
+      keyDown: null,
+      keyPress: null
+    };
+
+    Textarea.prototype.destroy = function() {
+      if (!this._destroyed) {
+        Textarea.__super__.destroy.call(this);
+        delete this._doms;
+      }
+    };
+
+    Textarea.prototype._bindSetter = function(bindStr) {
+      var dataType;
+      Textarea.__super__._bindSetter.call(this, bindStr);
+      dataType = this.getBindingDataType();
+      if (dataType) {
+        cola.DataType.dataTypeSetter.call(this, dataType);
+      }
+    };
+
+    Textarea.prototype.focus = function() {
+      var ref;
+      if ((ref = this._doms.input) != null) {
+        ref.focus();
+      }
+    };
+
+    Textarea.prototype._initDom = function(dom) {
+      var doPost, input;
+      Textarea.__super__._initDom.call(this, dom);
+      if (this._doms == null) {
+        this._doms = {};
+      }
+      if (dom.nodeName !== "TEXTAREA") {
+        input = $.xCreate({
+          tagName: "textarea"
+        });
+        this._doms.input = input;
+        dom.appendChild(input);
+      } else {
+        this._doms.input = dom;
+      }
+      doPost = (function(_this) {
+        return function() {
+          var readOnly, value;
+          readOnly = _this._readOnly;
+          if (!readOnly) {
+            value = $(_this._doms.input).val();
+            _this.set("value", value);
+          }
+        };
+      })(this);
+      $(this._doms.input).on("change", (function(_this) {
+        return function() {
+          doPost();
+        };
+      })(this)).on("focus", (function(_this) {
+        return function() {
+          _this._inputFocused = true;
+          _this._refreshInputValue(_this._value);
+          if (!_this._finalReadOnly) {
+            _this.addClass("focused");
+          }
+          _this.fire("focus", _this);
+        };
+      })(this)).on("blur", (function(_this) {
+        return function() {
+          var entity, propertyDef, ref;
+          _this._inputFocused = false;
+          _this.removeClass("focused");
+          _this._refreshInputValue(_this._value);
+          _this.fire("blur", _this);
+          if ((_this._value == null) || _this._value === "" && ((ref = _this._bindInfo) != null ? ref.isWriteable : void 0)) {
+            propertyDef = _this.getBindingProperty();
+            if ((propertyDef != null ? propertyDef._required : void 0) && propertyDef._validators) {
+              entity = _this._scope.get(_this._bindInfo.entityPath);
+              if (entity) {
+                entity.validate(_this._bindInfo.property);
+              }
+            }
+          }
+        };
+      })(this)).on("input", (function(_this) {
+        return function() {
+          if (_this._postOnInput) {
+            doPost();
+          }
+        };
+      })(this)).on("keydown", (function(_this) {
+        return function(event) {
+          var arg;
+          arg = {
+            keyCode: event.keyCode,
+            shiftKey: event.shiftKey,
+            ctrlKey: event.ctrlKey,
+            altlKey: event.altlKey,
+            event: event
+          };
+          return _this.fire("keyDown", _this, arg);
+        };
+      })(this)).on("keypress", (function(_this) {
+        return function(event) {
+          var arg;
+          arg = {
+            keyCode: event.keyCode,
+            shiftKey: event.shiftKey,
+            ctrlKey: event.ctrlKey,
+            altlKey: event.altlKey,
+            event: event
+          };
+          if (_this.fire("keyPress", _this, arg) === false) {
+            return;
+          }
+          if (event.keyCode === 13 && isIE11) {
+            return doPost();
+          }
+        };
+      })(this));
+    };
+
+    Textarea.prototype._refreshInputValue = function(value) {
+      $fly(this._doms.input).val(value != null ? value + "" || "" : void 0);
+    };
+
+    Textarea.prototype._doRefreshDom = function() {
+      if (!this._dom) {
+        return;
+      }
+      Textarea.__super__._doRefreshDom.call(this);
+      this._refreshInputValue(this._value);
+      return $fly(this._doms.input).prop("readOnly", this._readOnly).attr("placeholder", this._placeholder);
+    };
+
+    return Textarea;
+
+  })(cola.AbstractEditor);
 
   cola.AbstractItemGroup = (function(superClass) {
     extend(AbstractItemGroup, superClass);
@@ -22870,7 +23560,7 @@
         return carousel._scroller = new Swipe(carousel._dom, {
           vertical: carousel._orientation === "vertical",
           disableScroll: false,
-          continuous: true,
+          continuous: false,
           callback: function(pos) {
             carousel.setCurrentIndex(pos);
           }
@@ -27900,11 +28590,11 @@
           if (_this._autoExpand) {
             itemDom = _this._findItemDom(evt.currentTarget);
             if (!itemDom) {
-              return;
+              return false;
             }
             node = cola.util.userData(itemDom, "item");
             if (!node) {
-              return;
+              return false;
             }
             if (node.get("expanded")) {
               _this.collapse(node);
@@ -27913,6 +28603,7 @@
             }
             return false;
           }
+          return false;
         };
       })(this));
       itemsScope = this._itemsScope;
@@ -27927,6 +28618,17 @@
             return _this._bind.retrieveChildNodes(_this._rootNode, null, dataCtx);
           };
         })(this);
+      }
+    };
+
+    Tree.prototype._setCurrentItemDom = function(currentItemDom) {
+      var node;
+      if (!currentItemDom) {
+        return;
+      }
+      node = cola.util.userData(currentItemDom, "item");
+      if (node) {
+        return this._setCurrentNode(node);
       }
     };
 
@@ -28133,6 +28835,16 @@
       node.set("expanded", !node.get("expanded"));
       evt.stopPropagation();
       return false;
+    };
+
+    Tree.prototype.findNode = function(entity) {
+      var itemDom, itemId;
+      itemId = cola.Entity._getEntityId(entity);
+      if (!itemId) {
+        return;
+      }
+      itemDom = this._itemDomMap[itemId];
+      return cola.util.userData(itemDom, "item");
     };
 
     Tree.prototype.expand = function(node) {
@@ -28864,7 +29576,7 @@
           contextKey: "table",
           content: [
             {
-              tagName: "colgroup",
+              tagName: "div",
               contextKey: "colgroup",
               span: 100
             }, {
@@ -28941,13 +29653,14 @@
     };
 
     Table.prototype._doRefreshItems = function() {
-      var col, colInfo, colgroup, column, columnConfigs, i, l, len1, len2, n, nextCol, propertyDef, ref, ref1, tbody, tfoot, thead;
+      var col, colInfo, colgroup, column, columnConfigs, dataType, i, l, len1, len2, n, nextCol, propertyDef, ref, ref1, tbody, tfoot, thead;
       if (!this._columnsInfo) {
         return;
       }
-      if (!this._columnsInfo.dataColumns.length && this._dataType && this._dataType instanceof cola.EntityDataType) {
+      dataType = this._getBindDataType();
+      if (!this._columnsInfo.dataColumns.length && dataType && dataType instanceof cola.EntityDataType) {
         columnConfigs = [];
-        ref = this._dataType.getProperties().elements;
+        ref = dataType.getProperties().elements;
         for (l = 0, len1 = ref.length; l < len1; l++) {
           propertyDef = ref[l];
           columnConfigs.push({
@@ -29320,7 +30033,7 @@
       if (this.getListeners("renderCell")) {
         if (this.fire("renderCell", this, {
           item: item,
-          column: colInfo.column,
+          column: column,
           dom: dom,
           scope: itemScope
         }) === false) {
@@ -29957,7 +30670,7 @@
       infoItem = pager._pagerItemMap["info"];
       if (infoItem) {
         infoItemDom = infoItem.nodeType === 1 ? infoItem : infoItem.getDom();
-        $(infoItemDom).text("第" + pageNo + "页/共" + pageCount + "页");
+        $(infoItemDom).text(cola.resource("cola.pager.info", pageNo, pageCount));
       }
       gotoInput = (ref4 = pager._pagerItemMap["goto"]) != null ? ref4.get("control") : void 0;
       if (gotoInput) {
@@ -30056,5 +30769,196 @@
   })(cola.AbstractList);
 
   cola.registerWidget(cola.TimeLine);
+
+  cola.ColorGrid = (function(superClass) {
+    extend(ColorGrid, superClass);
+
+    function ColorGrid() {
+      return ColorGrid.__super__.constructor.apply(this, arguments);
+    }
+
+    ColorGrid.CLASS_NAME = "color-grid";
+
+    ColorGrid.attributes = {
+      bind: {
+        refreshItems: true,
+        setter: function(bindStr) {
+          return this._bindSetter(bindStr);
+        }
+      },
+      columns: {
+        refreshItems: true,
+        defaultValue: 4
+      },
+      highlightCurrentItem: {
+        type: "boolean",
+        defaultValue: true
+      }
+    };
+
+    ColorGrid.TEMPLATES = {
+      "default": {
+        tagName: "li"
+      },
+      "color": {
+        tagName: "div",
+        "c-code": "$default.code"
+      },
+      label: {
+        tagName: "div",
+        "c-bind": "$default.label"
+      }
+    };
+
+    ColorGrid.prototype._initDom = function(dom) {
+      return ColorGrid.__super__._initDom.call(this, dom);
+    };
+
+    ColorGrid.prototype._doRefreshDom = function() {
+      ColorGrid.__super__._doRefreshDom.call(this);
+      if (this._doms) {
+        return $(this._doms.itemsWrapper).addClass("small-block-grid-" + this._columns);
+      }
+    };
+
+    ColorGrid.prototype._createNewItem = function(itemType, item) {
+      var container, contentDom, itemDom, l, len1, name, ref, template;
+      template = this._getTemplate(itemType);
+      itemDom = this._cloneTemplate(template);
+      $fly(itemDom).addClass("item " + itemType);
+      itemDom._itemType = itemType;
+      ref = ["color", "label"];
+      for (l = 0, len1 = ref.length; l < len1; l++) {
+        name = ref[l];
+        template = this._getTemplate(name);
+        contentDom = this._cloneTemplate(template, true);
+        container = $.xCreate({
+          tagName: "div",
+          "class": name
+        });
+        if (name === "color") {
+          contentDom.style.backgroundColor = item.get("code");
+        }
+        container.appendChild(contentDom);
+        itemDom.appendChild(container);
+      }
+      if (!this._currentItem) {
+        this._setCurrentNode(item);
+      }
+      return itemDom;
+    };
+
+    return ColorGrid;
+
+  })(cola.AbstractList);
+
+  cola.ColorEditor = (function(superClass) {
+    extend(ColorEditor, superClass);
+
+    function ColorEditor() {
+      return ColorEditor.__super__.constructor.apply(this, arguments);
+    }
+
+    ColorEditor.tagName = "c-coloreditor";
+
+    ColorEditor.CLASS_NAME = "app-color input drop";
+
+    ColorEditor.TEMPLATES = {
+      "default": {
+        tagName: "li",
+        "c-bind": "$default"
+      },
+      "list": {
+        tagName: "div",
+        contextKey: "flexContent",
+        content: {
+          tagName: "div",
+          contextKey: "list",
+          "c-widget": "listView; columns:3",
+          style: "height:100%;overflow:auto"
+        }
+      }
+    };
+
+    ColorEditor.prototype._doRefreshDom = function() {
+      var value;
+      ColorEditor.__super__._doRefreshDom.call(this);
+      value = this._value;
+      if (this._doms) {
+        this._doms.iconDom.style.backgroundColor = value;
+        this._doms.input.readOnly = true;
+        return this._doms.input.style.borderColor = value;
+      }
+    };
+
+    ColorEditor.prototype._initValueContent = function(valueContent, context) {
+      var template;
+      ColorEditor.__super__._initValueContent.call(this, valueContent, context);
+      if (!valueContent.firstChild) {
+        template = this._getTemplate("default");
+        if (template) {
+          valueContent.appendChild(this._cloneTemplate(template));
+        }
+      }
+    };
+
+    ColorEditor.prototype.open = function() {
+      var list;
+      ColorEditor.__super__.open.call(this);
+      list = this._list;
+      if (list && this._currentItem !== list.get("currentItem")) {
+        list.set("currentItem", this._currentItem);
+      }
+    };
+
+    ColorEditor.prototype._getDropdownContent = function() {
+      var attrBinding, list, template, templateName;
+      if (!this._dropdownContent) {
+        templateName = "list";
+        template = this._getTemplate(templateName);
+        this._dropdownContent = template = cola.xRender(template, this._scope);
+        this._list = list = cola.widget(this._doms.list);
+        list._regTemplate("default", {
+          tagName: "li",
+          content: [
+            {
+              tagName: "div",
+              "c-code": "$default.code",
+              "class": "color"
+            }, {
+              tagName: "div",
+              "c-bind": "$default.label",
+              "class": "label"
+            }
+          ]
+        });
+        list.on("itemClick", (function(_this) {
+          return function() {
+            return _this.close(list.get("currentItem"));
+          };
+        })(this));
+        list.on("renderItem", function(self, arg) {
+          return $(arg.dom).find(".color").css("background-color", arg.item.get("code"));
+        });
+      }
+      attrBinding = this._elementAttrBindings["items"];
+      list = this._list;
+      if (attrBinding) {
+        list.set("bind", attrBinding.expression.raw);
+      } else {
+        list.set("items", this._items);
+      }
+      list.refresh();
+      list.get$Dom().addClass("color-list");
+      return template;
+    };
+
+    return ColorEditor;
+
+  })(cola.AbstractDropdown);
+
+  cola.registerWidget(cola.ColorEditor);
+
+  cola.registerWidget(cola.ColorGrid);
 
 }).call(this);

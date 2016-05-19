@@ -31,13 +31,9 @@ cola((model)->
 			products: {
 				dataType: "Product",
 				provider: {
-					url: "/service/product/",
+					url: "/service/product/?categoryId={{@id}}",
 					pageSize: 5
-					beforeSend: (self, arg)->
-						arg.options.data.categoryId = arg.model.get("categorys.id")
-						NProgress.start();
-					complete: (sefl, arg)->
-						NProgress.done();
+
 				}
 			}
 		}
