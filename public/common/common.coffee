@@ -21,16 +21,29 @@ unless rootApp
 		"service.menus": "./service/menus"
 		"service.user.detail": "./service/user/detail"
 		"menu.exclusive": false
+
 		"message.action":
 			path: "http://cola-ui.com"
 			type: "subWindow"
 			label: "我的消息"
 			closeable: true
+			icon:""
+			icon:"icon menu"
+
 		"task.action":
 			path: "http://cola-ui.com"
 			type: "subWindow"
 			label: "我的任务"
 			closeable: true
+			icon:"icon alarm outline"
+
+		"workbench":
+			path: "http://cola-ui.com"
+			type: "subWindow"
+			label: "我的工作台"
+			closeable: false
+			icon:"icon dashboard"
+
 		"app.logo.path": "./resources/images/logo.png"
 		"app.name": "Cola-UI Client Framework"
 		title: "Cola-Frame"
@@ -60,7 +73,7 @@ App = window.App =
 							path: path
 						icon: config.icon
 						name: path
-						closeable: config.closeable or true
+						closeable: config.closeable
 						caption: config.label
 					})
 					viewTab = cola.widget("viewTab")

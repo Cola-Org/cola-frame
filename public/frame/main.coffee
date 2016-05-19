@@ -197,7 +197,14 @@ cola((model)->
 		$("#frameworkSidebar").find(".menu-item.current-item").removeClass("current-item");
 		$fly(@).addClass("current-item")
 	)
+
 	$("#rightContainer>.layer-dimmer").on("click", ()->
 		cola.widget("subMenuLayer").hide();
 	)
+
+)
+
+cola.ready(()->
+	workbench = App.prop("workbench")
+	if workbench then App.open(workbench.path, workbench)
 )

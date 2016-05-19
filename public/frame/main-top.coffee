@@ -273,3 +273,8 @@ cola((model)->
 		cola.widget("subMenuLayer").hide();
 	)
 )
+
+cola.ready(()->
+	workbench = App.prop("workbench")
+	if workbench then App.open(workbench.path, workbench)
+)
