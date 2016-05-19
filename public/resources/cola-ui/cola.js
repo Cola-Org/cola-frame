@@ -52,7 +52,15 @@
   oldIE = !-[1,];
 
   $.xCreate = xCreate = function(template, context) {
-    var $el, child, content, el, element, elements, l, len1, len2, len3, o, part, q, ref, tagName, templateProcessor;
+    var $el, child, content, el, element, elements, isSimpleValue, l, len1, len2, len3, o, part, q, ref, tagName, templateProcessor;
+    isSimpleValue = function(value) {
+      var type;
+      if (value === null || value === void 0) {
+        return true;
+      }
+      type = typeof value;
+      return type !== "object" && type !== "function" || value instanceof Date;
+    };
     if (template instanceof Array) {
       elements = [];
       for (l = 0, len1 = template.length; l < len1; l++) {
@@ -94,8 +102,8 @@
     setAttrs(el, $el, template, context);
     content = template.content;
     if (content != null) {
-      if (typeof content === "string") {
-        if (content.charAt(0) === '^') {
+      if (isSimpleValue(content)) {
+        if (typeof content === "string" && content.charAt(0) === '^') {
           appendChild(el, document.createElement(content.substring(1)));
         } else {
           $el.text(content);
@@ -104,8 +112,8 @@
         if (content instanceof Array) {
           for (q = 0, len3 = content.length; q < len3; q++) {
             part = content[q];
-            if (typeof part === "string") {
-              if (part.charAt(0) === '^') {
+            if (isSimpleValue(part)) {
+              if (typeof part === "string" && part.charAt(0) === '^') {
                 appendChild(el, document.createElement(part.substring(1)));
               } else {
                 appendChild(el, document.createTextNode(part));
@@ -7421,6 +7429,14 @@
     return _numberWords[number];
   };
 
+  cola.defaultAction.backgroundImage = function(url) {
+    if (url) {
+      return "url(" + url + ")";
+    } else {
+      return "none";
+    }
+  };
+
   cola.AjaxServiceInvoker = (function() {
     function AjaxServiceInvoker(ajaxService1, invokerOptions1) {
       this.ajaxService = ajaxService1;
@@ -10348,7 +10364,7 @@
  * at http://www.bstek.com/contact.
  */
 (function() {
-  var ACTIVE_PINCH_REG, ACTIVE_ROTATE_REG, ALIAS_REGEXP, BLANK_PATH, DEFAULT_DATE_DISPLAY_FORMAT, DEFAULT_DATE_INPUT_FORMAT, DEFAULT_TIME_DISPLAY_FORMAT, DEFAULT_TIME_INPUT_FORMAT, DropBox, LIST_SIZE_PREFIXS, PAN_VERTICAL_events, SAFE_PULL_EFFECT, SAFE_SLIDE_EFFECT, SLIDE_ANIMATION_SPEED, SWIPE_VERTICAL_events, TEMP_TEMPLATE, WIDGET_TAGS_REGISTRY, _columnsSetter, _compileWidgetAttribute, _compileWidgetDom, _createGroupArray, _destroyRenderableElement, _extendWidget, _findWidgetConfig, _getEntityId, _pageCodeMap, _pagesItems, _removeTranslateStyle, containerEmptyChildren, currentDate, currentHours, currentMinutes, currentMonth, currentSeconds, currentYear, dateTimeSlotConfigs, dateTypeConfig, dropdownDialogMargin, emptyRadioGroupItems, isIE11, now, oldErrorTemplate, slotAttributeGetter, slotAttributeSetter,
+  var ACTIVE_PINCH_REG, ACTIVE_ROTATE_REG, ALIAS_REGEXP, BLANK_PATH, DEFAULT_DATE_DISPLAY_FORMAT, DEFAULT_DATE_INPUT_FORMAT, DEFAULT_TIME_DISPLAY_FORMAT, DEFAULT_TIME_INPUT_FORMAT, DropBox, LIST_SIZE_PREFIXS, PAN_VERTICAL_events, SAFE_PULL_EFFECT, SAFE_SLIDE_EFFECT, SLIDE_ANIMATION_SPEED, SWIPE_VERTICAL_events, TEMP_TEMPLATE, TipManager, WIDGET_TAGS_REGISTRY, _columnsSetter, _compileWidgetAttribute, _compileWidgetDom, _createGroupArray, _destroyRenderableElement, _extendWidget, _findWidgetConfig, _getEntityId, _pageCodeMap, _pagesItems, _removeTranslateStyle, containerEmptyChildren, currentDate, currentHours, currentMinutes, currentMonth, currentSeconds, currentYear, dateTimeSlotConfigs, dateTypeConfig, dropdownDialogMargin, emptyRadioGroupItems, isIE11, now, oldErrorTemplate, renderTabs, slotAttributeGetter, slotAttributeSetter,
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
@@ -10434,11 +10450,11 @@
   };
 
   cola.util.hasClass = function(dom, className) {
-    var domClassName, l, len1, name, names;
+    var domClassName, len1, n, name, names;
     names = className.split(/\s+/g);
     domClassName = dom.className ? (" " + dom.className + " ").replace(cola.constants.CLASS_REG, " ") : " ";
-    for (l = 0, len1 = names.length; l < len1; l++) {
-      name = names[l];
+    for (n = 0, len1 = names.length; n < len1; n++) {
+      name = names[n];
       if (domClassName.indexOf(" " + name + " ") < 0) {
         return false;
       }
@@ -10523,11 +10539,11 @@
   };
 
   cola.util.getType = (function() {
-    var classToType, l, len1, name, ref;
+    var classToType, len1, n, name, ref;
     classToType = {};
     ref = "Boolean Number String Function Array Date RegExp Undefined Null".split(" ");
-    for (l = 0, len1 = ref.length; l < len1; l++) {
-      name = ref[l];
+    for (n = 0, len1 = ref.length; n < len1; n++) {
+      name = ref[n];
       classToType["[object " + name + "]"] = name.toLowerCase();
     }
     return function(obj) {
@@ -10734,7 +10750,7 @@
   };
 
   _compileWidgetDom = function(dom, widgetType) {
-    var attr, attrName, config, l, len1, len2, n, prop, ref, removeAttrs;
+    var attr, attrName, config, len1, len2, n, o, prop, ref, removeAttrs;
     if (!widgetType.attributes._inited || !widgetType.events._inited) {
       cola.preprocessClass(widgetType);
     }
@@ -10743,8 +10759,8 @@
     };
     removeAttrs = null;
     ref = dom.attributes;
-    for (l = 0, len1 = ref.length; l < len1; l++) {
-      attr = ref[l];
+    for (n = 0, len1 = ref.length; n < len1; n++) {
+      attr = ref[n];
       attrName = attr.name;
       if (attrName.indexOf("c-") === 0) {
         prop = attrName.slice(2);
@@ -10763,8 +10779,8 @@
       }
     }
     if (removeAttrs) {
-      for (n = 0, len2 = removeAttrs.length; n < len2; n++) {
-        attr = removeAttrs[n];
+      for (o = 0, len2 = removeAttrs.length; o < len2; o++) {
+        attr = removeAttrs[o];
         dom.removeAttribute(attr);
       }
     }
@@ -10772,7 +10788,7 @@
   };
 
   _compileWidgetAttribute = function(scope, dom, context) {
-    var config, importConfig, importName, importNames, ip, iv, l, len1, p, v, widgetConfigStr;
+    var config, importConfig, importName, importNames, ip, iv, len1, n, p, v, widgetConfigStr;
     widgetConfigStr = dom.getAttribute("c-widget");
     if (widgetConfigStr) {
       dom.removeAttribute("c-widget");
@@ -10799,8 +10815,8 @@
           }
         }
         if (importNames) {
-          for (l = 0, len1 = importNames.length; l < len1; l++) {
-            importName = importNames[l];
+          for (n = 0, len1 = importNames.length; n < len1; n++) {
+            importName = importNames[n];
             importConfig = _findWidgetConfig(scope, importName);
             if (importConfig) {
               for (ip in importConfig) {
@@ -10902,7 +10918,7 @@
   cola.registerType("widget", "_default", cola.Widget);
 
   cola.widget = function(config, namespace, model) {
-    var c, constr, e, ele, group, l, len1, len2, n, widget;
+    var c, constr, e, ele, group, len1, len2, n, o, widget;
     if (!config) {
       return null;
     }
@@ -10923,8 +10939,8 @@
         }
       } else {
         group = [];
-        for (l = 0, len1 = ele.length; l < len1; l++) {
-          e = ele[l];
+        for (n = 0, len1 = ele.length; n < len1; n++) {
+          e = ele[n];
           widget = cola.util.userData(e, cola.constants.DOM_ELEMENT_KEY);
           if (widget instanceof cola.Widget && (!model || widget._scope === model)) {
             group.push(widget);
@@ -10941,8 +10957,8 @@
     } else {
       if (config instanceof Array) {
         group = [];
-        for (n = 0, len2 = config.length; n < len2; n++) {
-          c = config[n];
+        for (o = 0, len2 = config.length; o < len2; o++) {
+          c = config[o];
           group.push(cola.widget(c, namespace, model));
         }
         return cola.Element.createGroup(group);
@@ -11072,7 +11088,7 @@
       }
     };
     cls.prototype._initDom = function(dom) {
-      var attr, attrName, cssName, l, len1, ref1, templateDom;
+      var attr, attrName, cssName, len1, n, ref1, templateDom;
       superCls.prototype._initDom.call(this, dom);
       template = this._template;
       if (template && !this._domCreated) {
@@ -11086,8 +11102,8 @@
         templateDom = this.xRender(template);
         if (templateDom) {
           ref1 = dom.attributes;
-          for (l = 0, len1 = ref1.length; l < len1; l++) {
-            attr = ref1[l];
+          for (n = 0, len1 = ref1.length; n < len1; n++) {
+            attr = ref1[n];
             attrName = attr.name;
             if (!attrName === "style") {
               if (!dom.hasAttribute(attrName)) {
@@ -11283,12 +11299,12 @@
       return template;
     },
     _cloneTemplate: function(template, supportMultiNodes) {
-      var fragment, l, len1, templ;
+      var fragment, len1, n, templ;
       if (template instanceof Array) {
         if (supportMultiNodes && template.length > 1) {
           fragment = document.createDocumentFragment();
-          for (l = 0, len1 = template.length; l < len1; l++) {
-            templ = template[l];
+          for (n = 0, len1 = template.length; n < len1; n++) {
+            templ = template[n];
             fragment.appendChild(templ.cloneNode(true));
           }
           return fragment;
@@ -11303,7 +11319,7 @@
 
   cola.DataWidgetMixin = {
     _bindSetter: function(bindStr) {
-      var bindInfo, bindProcessor, expression, i, l, len1, len2, n, p, path, paths, ref;
+      var bindInfo, bindProcessor, expression, i, len1, len2, n, o, p, path, paths, ref;
       if (this._bind === bindStr) {
         return;
       }
@@ -11311,8 +11327,8 @@
         bindInfo = this._bindInfo;
         if (this._watchingPaths) {
           ref = this._watchingPaths;
-          for (l = 0, len1 = ref.length; l < len1; l++) {
-            path = ref[l];
+          for (n = 0, len1 = ref.length; n < len1; n++) {
+            path = ref[n];
             this._scope.data.unbind(path.join("."), this._bindProcessor);
           }
         }
@@ -11375,7 +11391,7 @@
         }
         if (paths) {
           this._watchingPaths = paths;
-          for (i = n = 0, len2 = paths.length; n < len2; i = ++n) {
+          for (i = o = 0, len2 = paths.length; o < len2; i = ++o) {
             p = paths[i];
             this._scope.data.bind(p, bindProcessor);
             paths[i] = p.split(".");
@@ -11389,11 +11405,11 @@
       }
     },
     destroy: function() {
-      var l, len1, path, ref;
+      var len1, n, path, ref;
       if (this._watchingPaths) {
         ref = this._watchingPaths;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-          path = ref[l];
+        for (n = 0, len1 = ref.length; n < len1; n++) {
+          path = ref[n];
           this._scope.data.unbind(path.join("."), this._bindProcessor);
         }
       }
@@ -11433,16 +11449,16 @@
       return this._scope.data.getDataType(this._bind);
     },
     _isRootOfTarget: function(changedPath, targetPath) {
-      var i, isRoot, l, len1, len2, len3, n, o, part, targetPaths;
+      var i, isRoot, len1, len2, len3, n, o, part, q, targetPaths;
       if (!changedPath || !targetPath) {
         return true;
       }
       if (targetPath instanceof Array) {
         targetPaths = targetPath;
-        for (l = 0, len1 = targetPaths.length; l < len1; l++) {
-          targetPath = targetPaths[l];
+        for (n = 0, len1 = targetPaths.length; n < len1; n++) {
+          targetPath = targetPaths[n];
           isRoot = true;
-          for (i = n = 0, len2 = changedPath.length; n < len2; i = ++n) {
+          for (i = o = 0, len2 = changedPath.length; o < len2; i = ++o) {
             part = changedPath[i];
             if (part !== targetPath[i]) {
               isRoot = false;
@@ -11455,7 +11471,7 @@
         }
         return false;
       } else {
-        for (i = o = 0, len3 = changedPath.length; o < len3; i = ++o) {
+        for (i = q = 0, len3 = changedPath.length; q < len3; i = ++q) {
           part = changedPath[i];
           if (part !== targetPath[i]) {
             return false;
@@ -11744,7 +11760,7 @@
     };
 
     RenderableElement.prototype._doRefreshDom = function() {
-      var className, l, len1, name, names;
+      var className, len1, n, name, names;
       cola.util.cancelDelay(this, "_refreshDom");
       if (!this._dom) {
         return;
@@ -11753,8 +11769,8 @@
       className = this.constructor.CLASS_NAME;
       if (className) {
         names = $.trim(className).split(" ");
-        for (l = 0, len1 = names.length; l < len1; l++) {
-          name = names[l];
+        for (n = 0, len1 = names.length; n < len1; n++) {
+          name = names[n];
           this._classNamePool.add(name);
         }
       }
@@ -12092,7 +12108,7 @@
     };
 
     Widget.prototype._doRefreshDom = function() {
-      var l, len1, name, ref;
+      var len1, n, name, ref;
       if (!this._dom) {
         return;
       }
@@ -12103,8 +12119,8 @@
       this._classNamePool.toggle("display-none", !!!this._display);
       if (!this._rendered && this._class) {
         ref = this._class.split(" ");
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-          name = ref[l];
+        for (n = 0, len1 = ref.length; n < len1; n++) {
+          name = ref[n];
           this._classNamePool.add(name);
         }
       }
@@ -12408,11 +12424,11 @@
     };
 
     AbstractContainer.prototype._initDom = function(dom) {
-      var el, l, len1, ref;
+      var el, len1, n, ref;
       if (this._content) {
         ref = this._content;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-          el = ref[l];
+        for (n = 0, len1 = ref.length; n < len1; n++) {
+          el = ref[n];
           this._render(el, "content");
         }
       }
@@ -12440,11 +12456,11 @@
     };
 
     AbstractContainer.prototype._clearContent = function(target) {
-      var el, l, len1, old;
+      var el, len1, n, old;
       old = this["_" + target];
       if (old) {
-        for (l = 0, len1 = old.length; l < len1; l++) {
-          el = old[l];
+        for (n = 0, len1 = old.length; n < len1; n++) {
+          el = old[n];
           if (el instanceof cola.widget) {
             el.destroy();
           }
@@ -12460,11 +12476,11 @@
     };
 
     AbstractContainer.prototype._setContent = function(value, target) {
-      var el, l, len1, result;
+      var el, len1, n, result;
       this._clearContent(target);
       if (value instanceof Array) {
-        for (l = 0, len1 = value.length; l < len1; l++) {
-          el = value[l];
+        for (n = 0, len1 = value.length; n < len1; n++) {
+          el = value[n];
           result = cola.xRender(el, this._scope);
           if (result) {
             this._addContentElement(result, target);
@@ -12526,14 +12542,14 @@
     };
 
     AbstractContainer.prototype.destroy = function() {
-      var child, l, len1, ref;
+      var child, len1, n, ref;
       if (this._destroyed) {
         return;
       }
       if (this._content) {
         ref = this._content;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-          child = ref[l];
+        for (n = 0, len1 = ref.length; n < len1; n++) {
+          child = ref[n];
           if (typeof child.destroy === "function") {
             child.destroy();
           }
@@ -12914,11 +12930,11 @@
       },
       items: {
         setter: function(value) {
-          var item, l, len1;
+          var item, len1, n;
           this.clear();
           if (value instanceof Array) {
-            for (l = 0, len1 = value.length; l < len1; l++) {
-              item = value[l];
+            for (n = 0, len1 = value.length; n < len1; n++) {
+              item = value[n];
               this.addItem(item);
             }
           }
@@ -12927,12 +12943,12 @@
     };
 
     ButtonGroup.prototype._setDom = function(dom, parseChild) {
-      var activeExclusive, item, itemDom, l, len1, ref, ref1;
+      var activeExclusive, item, itemDom, len1, n, ref, ref1;
       ButtonGroup.__super__._setDom.call(this, dom, parseChild);
       if ((ref = this._items) != null ? ref.length : void 0) {
         ref1 = this._items;
-        for (l = 0, len1 = ref1.length; l < len1; l++) {
-          item = ref1[l];
+        for (n = 0, len1 = ref1.length; n < len1; n++) {
+          item = ref1[n];
           itemDom = item.getDom();
           if (itemDom.parentNode !== dom) {
             item.appendTo(this._dom);
@@ -12992,7 +13008,7 @@
     };
 
     ButtonGroup.prototype._resetFluid = function() {
-      var $dom, attrName, fluid, item, items, l, len1, newFluid, oldFluid;
+      var $dom, attrName, fluid, item, items, len1, n, newFluid, oldFluid;
       if (!this._dom) {
         return;
       }
@@ -13001,8 +13017,8 @@
       oldFluid = $dom.attr(attrName);
       newFluid = 0;
       items = this._items || [];
-      for (l = 0, len1 = items.length; l < len1; l++) {
-        item = items[l];
+      for (n = 0, len1 = items.length; n < len1; n++) {
+        item = items[n];
         if (item instanceof cola.Button) {
           newFluid++;
         }
@@ -13065,9 +13081,9 @@
     };
 
     ButtonGroup.prototype.add = function() {
-      var arg, l, len1;
-      for (l = 0, len1 = arguments.length; l < len1; l++) {
-        arg = arguments[l];
+      var arg, len1, n;
+      for (n = 0, len1 = arguments.length; n < len1; n++) {
+        arg = arguments[n];
         this.addItem(arg);
       }
       return this;
@@ -13088,14 +13104,14 @@
     };
 
     ButtonGroup.prototype.destroy = function() {
-      var item, l, len1, ref;
+      var item, len1, n, ref;
       if (this._destroyed) {
         return;
       }
       if (this._items) {
         ref = this._items;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-          item = ref[l];
+        for (n = 0, len1 = ref.length; n < len1; n++) {
+          item = ref[n];
           item.destroy();
         }
         delete this._items;
@@ -13104,11 +13120,11 @@
     };
 
     ButtonGroup.prototype.clear = function() {
-      var item, l, len1, ref, ref1;
+      var item, len1, n, ref, ref1;
       if ((ref = this._items) != null ? ref.length : void 0) {
         ref1 = this._items;
-        for (l = 0, len1 = ref1.length; l < len1; l++) {
-          item = ref1[l];
+        for (n = 0, len1 = ref1.length; n < len1; n++) {
+          item = ref1[n];
           item.destroy();
         }
         this._items = [];
@@ -13862,12 +13878,12 @@
     };
 
     MultiSlotPicker.prototype.doOnResize = function() {
-      var columnCount, dom, flex, flexes, i, index, item, items, l, lastWidth, len1, picker, results, totalFlex, unitWidth, viewWidth, width;
+      var columnCount, dom, flex, flexes, i, index, item, items, lastWidth, len1, n, picker, results, totalFlex, unitWidth, viewWidth, width;
       picker = this;
       items = picker._items || [];
       dom = picker._dom;
       flexes = [];
-      for (index = l = 0, len1 = items.length; l < len1; index = ++l) {
+      for (index = n = 0, len1 = items.length; n < len1; index = ++n) {
         item = items[index];
         width = picker.slotConfigs[index].width || 90;
         flexes.push(width);
@@ -13902,10 +13918,10 @@
     };
 
     MultiSlotPicker.prototype.updateItems = function() {
-      var l, len1, list, ref;
+      var len1, list, n, ref;
       ref = this._slotLists;
-      for (l = 0, len1 = ref.length; l < len1; l++) {
-        list = ref[l];
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        list = ref[n];
         list.refresh();
       }
       return this;
@@ -16223,16 +16239,16 @@
     };
 
     Reveal.prototype._initDom = function(dom) {
-      var container, el, key, l, len1, len2, n, ref, ref1, ref2;
+      var container, el, key, len1, len2, n, o, ref, ref1, ref2;
       Reveal.__super__._initDom.call(this, dom);
       ref = ["visibleContent", "hiddenContent"];
-      for (l = 0, len1 = ref.length; l < len1; l++) {
-        container = ref[l];
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        container = ref[n];
         key = "_" + container;
         if ((ref1 = this[key]) != null ? ref1.length : void 0) {
           ref2 = this[key];
-          for (n = 0, len2 = ref2.length; n < len2; n++) {
-            el = ref2[n];
+          for (o = 0, len2 = ref2.length; o < len2; o++) {
+            el = ref2[o];
             this._render(el, container);
           }
         }
@@ -16276,11 +16292,11 @@
     };
 
     Reveal.prototype._clearContent = function(target) {
-      var el, l, len1, old;
+      var el, len1, n, old;
       old = this["_" + target];
       if (old) {
-        for (l = 0, len1 = old.length; l < len1; l++) {
-          el = old[l];
+        for (n = 0, len1 = old.length; n < len1; n++) {
+          el = old[n];
           if (el instanceof cola.widget) {
             el.destroy();
           }
@@ -16296,11 +16312,11 @@
     };
 
     Reveal.prototype._setContent = function(value, target) {
-      var el, l, len1, result;
+      var el, len1, n, result;
       this._clearContent(target);
       if (value instanceof Array) {
-        for (l = 0, len1 = value.length; l < len1; l++) {
-          el = value[l];
+        for (n = 0, len1 = value.length; n < len1; n++) {
+          el = value[n];
           result = cola.xRender(el, this._scope);
           if (result) {
             this._addContentElement(result, target);
@@ -16484,10 +16500,10 @@
   cola.registerWidget(cola.Segment);
 
   _removeTranslateStyle = function(element) {
-    var l, len1, prefix, ref;
+    var len1, n, prefix, ref;
     ref = ['Moz', 'Webkit', 'O', 'ms'];
-    for (l = 0, len1 = ref.length; l < len1; l++) {
-      prefix = ref[l];
+    for (n = 0, len1 = ref.length; n < len1; n++) {
+      prefix = ref[n];
       element.style[prefix + "Transform"] = "";
     }
     return element.style.transform = "";
@@ -16751,16 +16767,16 @@
     };
 
     Dialog.prototype._initDom = function(dom) {
-      var container, el, key, l, len1, len2, n, ref, ref1, ref2;
+      var container, el, key, len1, len2, n, o, ref, ref1, ref2;
       Dialog.__super__._initDom.call(this, dom);
       ref = ["header", "actions"];
-      for (l = 0, len1 = ref.length; l < len1; l++) {
-        container = ref[l];
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        container = ref[n];
         key = "_" + container;
         if ((ref1 = this[key]) != null ? ref1.length : void 0) {
           ref2 = this[key];
-          for (n = 0, len2 = ref2.length; n < len2; n++) {
-            el = ref2[n];
+          for (o = 0, len2 = ref2.length; o < len2; o++) {
+            el = ref2[o];
             this._render(el, container);
           }
         }
@@ -16900,7 +16916,7 @@
     };
 
     Dialog.prototype._parseDom = function(dom) {
-      var $child, _parseChild, child, className, l, len1, ref;
+      var $child, _parseChild, child, className, len1, n, ref;
       if (this._doms == null) {
         this._doms = {};
       }
@@ -16928,8 +16944,8 @@
           } else {
             $child = $(child);
             ref = ["header", "content", "actions"];
-            for (l = 0, len1 = ref.length; l < len1; l++) {
-              className = ref[l];
+            for (n = 0, len1 = ref.length; n < len1; n++) {
+              className = ref[n];
               if (!$child.hasClass(className)) {
                 continue;
               }
@@ -17182,6 +17198,16 @@
 
   cola.registerWidget(cola.Sidebar);
 
+  renderTabs = [];
+
+  $(window).resize(function() {
+    var len1, n, tab;
+    for (n = 0, len1 = renderTabs.length; n < len1; n++) {
+      tab = renderTabs[n];
+      tab.refreshNavButtons();
+    }
+  });
+
   cola.Tab = (function(superClass) {
     extend(Tab, superClass);
 
@@ -17202,7 +17228,7 @@
           var oldValue;
           oldValue = this._direction;
           if (oldValue && oldValue !== value && this._dom) {
-            this.get$Dom().removeClass(oldValue + "-bar");
+            this.get$Dom().removeClass(oldValue + "-tab");
           }
           this._direction = value;
           return this;
@@ -17210,10 +17236,10 @@
       },
       tabs: {
         setter: function(list) {
-          var l, len1, tab;
+          var len1, n, tab;
           this.clear();
-          for (l = 0, len1 = list.length; l < len1; l++) {
-            tab = list[l];
+          for (n = 0, len1 = list.length; n < len1; n++) {
+            tab = list[n];
             this.addTab(tab);
           }
         }
@@ -17258,13 +17284,184 @@
       }
     };
 
+    Tab.prototype._makeControlBtn = function() {
+      var tabBar, tabControl;
+      tabBar = $(this._dom).find(">.tab-bar");
+      tabControl = this;
+      tabBar.prepend($.xCreate({
+        tagName: "div",
+        "class": "pre-button control-button"
+      }));
+      tabBar.append($.xCreate({
+        tagName: "div",
+        "class": "next-button control-button"
+      }));
+      tabBar.find(">.next-button").on("click", function() {
+        if ($(this).hasClass("disabled")) {
+          return;
+        }
+        return tabControl._doMove(true);
+      });
+      tabBar.find(">.pre-button").on("click", function() {
+        if ($(this).hasClass("disabled")) {
+          return;
+        }
+        return tabControl._doMove(false);
+      });
+    };
+
+    Tab.prototype._getTabButtonsSize = function() {
+      var $dom, buttons, direction, firstLeft, firstTab, firstTop, horizontal, lastLeft, lastTab, lastTop;
+      $dom = this._$dom || $(this._dom);
+      buttons = $dom.find(">.tab-bar>.tabs>.tab-button");
+      direction = this._direction;
+      horizontal = direction === "top" || direction === "bottom";
+      lastTab = buttons[buttons.length - 1];
+      firstTab = buttons[0];
+      if (horizontal) {
+        firstLeft = $(firstTab).offset().left;
+        lastLeft = $(lastTab).offset().left;
+        return lastLeft + $(lastTab).outerWidth() - firstLeft;
+      } else {
+        firstTop = $(firstTab).offset().top;
+        lastTop = $(lastTab).offset().top;
+        return lastTop + $(lastTab).outerHeight() - firstTop;
+      }
+    };
+
+    Tab.prototype.refreshNavButtons = function() {
+      var $dom, buttons, buttonsSize, controlButtons, direction, firstLeft, firstTab, firstTop, horizontal, lastELeft, lastETop, lastTab, left, oldPosition, style, tabBar, tabBarHeight, tabBarWidth, tabsWrap, top, visible;
+      $dom = this._$dom || $(this._dom);
+      buttons = $dom.find(">.tab-bar>.tabs>.tab-button");
+      visible = false;
+      direction = this._direction;
+      tabsWrap = $dom.find(">.tab-bar>.tabs");
+      horizontal = direction === "top" || direction === "bottom";
+      tabBar = $dom.find(">.tab-bar");
+      style = horizontal ? "left" : "top";
+      if (!horizontal) {
+        setTimeout(function() {
+          return tabBar.css("width", tabsWrap.width() + "px");
+        }, 100);
+      }
+      if (buttons.length <= 1) {
+        $dom.find(".control-button").toggleClass("visible", false);
+        tabsWrap.css(style, "0px");
+        return;
+      }
+      lastTab = buttons[buttons.length - 1];
+      firstTab = buttons[0];
+      buttonsSize = this._getTabButtonsSize();
+      if (horizontal) {
+        tabBarWidth = $dom.find(">.tab-bar").innerWidth();
+        firstLeft = $(firstTab).offset().left;
+        visible = tabBarWidth < buttonsSize;
+      } else {
+        tabBarHeight = $dom.find(">.tab-bar").innerHeight();
+        firstTop = $(firstTab).offset().top;
+        visible = tabBarHeight < buttonsSize;
+      }
+      if (visible) {
+        controlButtons = tabBar.find(">.control-button");
+        if (controlButtons.length < 1) {
+          this._makeControlBtn();
+        }
+        if (horizontal) {
+          oldPosition = tabsWrap.css("left");
+          oldPosition = parseInt(oldPosition.replace("px", ""));
+          if (oldPosition === 0) {
+            tabsWrap.css("left", tabBar.find(">.next-button").width() + "px");
+          }
+          left = $dom.find(">.tab-bar").offset().left;
+          lastELeft = $(lastTab).offset().left + $(lastTab).outerWidth();
+          tabBar.find(">.next-button").toggleClass("disabled", lastELeft < left + tabBarWidth);
+          tabBar.find(">.pre-button").toggleClass("disabled", firstLeft > left);
+        } else {
+          oldPosition = tabsWrap.css("top");
+          oldPosition = parseInt(oldPosition.replace("px", ""));
+          tabsWrap.css("left", "0px");
+          if (oldPosition === 0) {
+            tabsWrap.css("top", tabBar.find(">.next-button").height() + "px");
+          }
+          top = $dom.find(">.tab-bar").offset().top;
+          lastETop = $(lastTab).offset().top + $(lastTab).outerHeight();
+          tabBar.find(">.next-button").toggleClass("disabled", lastETop < top + tabBarHeight);
+          tabBar.find(">.pre-button").toggleClass("disabled", firstTop > top);
+        }
+      }
+      $dom.find(".control-button").toggleClass("visible", visible);
+      if (!visible) {
+        tabsWrap.css(style, "0px");
+      }
+    };
+
+    Tab.prototype._doMove = function(next) {
+      var $dom, $tabBar, buttons, controlBtn, direction, firstLeft, firstTab, firstTop, horizontal, l, lastHeight, lastLeft, lastTab, lastTop, lastWidth, oldPosition, size, style, t, tabBarOffset, tabsWrap;
+      $dom = this._$dom || $(this._dom);
+      direction = this._direction;
+      horizontal = direction === "top" || direction === "bottom";
+      style = horizontal ? "left" : "top";
+      size = this._getTabButtonsSize() / $dom.find(">.tab-bar>.tabs>.tab-button").length;
+      if (horizontal) {
+        size = size / 2;
+      }
+      tabsWrap = $dom.find(">.tab-bar>.tabs");
+      oldPosition = tabsWrap.css(style);
+      oldPosition = parseInt(oldPosition.replace("px", ""));
+      if (next) {
+        size = -1 * size;
+      }
+      buttons = $dom.find(">.tab-bar>.tabs>.tab-button");
+      direction = this._direction;
+      horizontal = direction === "top" || direction === "bottom";
+      lastTab = buttons[buttons.length - 1];
+      firstTab = buttons[0];
+      $tabBar = $dom.find(">.tab-bar");
+      tabBarOffset = $tabBar.offset();
+      controlBtn = $tabBar.find(".next-button");
+      if (horizontal) {
+        firstLeft = $(firstTab).offset().left + size;
+        lastLeft = $(lastTab).offset().left + size;
+        lastWidth = $(lastTab).outerWidth();
+        if (next) {
+          l = tabBarOffset.left + $tabBar.outerWidth() - controlBtn.outerWidth();
+          if (lastLeft + lastWidth < l) {
+            size = size + l - (lastLeft + lastWidth);
+          }
+        } else {
+          l = tabBarOffset.left + controlBtn.outerWidth();
+          if (firstLeft > l) {
+            size = size - (firstLeft - l);
+          }
+        }
+      } else {
+        firstTop = $(firstTab).offset().top + size;
+        lastTop = $(lastTab).offset().top + size;
+        lastHeight = $(lastTab).outerHeight();
+        if (next) {
+          t = tabBarOffset.top + $tabBar.outerHeight() - controlBtn.outerHeight();
+          if (lastTop + lastHeight < t) {
+            size = size + t - (lastTop + lastHeight);
+          }
+        } else {
+          t = tabBarOffset.top + controlBtn.outerHeight();
+          if (firstTop > t) {
+            size = size - (firstTop - t);
+          }
+        }
+      }
+      tabsWrap.css(style, (oldPosition + size) + "px");
+      return this.refreshNavButtons();
+    };
+
     Tab.prototype._doRefreshDom = function() {
       if (!this._dom) {
         return;
       }
       Tab.__super__._doRefreshDom.call(this);
-      this._classNamePool.remove("top-bar");
-      this._classNamePool.add(this._direction + "-bar");
+      this._classNamePool.remove("top-tab");
+      this._classNamePool.add(this._direction + "-tab");
+      this.refreshNavButtons();
     };
 
     Tab.prototype.setCurrentTab = function(index) {
@@ -17300,7 +17497,7 @@
     };
 
     Tab.prototype._initDom = function(dom) {
-      var activeExclusive, l, len1, ref, tab;
+      var activeExclusive, len1, n, ref, tab;
       Tab.__super__._initDom.call(this, dom);
       activeExclusive = (function(_this) {
         return function(targetDom) {
@@ -17314,16 +17511,34 @@
       $(dom).delegate("> .tab-bar > .tabs > .tab-button", "click", function(event) {
         return activeExclusive(this, event);
       });
+      renderTabs.push(this);
       if (!this._tabs) {
         return this;
       }
       ref = this._tabs;
-      for (l = 0, len1 = ref.length; l < len1; l++) {
-        tab = ref[l];
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        tab = ref[n];
         this._tabRender(tab);
       }
       this.setCurrentTab(this._currentTab || 0);
+      setTimeout((function(_this) {
+        return function() {
+          return _this.refreshNavButtons();
+        };
+      })(this), 150);
       return this;
+    };
+
+    Tab.prototype.destroy = function() {
+      var i;
+      if (this._destroyed) {
+        return;
+      }
+      i = renderTabs.indexOf(this);
+      if (i > -1) {
+        renderTabs.splice(i, 1);
+      }
+      return Tab.__super__.destroy.call(this);
     };
 
     Tab.prototype._parseTabBarDom = function(dom) {
@@ -17366,7 +17581,7 @@
     };
 
     Tab.prototype._parseDom = function(dom) {
-      var _contents, child, content, item, l, len1, name, parseContents, tab, tabs;
+      var _contents, child, content, item, len1, n, name, parseContents, tab, tabs;
       child = dom.firstChild;
       if (this._doms == null) {
         this._doms = {};
@@ -17397,8 +17612,8 @@
         child = child.nextSibling;
       }
       tabs = this._tabs || [];
-      for (l = 0, len1 = tabs.length; l < len1; l++) {
-        tab = tabs[l];
+      for (n = 0, len1 = tabs.length; n < len1; n++) {
+        tab = tabs[n];
         name = tab.get("name");
         if (name && _contents[name]) {
           item = _contents[name];
@@ -17475,15 +17690,16 @@
       if (this._dom) {
         this._tabRender(tab);
       }
+      this.refreshNavButtons();
       return this;
     };
 
     Tab.prototype.getTab = function(index) {
-      var l, len1, tab, tabs;
+      var len1, n, tab, tabs;
       tabs = this._tabs || [];
       if (typeof index === "string") {
-        for (l = 0, len1 = tabs.length; l < len1; l++) {
-          tab = tabs[l];
+        for (n = 0, len1 = tabs.length; n < len1; n++) {
+          tab = tabs[n];
           if (tab.get("name") === index) {
             return tab;
           }
@@ -17523,17 +17739,18 @@
           $(contentContainer).remove();
         }
       }
+      this.refreshNavButtons();
       return true;
     };
 
     Tab.prototype.clear = function() {
-      var l, len1, tab, tabs;
+      var len1, n, tab, tabs;
       tabs = this._tabs || [];
       if (tabs.length < 1) {
         return this;
       }
-      for (l = 0, len1 = tabs.length; l < len1; l++) {
-        tab = tabs[l];
+      for (n = 0, len1 = tabs.length; n < len1; n++) {
+        tab = tabs[n];
         tab.destroy();
       }
       return this._tabs = [];
@@ -17954,7 +18171,7 @@
     };
 
     Panel.prototype._initDom = function(dom) {
-      var headerContent, l, len1, node, nodes, template, toolsDom;
+      var headerContent, len1, n, node, nodes, template, toolsDom;
       this._regDefaultTempaltes();
       Panel.__super__._initDom.call(this, dom);
       this._headerContent = headerContent = $.xCreate({
@@ -17996,8 +18213,8 @@
           "class": "icon close close-btn"
         }
       ]);
-      for (l = 0, len1 = nodes.length; l < len1; l++) {
-        node = nodes[l];
+      for (n = 0, len1 = nodes.length; n < len1; n++) {
+        node = nodes[n];
         toolsDom.appendChild(node);
       }
       headerContent.appendChild(toolsDom);
@@ -18109,6 +18326,161 @@
     return GroupBox;
 
   })(cola.Panel);
+
+  TipManager = [];
+
+  cola.NotifyTip = (function(superClass) {
+    extend(NotifyTip, superClass);
+
+    function NotifyTip() {
+      return NotifyTip.__super__.constructor.apply(this, arguments);
+    }
+
+    NotifyTip.tagName = "c-notify-tip";
+
+    NotifyTip.CLASS_NAME = "transition hidden notify-tip message";
+
+    NotifyTip.attributes = {
+      type: {
+        defaultValue: "",
+        "enum": ["info", "warning", "error", "success", ""]
+      },
+      message: {
+        refreshDom: true
+      },
+      description: {
+        refreshDom: true
+      },
+      showDuration: null
+    };
+
+    NotifyTip.prototype._initDom = function(dom) {
+      var notifyTip;
+      NotifyTip.__super__._initDom.call(this, dom);
+      notifyTip = this;
+      if (this._doms == null) {
+        this._doms = {};
+      }
+      $(dom).xAppend([
+        {
+          tagName: "i",
+          "class": "close icon",
+          contextKey: "closeBtn"
+        }, {
+          tagName: "div",
+          "class": "header",
+          contextKey: "header"
+        }, {
+          tagName: "p",
+          contextKey: "description"
+        }
+      ], this._doms);
+      return $(this._doms.closeBtn).on("click", function() {
+        return notifyTip.hide();
+      });
+    };
+
+    NotifyTip.prototype._doRefreshDom = function() {
+      if (!this._dom) {
+        return;
+      }
+      NotifyTip.__super__._doRefreshDom.call(this);
+      $(this._doms.header).text(this._message || "");
+      return $(this._doms.description).text(this._description || "");
+    };
+
+    NotifyTip.prototype._doTransition = function(options, callback) {
+      var isShow, notifyTip;
+      notifyTip = this;
+      isShow = options.target === "show";
+      if (isShow) {
+        this.get$Dom().addClass(this._type);
+        if (this._showDuration) {
+          setTimeout(function() {
+            return notifyTip.hide();
+          }, parseInt(this._showDuration));
+        }
+      } else {
+        options.animation = "scale";
+      }
+      return NotifyTip.__super__._doTransition.call(this, options, callback);
+    };
+
+    NotifyTip.prototype._onHide = function() {
+      NotifyTip.__super__._onHide.call(this);
+      return this.destroy();
+    };
+
+    NotifyTip.prototype.close = NotifyTip.hide;
+
+    return NotifyTip;
+
+  })(cola.Layer);
+
+  cola.NotifyTipManager = {
+    show: function(options) {
+      var container, dom, tip;
+      if (typeof options === "string") {
+        options = {
+          message: options
+        };
+      }
+      tip = new cola.NotifyTip(options);
+      dom = tip.getDom();
+      container = $("#c-notify-tip-container");
+      if (container.length === 0) {
+        container = $.xCreate({
+          tagName: "div",
+          id: "c-notify-tip-container"
+        });
+        document.body.appendChild(container);
+      }
+      $(container).append(dom);
+      tip.show();
+      return tip;
+    },
+    info: function(options) {
+      if (typeof options === "string") {
+        options = {
+          message: options
+        };
+      }
+      options.type = "info";
+      return cola.NotifyTipManager.show(options);
+    },
+    warning: function(options) {
+      if (typeof options === "string") {
+        options = {
+          message: options
+        };
+      }
+      options.type = "warning";
+      return cola.NotifyTipManager.show(options);
+    },
+    error: function(options) {
+      if (typeof options === "string") {
+        options = {
+          message: options
+        };
+      }
+      options.type = "error";
+      return cola.NotifyTipManager.show(options);
+    },
+    success: function(options) {
+      if (typeof options === "string") {
+        options = {
+          message: options
+        };
+      }
+      options.type = "success";
+      return cola.NotifyTipManager.show(options);
+    },
+    clear: function() {
+      return $("#c-notify-tip-container").find(">.notify-tip").each(function() {
+        return cola.widget(this).hide();
+      });
+    }
+  };
 
   cola.AbstractEditor = (function(superClass) {
     extend(AbstractEditor, superClass);
@@ -18674,7 +19046,7 @@
     };
 
     AbstractInput.prototype._parseDom = function(dom) {
-      var $actionButtonDom, $labelDom, buttonIndex, child, childConfig, index, inputDom, inputIndex, l, labelIndex, len1, ref, widget;
+      var $actionButtonDom, $labelDom, buttonIndex, child, childConfig, index, inputDom, inputIndex, labelIndex, len1, n, ref, widget;
       if (!dom) {
         return;
       }
@@ -18686,7 +19058,7 @@
       labelIndex = 0;
       childConfig = {};
       ref = dom.childNodes;
-      for (index = l = 0, len1 = ref.length; l < len1; index = ++l) {
+      for (index = n = 0, len1 = ref.length; n < len1; index = ++n) {
         child = ref[index];
         if (child.nodeType !== 1) {
           continue;
@@ -19629,10 +20001,10 @@
       name: null,
       items: {
         setter: function(items) {
-          var item, l, len1;
+          var item, len1, n;
           this.clear();
-          for (l = 0, len1 = items.length; l < len1; l++) {
-            item = items[l];
+          for (n = 0, len1 = items.length; n < len1; n++) {
+            item = items[n];
             this._addItem(item);
           }
           return this;
@@ -19643,12 +20015,12 @@
         defaultValue: "radio",
         refreshDom: true,
         setter: function(value) {
-          var item, l, len1, ref;
+          var item, len1, n, ref;
           this._type = value;
           if (this._items) {
             ref = this._items;
-            for (l = 0, len1 = ref.length; l < len1; l++) {
-              item = ref[l];
+            for (n = 0, len1 = ref.length; n < len1; n++) {
+              item = ref[n];
               item.set("type", value);
             }
           }
@@ -19658,7 +20030,7 @@
     };
 
     RadioGroup.prototype._doRefreshDom = function() {
-      var item, l, len1, ref, value;
+      var item, len1, n, ref, value;
       if (!this._dom) {
         return;
       }
@@ -19668,8 +20040,8 @@
         return;
       }
       ref = this._items;
-      for (l = 0, len1 = ref.length; l < len1; l++) {
-        item = ref[l];
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        item = ref[n];
         if (item.get("value") === value) {
           item.set("checked", true);
           break;
@@ -19678,14 +20050,14 @@
     };
 
     RadioGroup.prototype._initDom = function(dom) {
-      var item, itemDom, l, len1, ref;
+      var item, itemDom, len1, n, ref;
       RadioGroup.__super__._initDom.call(this, dom);
       if (!this._items) {
         return;
       }
       ref = this._items;
-      for (l = 0, len1 = ref.length; l < len1; l++) {
-        item = ref[l];
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        item = ref[n];
         itemDom = item.getDom();
         if (itemDom.parentNode === this._dom) {
           continue;
@@ -19751,14 +20123,14 @@
     };
 
     RadioGroup.prototype.getRadioButton = function(index) {
-      var item, l, len1, ref;
+      var item, len1, n, ref;
       if (!this._items) {
         return;
       }
       if (typeof index === "string") {
         ref = this._items;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-          item = ref[l];
+        for (n = 0, len1 = ref.length; n < len1; n++) {
+          item = ref[n];
           if (item.get("value") === index) {
             return;
           }
@@ -19786,27 +20158,27 @@
     };
 
     RadioGroup.prototype.clear = function() {
-      var item, l, len1, ref;
+      var item, len1, n, ref;
       if (!this._items) {
         return;
       }
       ref = this._items;
-      for (l = 0, len1 = ref.length; l < len1; l++) {
-        item = ref[l];
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        item = ref[n];
         item.destroy();
       }
       return this._items = [];
     };
 
     RadioGroup.prototype.destroy = function() {
-      var item, l, len1, ref;
+      var item, len1, n, ref;
       if (this._destroyed) {
         return this;
       }
       if (this._items) {
         ref = this._items;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-          item = ref[l];
+        for (n = 0, len1 = ref.length; n < len1; n++) {
+          item = ref[n];
           item.destroy();
         }
         delete this._items;
@@ -20267,7 +20639,7 @@
     };
 
     AbstractDropdown.prototype._initValueContent = function(valueContent, context) {
-      var l, len1, property, t, template;
+      var len1, n, property, t, template;
       property = this._textProperty || this._valueProperty;
       if (property) {
         context.defaultPath += "." + property;
@@ -20275,8 +20647,8 @@
       template = this._getTemplate("value-content");
       if (template) {
         if (template instanceof Array) {
-          for (l = 0, len1 = template.length; l < len1; l++) {
-            t = template[l];
+          for (n = 0, len1 = template.length; n < len1; n++) {
+            t = template[n];
             valueContent.appendChild(t);
           }
         } else {
@@ -20508,15 +20880,20 @@
       clientWidth = document.body.offsetWidth;
       clientHeight = document.body.clientHeight;
       bottomSpace = clientHeight - rect.top - dropdownDom.clientHeight;
-      height = 0;
       if (bottomSpace >= boxHeight) {
         direction = "down";
       } else {
         topSpace = rect.top;
         if (topSpace > bottomSpace) {
           direction = "up";
+          if (boxHeight > topSpace) {
+            height = topSpace;
+          }
         } else {
           direction = "down";
+          if (boxHeight > bottomSpace) {
+            height = bottomSpace;
+          }
         }
       }
       if (direction === "down") {
@@ -20536,7 +20913,7 @@
       if (height) {
         $dom.css("height", height);
       }
-      $dom.removeClass(direction === "down" ? "direction-up" : "direction-down").addClass("direction-" + direction).toggleClass("x-over", boxWidth > dropdownDom.offsetWidth).css("left", left).css("top", top).css("min-width", dropdownDom.offsetWidth).css("max-width", document.body.clientWidth).css("min-height", boxHeight);
+      $dom.removeClass(direction === "down" ? "direction-up" : "direction-down").addClass("direction-" + direction).toggleClass("x-over", boxWidth > dropdownDom.offsetWidth).css("left", left).css("top", top).css("min-width", dropdownDom.offsetWidth).css("max-width", document.body.clientWidth);
       $dom.css({
         zIndex: cola.floatWidget.zIndex()
       });
@@ -20803,7 +21180,7 @@
       return DateGrid.__super__.constructor.apply(this, arguments);
     }
 
-    DateGrid.CLASS_NAME = "calendar";
+    DateGrid.CLASS_NAME = "calendar mild";
 
     DateGrid.attributes = {
       columnCount: {
@@ -21425,6 +21802,7 @@
             };
           })(this)
         });
+        dateGrid.setCurrentDate(new Date());
         this._dropdownContent = dateGrid.getDom();
       }
       return this._dropdownContent;
@@ -21939,7 +22317,7 @@
     };
 
     Form.prototype._refreshState = function() {
-      var errors, keyMessage, l, len1, m, messages, state, type;
+      var errors, keyMessage, len1, m, messages, n, state, type;
       if (!this._$dom) {
         return;
       }
@@ -21951,8 +22329,8 @@
         errors.length = 0;
         messages = this._messageHolder.findMessages(null, type);
         if (messages) {
-          for (l = 0, len1 = messages.length; l < len1; l++) {
-            m = messages[l];
+          for (n = 0, len1 = messages.length; n < len1; n++) {
+            m = messages[n];
             if (m.text) {
               errors.push(m.text);
             }
@@ -21970,7 +22348,7 @@
     };
 
     Form.prototype._resetEntityMessages = function() {
-      var entity, l, len1, message, messageHolder, messages;
+      var entity, len1, message, messageHolder, messages, n;
       if (!this._$dom) {
         return;
       }
@@ -21980,8 +22358,8 @@
       if (entity) {
         messages = entity.findMessages();
         if (messages) {
-          for (l = 0, len1 = messages.length; l < len1; l++) {
-            message = messages[l];
+          for (n = 0, len1 = messages.length; n < len1; n++) {
+            message = messages[n];
             messageHolder.add("fields", message);
           }
         }
@@ -21989,12 +22367,12 @@
     };
 
     Form.prototype.setMessages = function(messages) {
-      var l, len1, message, messageHolder;
+      var len1, message, messageHolder, n;
       messageHolder = this._messageHolder;
       messageHolder.clear();
       if (messages) {
-        for (l = 0, len1 = messages.length; l < len1; l++) {
-          message = messages[l];
+        for (n = 0, len1 = messages.length; n < len1; n++) {
+          message = messages[n];
           messageHolder.add("$", message);
         }
       }
@@ -22202,10 +22580,10 @@
     AbstractItemGroup.attributes = {
       items: {
         setter: function(value) {
-          var item, l, len1;
+          var item, len1, n;
           this.clearItems();
-          for (l = 0, len1 = value.length; l < len1; l++) {
-            item = value[l];
+          for (n = 0, len1 = value.length; n < len1; n++) {
+            item = value[n];
             this.addItem(item);
           }
           return this;
@@ -22258,13 +22636,13 @@
     };
 
     AbstractItemGroup.prototype._itemsRender = function() {
-      var item, l, len1, ref;
+      var item, len1, n, ref;
       if (!this._items) {
         return;
       }
       ref = this._items;
-      for (l = 0, len1 = ref.length; l < len1; l++) {
-        item = ref[l];
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        item = ref[n];
         this._addItemToDom(item);
       }
     };
@@ -22319,13 +22697,13 @@
     };
 
     AbstractItemGroup.prototype.clearItems = function() {
-      var item, l, len1, ref;
+      var item, len1, n, ref;
       if (this._items.length === 0) {
         return this;
       }
       ref = this._items;
-      for (l = 0, len1 = ref.length; l < len1; l++) {
-        item = ref[l];
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        item = ref[n];
         if (item instanceof cola.Widget) {
           item.destroy();
         } else {
@@ -23029,10 +23407,10 @@
       sections: {
         refreshDom: true,
         setter: function(value) {
-          var l, len1, section;
+          var len1, n, section;
           this.clear();
-          for (l = 0, len1 = value.length; l < len1; l++) {
-            section = value[l];
+          for (n = 0, len1 = value.length; n < len1; n++) {
+            section = value[n];
             this.addSection(section);
           }
           return this;
@@ -23060,12 +23438,12 @@
     };
 
     Breadcrumb.prototype._initDom = function(dom) {
-      var active, activeSection, l, len1, ref, ref1, section;
+      var active, activeSection, len1, n, ref, ref1, section;
       Breadcrumb.__super__._initDom.call(this, dom);
       if ((ref = this._sections) != null ? ref.length : void 0) {
         ref1 = this._sections;
-        for (l = 0, len1 = ref1.length; l < len1; l++) {
-          section = ref1[l];
+        for (n = 0, len1 = ref1.length; n < len1; n++) {
+          section = ref1[n];
           this._rendSection(section);
           if (section.get("active")) {
             active = section;
@@ -23168,7 +23546,7 @@
     };
 
     Breadcrumb.prototype._doChange = function(section) {
-      var l, len1, ref, s, targetDom, targetSection;
+      var len1, n, ref, s, targetDom, targetSection;
       if (section.nodeType === 1) {
         targetDom = section;
       } else if (section instanceof cola.breadcrumb.Section) {
@@ -23188,8 +23566,8 @@
       });
       targetSection = cola.widget(targetDom);
       ref = this._sections;
-      for (l = 0, len1 = ref.length; l < len1; l++) {
-        s = ref[l];
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        s = ref[n];
         if (s !== targetSection) {
           s.set("active", false);
         }
@@ -23279,13 +23657,13 @@
     };
 
     Breadcrumb.prototype.getSection = function(index) {
-      var el, l, len1, section, sections;
+      var el, len1, n, section, sections;
       sections = this._sections || [];
       if (typeof index === "number") {
         section = sections[index];
       } else if (typeof index === "string") {
-        for (l = 0, len1 = sections.length; l < len1; l++) {
-          el = sections[l];
+        for (n = 0, len1 = sections.length; n < len1; n++) {
+          el = sections[n];
           if (index === el.get("text")) {
             section = el;
             break;
@@ -23802,14 +24180,14 @@
     Menu.attributes = {
       items: {
         setter: function(value) {
-          var item, l, len1, results;
+          var item, len1, n, results;
           if (this["_items"]) {
             this.clearItems();
           }
           if (value) {
             results = [];
-            for (l = 0, len1 = value.length; l < len1; l++) {
-              item = value[l];
+            for (n = 0, len1 = value.length; n < len1; n++) {
+              item = value[n];
               results.push(this.addItem(item));
             }
             return results;
@@ -23822,14 +24200,14 @@
       },
       rightItems: {
         setter: function(value) {
-          var item, l, len1, results;
+          var item, len1, n, results;
           if (this["_rightItems"]) {
             this.clearRightItems();
           }
           if (value) {
             results = [];
-            for (l = 0, len1 = value.length; l < len1; l++) {
-              item = value[l];
+            for (n = 0, len1 = value.length; n < len1; n++) {
+              item = value[n];
               results.push(this.addRightItem(item));
             }
             return results;
@@ -23920,14 +24298,14 @@
     };
 
     Menu.prototype._initDom = function(dom) {
-      var container, item, itemDom, l, len1, len2, menu, menuItems, n, rItemDom, rightMenuItems;
+      var container, item, itemDom, len1, len2, menu, menuItems, n, o, rItemDom, rightMenuItems;
       menuItems = this._items;
       rightMenuItems = this._rightItems;
       menu = this;
       if (menuItems) {
         container = this._getItemsContainer();
-        for (l = 0, len1 = menuItems.length; l < len1; l++) {
-          item = menuItems[l];
+        for (n = 0, len1 = menuItems.length; n < len1; n++) {
+          item = menuItems[n];
           itemDom = item.getDom();
           if (itemDom.parentNode !== container) {
             container.appendChild(itemDom);
@@ -23939,8 +24317,8 @@
           this._rightMenuDom = this._createRightMenu();
           dom.appendChild(this._rightMenuDom);
         }
-        for (n = 0, len2 = rightMenuItems.length; n < len2; n++) {
-          item = rightMenuItems[n];
+        for (o = 0, len2 = rightMenuItems.length; o < len2; o++) {
+          item = rightMenuItems[o];
           rItemDom = item.getDom();
           if (rItemDom.parentNode !== this._rightMenuDom) {
             this._rightMenuDom.appendChild(rItemDom);
@@ -24140,11 +24518,11 @@
     };
 
     Menu.prototype.clearItems = function() {
-      var item, l, len1, menuItems;
+      var item, len1, menuItems, n;
       menuItems = this._items;
       if (menuItems != null ? menuItems.length : void 0) {
-        for (l = 0, len1 = menuItems.length; l < len1; l++) {
-          item = menuItems[l];
+        for (n = 0, len1 = menuItems.length; n < len1; n++) {
+          item = menuItems[n];
           item.destroy();
         }
         this._items = [];
@@ -24153,11 +24531,11 @@
     };
 
     Menu.prototype.clearRightItems = function() {
-      var item, l, len1, menuItems;
+      var item, len1, menuItems, n;
       menuItems = this._rightItems;
       if (menuItems != null ? menuItems.length : void 0) {
-        for (l = 0, len1 = menuItems.length; l < len1; l++) {
-          item = menuItems[l];
+        for (n = 0, len1 = menuItems.length; n < len1; n++) {
+          item = menuItems[n];
           item.destroy();
         }
         this._rightItems = [];
@@ -25129,10 +25507,10 @@
       steps: {
         refreshDom: true,
         setter: function(value) {
-          var l, len1, step;
+          var len1, n, step;
           this.clear();
-          for (l = 0, len1 = value.length; l < len1; l++) {
-            step = value[l];
+          for (n = 0, len1 = value.length; n < len1; n++) {
+            step = value[n];
             if (step instanceof cola.steps.Step) {
               this.addStep(step);
             } else if (step.constructor === Object.prototype.constructor) {
@@ -25189,14 +25567,14 @@
     };
 
     Steps.prototype._setDom = function(dom, parseChild) {
-      var l, len1, ref, ref1, step, stepDom;
+      var len1, n, ref, ref1, step, stepDom;
       Steps.__super__._setDom.call(this, dom, parseChild);
       if (!((ref = this._steps) != null ? ref.length : void 0)) {
         return;
       }
       ref1 = this._steps;
-      for (l = 0, len1 = ref1.length; l < len1; l++) {
-        step = ref1[l];
+      for (n = 0, len1 = ref1.length; n < len1; n++) {
+        step = ref1[n];
         stepDom = step.getDom();
         if (stepDom.parentNode !== this._dom) {
           step.appendTo(this._dom);
@@ -25263,11 +25641,11 @@
     };
 
     Steps.prototype.setCurrent = function(step) {
-      var currentIndex, el, index, l, len1, ref;
+      var currentIndex, el, index, len1, n, ref;
       currentIndex = step;
       if (typeof step === "string") {
         ref = this._steps;
-        for (index = l = 0, len1 = ref.length; l < len1; index = ++l) {
+        for (index = n = 0, len1 = ref.length; n < len1; index = ++n) {
           el = ref[index];
           if (step === el.get("content")) {
             currentIndex = index;
@@ -25304,9 +25682,9 @@
     };
 
     Steps.prototype.add = function() {
-      var arg, l, len1, step;
-      for (l = 0, len1 = arguments.length; l < len1; l++) {
-        arg = arguments[l];
+      var arg, len1, n, step;
+      for (n = 0, len1 = arguments.length; n < len1; n++) {
+        arg = arguments[n];
         step = arg;
         if (step instanceof cola.steps.Step) {
           this.addStep(step);
@@ -25453,7 +25831,7 @@
     };
 
     Step.prototype._parseDom = function(dom) {
-      var $cc, $child, cc, child, l, len1, parseContent, parseDescription, parseTitle, ref;
+      var $cc, $child, cc, child, len1, n, parseContent, parseDescription, parseTitle, ref;
       if (this._doms == null) {
         this._doms = {};
       }
@@ -25509,8 +25887,8 @@
             if ($child.hasClass("content")) {
               this._doms.contentDom = child;
               ref = child.childNodes;
-              for (l = 0, len1 = ref.length; l < len1; l++) {
-                cc = ref[l];
+              for (n = 0, len1 = ref.length; n < len1; n++) {
+                cc = ref[n];
                 if (child.nodeType !== 1) {
                   continue;
                 }
@@ -26675,7 +27053,7 @@
     };
 
     ListView.prototype._doRefreshDom = function(dom) {
-      var classNames, column, columns, i, itemsWrapper, l, len1;
+      var classNames, column, columns, i, itemsWrapper, len1, n;
       if (!this._dom) {
         return;
       }
@@ -26685,8 +27063,8 @@
         columns = this._columns || "row";
         columns = columns.split(" ");
         i = 0;
-        for (l = 0, len1 = columns.length; l < len1; l++) {
-          column = columns[l];
+        for (n = 0, len1 = columns.length; n < len1; n++) {
+          column = columns[n];
           if (column === "") {
             continue;
           }
@@ -26782,7 +27160,7 @@
     };
 
     ListView.prototype._refreshGroupDom = function(groupDom, group, parentScope) {
-      var currentItemDom, documentFragment, groupHeaderDom, groupId, groupScope, item, itemDom, itemType, itemsWrapper, l, len1, nextItemDom, oldGroup, ref;
+      var currentItemDom, documentFragment, groupHeaderDom, groupId, groupScope, item, itemDom, itemType, itemsWrapper, len1, n, nextItemDom, oldGroup, ref;
       if (parentScope == null) {
         parentScope = this._itemsScope;
       }
@@ -26824,8 +27202,8 @@
       documentFragment = null;
       currentItemDom = itemsWrapper.firstChild;
       ref = group.items;
-      for (l = 0, len1 = ref.length; l < len1; l++) {
-        item = ref[l];
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        item = ref[n];
         itemType = this._getItemType(item);
         itemDom = null;
         if (currentItemDom) {
@@ -27037,7 +27415,7 @@
     };
 
     ListView.prototype._refreshIndexBar = function() {
-      var clearCurrent, currentItemDom, documentFragment, goIndex, group, groups, i, indexBar, itemDom, l, len1, list, nextDom;
+      var clearCurrent, currentItemDom, documentFragment, goIndex, group, groups, i, indexBar, itemDom, len1, list, n, nextDom;
       list = this;
       indexBar = this._doms.indexBar;
       if (!indexBar) {
@@ -27117,7 +27495,7 @@
       documentFragment = null;
       currentItemDom = indexBar.firstChild;
       groups = this._realItems;
-      for (i = l = 0, len1 = groups.length; l < len1; i = ++l) {
+      for (i = n = 0, len1 = groups.length; n < len1; i = ++n) {
         group = groups[i];
         if (currentItemDom) {
           itemDom = currentItemDom;
@@ -27702,7 +28080,7 @@
           hasChild = true;
         }
       }
-      if (funcs.length && callback) {
+      if (funcs.length) {
         cola.util.waitForAll(funcs, {
           scope: this,
           complete: function(success, result) {
@@ -27727,26 +28105,24 @@
                 childItems = this._child._expression.evaluate(parentNode._scope, "never", dataCtx);
                 originChildItems = dataCtx.originData;
               }
-              if (hasChild) {
-                this._wrapChildItems(parentNode, recursiveItems, originRecursiveItems, childItems, originChildItems);
-              } else {
-                parentNode._hasChild = false;
-              }
+              this._wrapChildItems(parentNode, recursiveItems, originRecursiveItems, childItems, originChildItems);
+              parentNode._hasChild = hasChild;
               if (typeof (base = parentNode._itemsScope).onItemsRefresh === "function") {
                 base.onItemsRefresh();
               }
-              cola.callback(callback, true);
+              if (callback) {
+                cola.callback(callback, true);
+              }
             } else {
-              cola.callback(callback, false, result);
+              if (callback) {
+                cola.callback(callback, false, result);
+              }
             }
           }
         });
       } else {
-        if (hasChild) {
-          this._wrapChildItems(parentNode, recursiveItems, originRecursiveItems, childItems, originChildItems);
-        } else {
-          parentNode._hasChild = false;
-        }
+        this._wrapChildItems(parentNode, recursiveItems, originRecursiveItems, childItems, originChildItems);
+        parentNode._hasChild = hasChild;
         if (typeof (base = parentNode._itemsScope).onItemsRefresh === "function") {
           base.onItemsRefresh();
         }
@@ -27882,11 +28258,11 @@
     }
 
     Node.prototype.destroy = function() {
-      var child, l, len1, ref, ref1;
+      var child, len1, n, ref, ref1;
       if (this._children) {
         ref = this._children;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-          child = ref[l];
+        for (n = 0, len1 = ref.length; n < len1; n++) {
+          child = ref[n];
           child.destroy();
         }
       }
@@ -28651,6 +29027,9 @@
         }
       }
       this._currentNode = node;
+      if (this._currentItemAlias) {
+        this._scope.set(this._currentItemAlias, node != null ? node._data : void 0);
+      }
       if (node) {
         itemDom = this._itemDomMap[node._id];
         if (itemDom && this._highlightCurrentItem) {
@@ -28688,9 +29067,6 @@
           nodeDom.appendChild(contentDom);
         }
       }
-      if (!this._currentNode) {
-        this._setCurrentNode(node);
-      }
       return itemDom;
     };
 
@@ -28703,7 +29079,11 @@
     };
 
     Tree.prototype._refreshItemDom = function(itemDom, node, parentScope) {
-      var checkbox, checkboxDom, nodeDom, nodeScope, tree;
+      var checkbox, checkboxDom, collapsed, nodeDom, nodeScope, tree;
+      nodeScope = cola.util.userData(itemDom, "scope");
+      if ((nodeScope != null ? nodeScope.data.getTargetData() : void 0) !== node) {
+        collapsed = true;
+      }
       nodeScope = Tree.__super__._refreshItemDom.call(this, itemDom, node, parentScope);
       node._scope = nodeScope;
       if (!itemDom._binded) {
@@ -28722,24 +29102,29 @@
           }
         }
       }
-      if (node.get("expanded")) {
+      if (!collapsed && node.get("expanded")) {
         if (node._hasExpanded) {
           this._refreshChildNodes(itemDom, node);
         } else {
           this.expand(node);
         }
       } else {
+        if (collapsed) {
+          this.collapse(node, true);
+        }
         nodeDom = itemDom.firstChild;
         $fly(nodeDom).toggleClass("leaf", node.get("hasChild") === false);
       }
-      if (node === this._currentNode && this._highlightCurrentItem) {
+      if (!this._currentNode) {
+        this._setCurrentNode(node);
+      } else if (node === this._currentNode && this._highlightCurrentItem) {
         $fly(itemDom).addClass("current");
       }
       return nodeScope;
     };
 
     Tree.prototype._refreshChildNodes = function(parentItemDom, parentNode, hidden) {
-      var currentItemDom, documentFragment, itemDom, itemType, itemsScope, l, len1, nextItemDom, node, nodesWrapper, ref;
+      var currentItemDom, documentFragment, itemDom, itemType, itemsScope, len1, n, nextItemDom, node, nodesWrapper, ref;
       nodesWrapper = parentItemDom.lastChild;
       if (!$fly(nodesWrapper).hasClass("child-nodes")) {
         nodesWrapper = $.xCreate({
@@ -28760,8 +29145,8 @@
       currentItemDom = nodesWrapper.firstChild;
       if (parentNode._children) {
         ref = parentNode._children;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-          node = ref[l];
+        for (n = 0, len1 = ref.length; n < len1; n++) {
+          node = ref[n];
           itemType = this._getItemType(node);
           if (currentItemDom) {
             while (currentItemDom) {
@@ -28847,8 +29232,11 @@
       return cola.util.userData(itemDom, "item");
     };
 
-    Tree.prototype.expand = function(node) {
+    Tree.prototype.expand = function(node, noAnimation) {
       var itemDom, itemsScope, nodeDom, tree;
+      if (noAnimation == null) {
+        noAnimation = true;
+      }
       itemDom = this._itemDomMap[node._id];
       if (!itemDom) {
         return;
@@ -28877,14 +29265,18 @@
       nodeDom = itemDom.firstChild;
       $fly(nodeDom).addClass("expanding");
       node._bind.retrieveChildNodes(node, function() {
-        var $nodesWrapper, brotherNode, l, len1, ref, ref1;
+        var $nodesWrapper, brotherNode, len1, n, ref, ref1;
         $fly(nodeDom).removeClass("expanding");
         if (node._children) {
           tree._refreshChildNodes(itemDom, node, true);
           $fly(nodeDom).addClass("expanded");
           $nodesWrapper = $fly(itemDom.lastChild);
           if ($nodesWrapper.hasClass("child-nodes")) {
-            $nodesWrapper.slideDown(150);
+            if (noAnimation) {
+              $nodesWrapper.show();
+            } else {
+              $nodesWrapper.slideDown(150);
+            }
           }
         } else {
           $fly(nodeDom).addClass("leaf");
@@ -28893,8 +29285,8 @@
         node._hasExpanded = true;
         if (tree._autoCollapse && ((ref = node._parent) != null ? ref._children : void 0)) {
           ref1 = node._parent._children;
-          for (l = 0, len1 = ref1.length; l < len1; l++) {
-            brotherNode = ref1[l];
+          for (n = 0, len1 = ref1.length; n < len1; n++) {
+            brotherNode = ref1[n];
             if (brotherNode !== node && brotherNode.get("expanded")) {
               tree.collapse(brotherNode);
             }
@@ -28903,8 +29295,11 @@
       });
     };
 
-    Tree.prototype.collapse = function(node) {
+    Tree.prototype.collapse = function(node, noAnimation) {
       var $nodesWrapper, itemDom, parent;
+      if (noAnimation == null) {
+        noAnimation = true;
+      }
       itemDom = this._itemDomMap[node._id];
       if (!itemDom) {
         return;
@@ -28922,9 +29317,25 @@
       $fly(itemDom.firstChild).removeClass("expanded");
       $nodesWrapper = $fly(itemDom.lastChild);
       if ($nodesWrapper.hasClass("child-nodes")) {
-        $nodesWrapper.slideUp(150);
+        if (noAnimation) {
+          $nodesWrapper.hide();
+        } else {
+          $nodesWrapper.slideUp(150);
+        }
       }
       node._expanded = false;
+    };
+
+    Tree.prototype._refreshItems = function() {
+      var itemDom;
+      if (this._currentNode) {
+        itemDom = this._itemDomMap[this._currentNode._id];
+        delete this._currentNode;
+        if (itemDom) {
+          $fly(itemDom).removeClass("current");
+        }
+      }
+      return Tree.__super__._refreshItems.call(this);
     };
 
     Tree.prototype._onItemRemove = function(arg) {
@@ -28958,7 +29369,7 @@
     Tree.prototype._onCurrentItemChange = null;
 
     Tree.prototype._resetNodeAutoCheckedState = function(node) {
-      var c, checkableCount, checkedCount, child, halfCheck, l, len1, ref;
+      var c, checkableCount, checkedCount, child, halfCheck, len1, n, ref;
       if (node._bind._checkedProperty && node._bind._autoCheckChildren) {
         if (!this._autoChecking) {
           this._autoCheckingParent = true;
@@ -28969,8 +29380,8 @@
           checkableCount = 0;
           halfCheck = false;
           ref = node._children;
-          for (l = 0, len1 = ref.length; l < len1; l++) {
-            child = ref[l];
+          for (n = 0, len1 = ref.length; n < len1; n++) {
+            child = ref[n];
             if (child._bind._checkedProperty) {
               checkableCount++;
               c = child.get("checked");
@@ -29000,7 +29411,7 @@
     };
 
     Tree.prototype._nodeCheckedChanged = function(node, processChildren, processParent) {
-      var checked, child, l, len1, oldChecked, ref;
+      var checked, child, len1, n, oldChecked, ref;
       if (processChildren && node._children && node._bind._autoCheckChildren) {
         if (!this._autoChecking) {
           this._autoCheckingChildren = true;
@@ -29010,8 +29421,8 @@
           this._autoChecking = true;
           checked = node.get("checked");
           ref = node._children;
-          for (l = 0, len1 = ref.length; l < len1; l++) {
-            child = ref[l];
+          for (n = 0, len1 = ref.length; n < len1; n++) {
+            child = ref[n];
             if (child._bind._checkedProperty) {
               oldChecked = child.get("checked");
               if (oldChecked !== checked) {
@@ -29033,18 +29444,18 @@
     };
 
     Tree.prototype.getCheckedNodes = function() {
-      var child, l, len1, nodes, ref;
+      var child, len1, n, nodes, ref;
       nodes = [];
       ({
         collectCheckNodes: function(node) {
-          var child, l, len1, ref;
+          var child, len1, n, ref;
           if (node._bind._checkedProperty && node.get("checked")) {
             nodes.push(node);
           }
           if (node._children) {
             ref = node._children;
-            for (l = 0, len1 = ref.length; l < len1; l++) {
-              child = ref[l];
+            for (n = 0, len1 = ref.length; n < len1; n++) {
+              child = ref[n];
               collectCheckNodes(child);
             }
           }
@@ -29052,8 +29463,8 @@
       });
       if (this._rootNode) {
         ref = this._rootNode._children;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-          child = ref[l];
+        for (n = 0, len1 = ref.length; n < len1; n++) {
+          child = ref[n];
           collectCheckNodes(child);
         }
       }
@@ -29143,12 +29554,12 @@
     };
 
     TableGroupColumn.prototype._setTable = function(table) {
-      var column, l, len1, ref;
+      var column, len1, n, ref;
       TableGroupColumn.__super__._setTable.call(this, table);
       if (this._columns) {
         ref = this._columns;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-          column = ref[l];
+        for (n = 0, len1 = ref.length; n < len1; n++) {
+          column = ref[n];
           column._setTable(table);
         }
       }
@@ -29323,18 +29734,18 @@
   })(cola.TableContentColumn);
 
   _columnsSetter = function(table, columnConfigs) {
-    var column, columnConfig, columns, l, len1, len2, n, ref;
+    var column, columnConfig, columns, len1, len2, n, o, ref;
     if (table != null ? table._columns : void 0) {
       ref = table._columns;
-      for (l = 0, len1 = ref.length; l < len1; l++) {
-        column = ref[l];
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        column = ref[n];
         column._setTable(null);
       }
     }
     columns = [];
     if (columnConfigs) {
-      for (n = 0, len2 = columnConfigs.length; n < len2; n++) {
-        columnConfig = columnConfigs[n];
+      for (o = 0, len2 = columnConfigs.length; o < len2; o++) {
+        columnConfig = columnConfigs[o];
         if (!columnConfig) {
           continue;
         }
@@ -29458,9 +29869,9 @@
     };
 
     AbstractTable.prototype._collectionColumnsInfo = function() {
-      var col, collectColumnInfo, columnsInfo, expression, l, len1, ref;
+      var col, collectColumnInfo, columnsInfo, expression, len1, n, ref;
       collectColumnInfo = function(column, context, deepth) {
-        var bind, col, cols, info, l, len1, ref, width, widthType;
+        var bind, col, cols, info, len1, n, ref, width, widthType;
         info = {
           level: deepth,
           column: column
@@ -29469,8 +29880,8 @@
           if (column._columns) {
             info.columns = cols = [];
             ref = column._columns;
-            for (l = 0, len1 = ref.length; l < len1; l++) {
-              col = ref[l];
+            for (n = 0, len1 = ref.length; n < len1; n++) {
+              col = ref[n];
               if (!col._visible) {
                 continue;
               }
@@ -29539,8 +29950,8 @@
           columnsInfo.alias = expression.alias;
         }
         ref = this._columns;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-          col = ref[l];
+        for (n = 0, len1 = ref.length; n < len1; n++) {
+          col = ref[n];
           if (!col._visible) {
             continue;
           }
@@ -29576,7 +29987,7 @@
           contextKey: "table",
           content: [
             {
-              tagName: "div",
+              tagName: "colgroup",
               contextKey: "colgroup",
               span: 100
             }, {
@@ -29653,7 +30064,7 @@
     };
 
     Table.prototype._doRefreshItems = function() {
-      var col, colInfo, colgroup, column, columnConfigs, dataType, i, l, len1, len2, n, nextCol, propertyDef, ref, ref1, tbody, tfoot, thead;
+      var col, colInfo, colgroup, column, columnConfigs, dataType, i, len1, len2, n, nextCol, o, propertyDef, ref, ref1, tbody, tfoot, thead;
       if (!this._columnsInfo) {
         return;
       }
@@ -29661,8 +30072,8 @@
       if (!this._columnsInfo.dataColumns.length && dataType && dataType instanceof cola.EntityDataType) {
         columnConfigs = [];
         ref = dataType.getProperties().elements;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-          propertyDef = ref[l];
+        for (n = 0, len1 = ref.length; n < len1; n++) {
+          propertyDef = ref[n];
           columnConfigs.push({
             bind: propertyDef._property
           });
@@ -29672,7 +30083,7 @@
       colgroup = this._doms.colgroup;
       nextCol = colgroup.firstChild;
       ref1 = this._columnsInfo.dataColumns;
-      for (i = n = 0, len2 = ref1.length; n < len2; i = ++n) {
+      for (i = o = 0, len2 = ref1.length; o < len2; i = ++o) {
         colInfo = ref1[i];
         col = nextCol;
         if (!col) {
@@ -29741,10 +30152,10 @@
       if (this._columnsInfo.selectColumns) {
         cola.util.delay(this, "refreshHeaderCheckbox", 100, (function(_this) {
           return function() {
-            var colInfo, l, len1, ref;
+            var colInfo, len1, n, ref;
             ref = _this._columnsInfo.selectColumns;
-            for (l = 0, len1 = ref.length; l < len1; l++) {
-              colInfo = ref[l];
+            for (n = 0, len1 = ref.length; n < len1; n++) {
+              colInfo = ref[n];
               colInfo.column.refreshHeaderCheckbox();
             }
           };
@@ -29760,10 +30171,10 @@
       if (this._columnsInfo.selectColumns) {
         cola.util.delay(this, "refreshHeaderCheckbox", 100, (function(_this) {
           return function() {
-            var colInfo, l, len1, ref;
+            var colInfo, len1, n, ref;
             ref = _this._columnsInfo.selectColumns;
-            for (l = 0, len1 = ref.length; l < len1; l++) {
-              colInfo = ref[l];
+            for (n = 0, len1 = ref.length; n < len1; n++) {
+              colInfo = ref[n];
               colInfo.column.refreshHeaderCheckbox();
             }
           };
@@ -29772,7 +30183,7 @@
     };
 
     Table.prototype._refreshHeader = function(thead) {
-      var cell, colInfo, column, contentWrapper, fragment, i, isNew, j, l, len, len1, row, rowInfo, rowInfos;
+      var cell, colInfo, column, contentWrapper, fragment, i, isNew, j, len, len1, n, row, rowInfo, rowInfos;
       fragment = null;
       rowInfos = this._columnsInfo.rows;
       i = 0;
@@ -29789,7 +30200,7 @@
           fragment.appendChild(row);
         }
         rowInfo = rowInfos[i];
-        for (j = l = 0, len1 = rowInfo.length; l < len1; j = ++l) {
+        for (j = n = 0, len1 = rowInfo.length; n < len1; j = ++n) {
           colInfo = rowInfo[j];
           column = colInfo.column;
           cell = row.cells[j];
@@ -29889,13 +30300,13 @@
     };
 
     Table.prototype._refreshFooter = function(tfoot) {
-      var cell, colInfo, colInfos, column, contentWrapper, i, isNew, l, len1, row;
+      var cell, colInfo, colInfos, column, contentWrapper, i, isNew, len1, n, row;
       colInfos = this._columnsInfo.dataColumns;
       row = tfoot.rows[0];
       if (!row) {
         row = document.createElement("tr");
       }
-      for (i = l = 0, len1 = colInfos.length; l < len1; i = ++l) {
+      for (i = n = 0, len1 = colInfos.length; n < len1; i = ++n) {
         colInfo = colInfos[i];
         column = colInfo.column;
         cell = row.cells[i];
@@ -29971,7 +30382,7 @@
     };
 
     Table.prototype._doRefreshItemDom = function(itemDom, item, itemScope) {
-      var cell, colInfo, colInfos, column, contentWrapper, i, isNew, itemType, l, len1;
+      var cell, colInfo, colInfos, column, contentWrapper, i, isNew, itemType, len1, n;
       itemType = itemDom._itemType;
       if (this.getListeners("renderRow")) {
         if (this.fire("renderRow", this, {
@@ -29984,7 +30395,7 @@
       }
       if (itemType === "default") {
         colInfos = this._columnsInfo.dataColumns;
-        for (i = l = 0, len1 = colInfos.length; l < len1; i = ++l) {
+        for (i = n = 0, len1 = colInfos.length; n < len1; i = ++n) {
           colInfo = colInfos[i];
           column = colInfo.column;
           cell = itemDom.cells[i];
@@ -30092,10 +30503,10 @@
     };
 
     Table.prototype._refreshFakeRow = function(row) {
-      var cell, colInfo, i, l, len1, nextCell, ref;
+      var cell, colInfo, i, len1, n, nextCell, ref;
       nextCell = row.firstChild;
       ref = this._columnsInfo.dataColumns;
-      for (i = l = 0, len1 = ref.length; l < len1; i = ++l) {
+      for (i = n = 0, len1 = ref.length; n < len1; i = ++n) {
         colInfo = ref[i];
         cell = nextCell;
         if (!cell) {
@@ -30429,15 +30840,15 @@
     };
 
     Pager.prototype._parsePageItem = function(childNode, right) {
-      var beforeChild, itemConfig, itemDom, l, len1, menuItem, pageCode, pageItem, pageItemKey, propName, results;
+      var beforeChild, itemConfig, itemDom, len1, menuItem, n, pageCode, pageItem, pageItemKey, propName, results;
       pageCode = $fly(childNode).attr("page-code");
       if (!pageCode) {
         return;
       }
       if (pageCode === "pages") {
         results = [];
-        for (l = 0, len1 = _pagesItems.length; l < len1; l++) {
-          pageItemKey = _pagesItems[l];
+        for (n = 0, len1 = _pagesItems.length; n < len1; n++) {
+          pageItemKey = _pagesItems[n];
           pageItem = this._pagerItemConfig[pageItemKey];
           if (pageItemKey === "firstPage") {
             pageItem.dom = childNode;
@@ -30571,11 +30982,11 @@
     };
 
     Pager.prototype._createItem = function(config, floatRight) {
-      var itemConfig, l, len1, menuItem, pageItem, pageItemKey, propName;
+      var itemConfig, len1, menuItem, n, pageItem, pageItemKey, propName;
       if (typeof config === "string") {
         if (config === "pages") {
-          for (l = 0, len1 = _pagesItems.length; l < len1; l++) {
-            pageItemKey = _pagesItems[l];
+          for (n = 0, len1 = _pagesItems.length; n < len1; n++) {
+            pageItemKey = _pagesItems[n];
             pageItem = this._pagerItemConfig[pageItemKey];
             if (pageItemKey === "info") {
               menuItem = new cola.menu.ControlMenuItem();
@@ -30741,14 +31152,14 @@
     };
 
     TimeLine.prototype._createNewItem = function(itemType, item) {
-      var container, contentDom, itemDom, l, len1, name, ref, template;
+      var container, contentDom, itemDom, len1, n, name, ref, template;
       template = this._getTemplate(itemType);
       itemDom = this._cloneTemplate(template);
       $fly(itemDom).addClass("item " + itemType);
       itemDom._itemType = itemType;
       ref = ["content", "icon", "label"];
-      for (l = 0, len1 = ref.length; l < len1; l++) {
-        name = ref[l];
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        name = ref[n];
         template = this._getTemplate(name);
         contentDom = this._cloneTemplate(template, true);
         container = $.xCreate({
@@ -30769,196 +31180,5 @@
   })(cola.AbstractList);
 
   cola.registerWidget(cola.TimeLine);
-
-  cola.ColorGrid = (function(superClass) {
-    extend(ColorGrid, superClass);
-
-    function ColorGrid() {
-      return ColorGrid.__super__.constructor.apply(this, arguments);
-    }
-
-    ColorGrid.CLASS_NAME = "color-grid";
-
-    ColorGrid.attributes = {
-      bind: {
-        refreshItems: true,
-        setter: function(bindStr) {
-          return this._bindSetter(bindStr);
-        }
-      },
-      columns: {
-        refreshItems: true,
-        defaultValue: 4
-      },
-      highlightCurrentItem: {
-        type: "boolean",
-        defaultValue: true
-      }
-    };
-
-    ColorGrid.TEMPLATES = {
-      "default": {
-        tagName: "li"
-      },
-      "color": {
-        tagName: "div",
-        "c-code": "$default.code"
-      },
-      label: {
-        tagName: "div",
-        "c-bind": "$default.label"
-      }
-    };
-
-    ColorGrid.prototype._initDom = function(dom) {
-      return ColorGrid.__super__._initDom.call(this, dom);
-    };
-
-    ColorGrid.prototype._doRefreshDom = function() {
-      ColorGrid.__super__._doRefreshDom.call(this);
-      if (this._doms) {
-        return $(this._doms.itemsWrapper).addClass("small-block-grid-" + this._columns);
-      }
-    };
-
-    ColorGrid.prototype._createNewItem = function(itemType, item) {
-      var container, contentDom, itemDom, l, len1, name, ref, template;
-      template = this._getTemplate(itemType);
-      itemDom = this._cloneTemplate(template);
-      $fly(itemDom).addClass("item " + itemType);
-      itemDom._itemType = itemType;
-      ref = ["color", "label"];
-      for (l = 0, len1 = ref.length; l < len1; l++) {
-        name = ref[l];
-        template = this._getTemplate(name);
-        contentDom = this._cloneTemplate(template, true);
-        container = $.xCreate({
-          tagName: "div",
-          "class": name
-        });
-        if (name === "color") {
-          contentDom.style.backgroundColor = item.get("code");
-        }
-        container.appendChild(contentDom);
-        itemDom.appendChild(container);
-      }
-      if (!this._currentItem) {
-        this._setCurrentNode(item);
-      }
-      return itemDom;
-    };
-
-    return ColorGrid;
-
-  })(cola.AbstractList);
-
-  cola.ColorEditor = (function(superClass) {
-    extend(ColorEditor, superClass);
-
-    function ColorEditor() {
-      return ColorEditor.__super__.constructor.apply(this, arguments);
-    }
-
-    ColorEditor.tagName = "c-coloreditor";
-
-    ColorEditor.CLASS_NAME = "app-color input drop";
-
-    ColorEditor.TEMPLATES = {
-      "default": {
-        tagName: "li",
-        "c-bind": "$default"
-      },
-      "list": {
-        tagName: "div",
-        contextKey: "flexContent",
-        content: {
-          tagName: "div",
-          contextKey: "list",
-          "c-widget": "listView; columns:3",
-          style: "height:100%;overflow:auto"
-        }
-      }
-    };
-
-    ColorEditor.prototype._doRefreshDom = function() {
-      var value;
-      ColorEditor.__super__._doRefreshDom.call(this);
-      value = this._value;
-      if (this._doms) {
-        this._doms.iconDom.style.backgroundColor = value;
-        this._doms.input.readOnly = true;
-        return this._doms.input.style.borderColor = value;
-      }
-    };
-
-    ColorEditor.prototype._initValueContent = function(valueContent, context) {
-      var template;
-      ColorEditor.__super__._initValueContent.call(this, valueContent, context);
-      if (!valueContent.firstChild) {
-        template = this._getTemplate("default");
-        if (template) {
-          valueContent.appendChild(this._cloneTemplate(template));
-        }
-      }
-    };
-
-    ColorEditor.prototype.open = function() {
-      var list;
-      ColorEditor.__super__.open.call(this);
-      list = this._list;
-      if (list && this._currentItem !== list.get("currentItem")) {
-        list.set("currentItem", this._currentItem);
-      }
-    };
-
-    ColorEditor.prototype._getDropdownContent = function() {
-      var attrBinding, list, template, templateName;
-      if (!this._dropdownContent) {
-        templateName = "list";
-        template = this._getTemplate(templateName);
-        this._dropdownContent = template = cola.xRender(template, this._scope);
-        this._list = list = cola.widget(this._doms.list);
-        list._regTemplate("default", {
-          tagName: "li",
-          content: [
-            {
-              tagName: "div",
-              "c-code": "$default.code",
-              "class": "color"
-            }, {
-              tagName: "div",
-              "c-bind": "$default.label",
-              "class": "label"
-            }
-          ]
-        });
-        list.on("itemClick", (function(_this) {
-          return function() {
-            return _this.close(list.get("currentItem"));
-          };
-        })(this));
-        list.on("renderItem", function(self, arg) {
-          return $(arg.dom).find(".color").css("background-color", arg.item.get("code"));
-        });
-      }
-      attrBinding = this._elementAttrBindings["items"];
-      list = this._list;
-      if (attrBinding) {
-        list.set("bind", attrBinding.expression.raw);
-      } else {
-        list.set("items", this._items);
-      }
-      list.refresh();
-      list.get$Dom().addClass("color-list");
-      return template;
-    };
-
-    return ColorEditor;
-
-  })(cola.AbstractDropdown);
-
-  cola.registerWidget(cola.ColorEditor);
-
-  cola.registerWidget(cola.ColorGrid);
 
 }).call(this);
