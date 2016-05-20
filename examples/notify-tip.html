@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" type="text/css"
+		  href="../resources/cola-ui/semantic.min.css">
+	<link rel="stylesheet" type="text/css" href="../resources/cola-ui/cola.min.css">
+	<script type="text/javascript" src="http://code.jquery.com/jquery-2.2.3.js"></script>
+	<script type="text/javascript" src="../resources/cola-ui/3rd.min.js"></script>
+	<script type="text/javascript" src="../resources/cola-ui/semantic.min.js"></script>
+	<script type="text/javascript" src="../resources/cola-ui/cola.js"></script>
+</head>
+<body>
+<div c-widget="button; caption:default; click:show"></div>
+<div c-widget="button; caption:info; click:info"></div>
+<div c-widget="button; caption:warning; click:warning"></div>
+<div c-widget="button; caption:error; click:error"></div>
+<div c-widget="button; caption:success; click:success"></div>
+<div c-widget="button; caption:clear; click:clear"></div>
+<script type="text/javascript">
+	cola(function (model) {
+		model.action({
+			show:function () {
+				cola.NotifyTipManager.show({
+					message: "系统消息",
+					description: "今晚19：00准时看新闻联播哦！",
+					showDuration: 5000
+				})
+			},
+			info: function () {
+				cola.NotifyTipManager.info({
+					message: "系统消息",
+					description: "今晚19：00准时看新闻联播哦！",
+					showDuration: 5000
+				})
+			},
+			warning: function () {
+				cola.NotifyTipManager.warning({
+					message: "系统警告",
+					description: "您所执行的后台任务出现警告请查看控制台！"
+				})
+			},
+			error: function () {
+				cola.NotifyTipManager.error({
+					message: "系统报错",
+					description: "您所执行的后台任务出现错误请查看控制台！"
+				})
+			},
+			success: function () {
+				cola.NotifyTipManager.success({
+					message: "提交成功",
+					description: "后台任务执行成功！"
+				})
+			},
+			clear: function () {
+				cola.NotifyTipManager.clear()
+			}
+		})
+
+	});
+</script>
+</body>
+</html>
