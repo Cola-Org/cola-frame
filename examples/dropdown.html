@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" type="text/css"
+		  href="../resources/cola-ui/semantic.min.css">
+	<link rel="stylesheet" type="text/css" href="../resources/cola-ui/cola.min.css">
+	<script type="text/javascript" src="http://code.jquery.com/jquery-2.2.3.js"></script>
+	<script type="text/javascript" src="../resources/cola-ui/3rd.min.js"></script>
+	<script type="text/javascript" src="../resources/cola-ui/semantic.min.js"></script>
+	<script type="text/javascript" src="../resources/cola-ui/cola.js"></script>
+</head>
+<body>
+<div c-widget="button; caption:Create; click:create"></div>
+<div id=""></div>
+
+<div id="panel"></div>
+<script type="text/javascript">
+	cola(function (model) {
+		model.set("items", [
+			{
+				k: "01", v: "Alex"
+			},
+			{
+				k: "02", v: "Benny"
+			}
+		]);
+		model.action({
+			create: function () {
+				var dropDown = new cola.Dropdown({
+					$type: "dropdown",
+					filterable: false,
+					items: "{{item in items}}",
+					valueProperty: "k",
+					textProperty: "v"
+//					icon:"setting"
+				});
+				$("#panel").append(dropDown.getDom())
+			}
+
+		})
+
+	});
+</script>
+</body>
+</html>
