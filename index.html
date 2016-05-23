@@ -213,11 +213,11 @@
 	</ul>
 	<p>如果你希望改变这个服务的路径可以在common.js中修改Cola Frame的<code>service.login</code>参数。</p>
 	<p>该接口的Response的结构是这样的...</p>
-<pre><code>{
+	<pre><code>{
 	type: true/false,    // 登录是否成功
 	message: &quot;&quot;    // 如果登录失败则输出失败的原因
-	}
-</code></pre><h3 >登出</h3>
+}</code></pre>
+	<h3 >登出</h3>
 	<p>Cola Shell已经默认提供好了一套登录界面，如果不使用Cola Shell提供的登录界面，那么你可以直接跳过这一段内容。
 		如果要使用这套界面你只需要在后台为它定义一个登录的服务接口就好了。</p>
 	<ul>
@@ -229,8 +229,7 @@
 <pre><code>{
 	type: true/false,    // 登出是否成功
 	message: &quot;&quot;    // 如果登录失败则输出失败的原因
-	}
-</code></pre><h3 >拉取消息</h3>
+}</code></pre><h3 >拉取消息</h3>
 	<p>用于获得后台消息的接口。</p>
 	<ul>
 		<li>URL:<code>./service/message/pull</code>。</li>
@@ -240,14 +239,14 @@
 	<p>该接口的Response的结构是这样的...</p>
 <pre><code>[
 	{
-	type:&quot;message&quot;,
-	content:12
+		type:&quot;message&quot;,
+		content:12
 	},
 	{
-	type:&quot;task&quot;,
-	content:8
+		type:&quot;task&quot;,
+		content:8
 	}
-	]
+]
 </code></pre><h3 >获得用户详细信息</h3>
 	<p>用于获得获取登录用户信息的接口。</p>
 	<ul>
@@ -256,11 +255,11 @@
 	</ul>
 	<p>如果不想使用这个路径的话可以在common.js中修改Cola Frame的<code>service.menus</code>参数。</p>
 	<p>该接口的Response的结构是这样的...</p>
-	<pre><code>    {
-		id: &quot;u0001&quot;
-		name: &quot;Alex Tong&quot;
-		avatar: &quot;/resources/images/avatars/alex.png&quot;
-		}
+	<pre><code>{
+	id: &quot;u0001&quot;
+	name: &quot;Alex Tong&quot;
+	avatar: &quot;/resources/images/avatars/alex.png&quot;
+}
 	</code></pre>
 
 	<footer class="site-footer">
