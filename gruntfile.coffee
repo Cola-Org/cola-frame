@@ -22,9 +22,7 @@ module.exports = (grunt) ->
 					{
 						expand: true
 						cwd: "views/"
-						src: ["**/*.jade"
-#						,"example/*.jade"
-						]
+						src: ["**/*.jade"]
 						dest: "<%=configure.dest%>"
 						ext: ".html"
 					}
@@ -38,9 +36,7 @@ module.exports = (grunt) ->
 				files: [{
 					expand: true
 					cwd: "public/"
-					src: ["**/*.coffee"
-#					,"!example/*.coffee"
-					]
+					src: ["**/*.coffee"]
 					dest: "<%=configure.dest%>"
 					ext: ".js"
 				}]
@@ -51,7 +47,6 @@ module.exports = (grunt) ->
 					expand: true
 					cwd: "public/"
 					src: ["**/*.less",
-#					      "!example/*.less",
 					      "!**/.*.less"]
 					dest: "<%=configure.dest%>"
 					ext: ".css"
@@ -154,7 +149,5 @@ module.exports = (grunt) ->
 			"copy"
 			"coffee"
 			"less"
-#			"cssmin"
-#			"uglify"
 		])
 	)

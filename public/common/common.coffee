@@ -27,22 +27,22 @@ unless rootApp
 			type: "subWindow"
 			label: "我的消息"
 			closeable: true
-			icon:""
-			icon:"icon menu"
+			icon: ""
+			icon: "icon menu"
 
 		"task.action":
 			path: "http://cola-ui.com"
 			type: "subWindow"
 			label: "我的任务"
 			closeable: true
-			icon:"icon alarm outline"
+			icon: "icon alarm outline"
 
 		"workbench":
 			path: "http://cola-ui.com"
 			type: "subWindow"
 			label: "我的工作台"
 			closeable: false
-			icon:"icon dashboard"
+			icon: "icon dashboard"
 
 		"app.logo.path": "./resources/images/logo.png"
 		"app.name": "Cola-UI Client Framework"

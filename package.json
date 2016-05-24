@@ -1,6 +1,6 @@
 {
   "name": "cola-frame",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "start": "coffee ./bin/www"
