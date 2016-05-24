@@ -18394,6 +18394,9 @@
       notifyTip = this;
       isShow = options.target === "show";
       if (isShow) {
+        if (cola.device.mobile) {
+          options.animation = "scale";
+        }
         this.get$Dom().addClass(this._type);
         if (this._showDuration) {
           setTimeout(function() {
@@ -18407,8 +18410,13 @@
     };
 
     NotifyTip.prototype._onHide = function() {
+      var container;
       NotifyTip.__super__._onHide.call(this);
-      return this.destroy();
+      this.destroy();
+      container = $("#c-notify-tip-container");
+      if (container.children().length === 0) {
+        return container.remove();
+      }
     };
 
     NotifyTip.prototype.close = NotifyTip.hide;
@@ -29084,9 +29092,9 @@
     };
 
     Tree.prototype._refreshItemDom = function(itemDom, node, parentScope) {
-      var checkbox, checkboxDom, collapsed, nodeDom, nodeScope, tree;
+      var checkbox, checkboxDom, checkedPropValue, collapsed, dataPath, nodeDom, nodeScope, tree;
       nodeScope = cola.util.userData(itemDom, "scope");
-      if ((nodeScope != null ? nodeScope.data.getTargetData() : void 0) !== node) {
+      if ((nodeScope != null ? nodeScope.data.getTargetData() : void 0) !== node.get("data")) {
         collapsed = true;
       }
       nodeScope = Tree.__super__._refreshItemDom.call(this, itemDom, node, parentScope);
@@ -29098,8 +29106,13 @@
           if (checkboxDom) {
             tree = this;
             checkbox = cola.widget(checkboxDom);
+            dataPath = nodeScope.data.alias + "." + node._bind._checkedProperty;
+            checkedPropValue = nodeScope.get(dataPath);
+            if (typeof checkedPropValue === "undefined") {
+              nodeScope.set(dataPath, false);
+            }
             checkbox.set({
-              bind: nodeScope.data.alias + "." + node._bind._checkedProperty,
+              bind: dataPath,
               click: function() {
                 return tree._onCheckboxClick(node);
               }
