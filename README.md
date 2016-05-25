@@ -7,7 +7,7 @@ cola-ui 桌面应用前段基础框架
 * 提供美工设计稿
 * 提供公司名称
 * 允许Cola-UI官网做宣传素材使用
-* 如有需求请在[联系方式](https://github.com/Cola-Org/cola-frame/issues)留言
+* 如有需求请在[Issue](https://github.com/Cola-Org/cola-frame/issues)留言，或加入QQ群:309407648 @管理员
 
 ## 功能介绍
 
