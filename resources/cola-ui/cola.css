@@ -349,6 +349,9 @@ template {
 .ui.fragment.basic {
   background-color: transparent;
 }
+.ui.fragment.crowd {
+  padding: 0em;
+}
 .ui.fragment.red:before {
   background-color: rgba(219, 40, 40, 0.8);
 }
@@ -2793,6 +2796,7 @@ template {
   padding: 0;
 }
 .ui.tree .child-nodes {
+  display: none;
   overflow: visible;
   margin-left: 2.25em !important;
 }
@@ -3079,20 +3083,40 @@ template {
 .ui.widget-table table td {
   border-width: 1px;
   border-style: solid;
-  border-color: #edf0f3 transparent;
+  border-color: #edf0f3 #edf0f3;
 }
 .ui.widget-table table thead th {
   font-weight: normal;
   background: #ffffff;
-  border-color: #edf0f3 transparent;
+  border-color: #edf0f3 #edf0f3;
 }
 .ui.widget-table table thead th > div {
+  position: relative;
   overflow: hidden;
-  padding: 0.4em 6px;
+  padding: 0.4em 0.4em;
+}
+.ui.widget-table table thead th.sortable > div {
+  padding-right: 1.25em;
+}
+.ui.widget-table table thead th.sortable > div:after {
+  content: "\f0dc";
+  font-family: Icons;
+  position: absolute;
+  right: 0.25em;
+  top: 0.4em;
+  color: rgba(40, 40, 40, 0.3);
+}
+.ui.widget-table table thead th.sortable.asc > div:after {
+  content: "\f0de";
+  color: rgba(0, 0, 0, 0.85);
+}
+.ui.widget-table table thead th.sortable.desc > div:after {
+  content: "\f0dd";
+  color: rgba(0, 0, 0, 0.85);
 }
 .ui.widget-table table tbody td > div {
   overflow: hidden;
-  padding: 0.6em 6px;
+  padding: 0.6em 0.4em;
 }
 .ui.widget-table table tbody tr:first-child td {
   border-top: 2px solid #edf0f3;
@@ -3102,11 +3126,11 @@ template {
 }
 .ui.widget-table table tfoot td {
   background: #ffffff;
-  border-color: #edf0f3 transparent;
+  border-color: #edf0f3 #edf0f3;
 }
 .ui.widget-table table tfoot td > div {
   overflow: hidden;
-  padding: 0.4em 6px;
+  padding: 0.4em 0.4em;
 }
 .ui.widget-table table .ui.checkbox.in-cell {
   margin-top: 0.25em;
@@ -3551,13 +3575,19 @@ template {
 .ui.sub-view > .content {
   height: 100%;
 }
+.ui.sub-view > .ui.dimmer {
+  background: transparent !important;
+}
 .ui.iframe {
   display: block;
   position: relative;
 }
-.ui.iframe iframe {
+.ui.iframe > iframe {
   width: 100%;
   height: 100%;
+}
+.ui.iframe > .ui.dimmer {
+  background: transparent !important;
 }
 
 @keyframes breath {
@@ -3905,6 +3935,9 @@ template {
 }
 .ui.message-box.mobile.tradition.error .header {
   background-color: #db2828;
+}
+.mobile .ui.message-box {
+  min-width: 300px !important;
 }
 
 .ui.layer {
@@ -4944,6 +4977,9 @@ html.ios body {
 }
 .ui.sidebar.animation {
   display: block !important;
+}
+.hide-overflow {
+  overflow: hidden !important;
 }
 
 .ui.menu.pager .goto.ui.input {
@@ -6102,7 +6138,7 @@ html.ios body {
   display: block !important;
 }
 
-.ui.segment.crowded {
+.ui.segment.crowd {
   padding: 0 !important;
 }
 
@@ -6164,4 +6200,9 @@ textarea.error {
 .ui.notify-tip {
   width: 100%;
   display: inline-block;
+}
+.mobile #c-notify-tip-container {
+  left: 1em;
+  right: 1em;
+  width: auto;
 }

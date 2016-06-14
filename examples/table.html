@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css"
+          href="../resources/cola-ui/semantic.min.css">
+    <link rel="stylesheet" type="text/css" href="../resources/cola-ui/cola.css">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-2.2.3.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/3rd.min.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/semantic.min.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/cola.js"></script>
+</head>
+<body style="padding: 1em">
+
+<div id="pagingTable"></div>
+<script>
+    cola(function (model) {
+        model.describe("pageItems", {
+            provider: {
+                url: "http://localhost:4001/data/items",
+                pageSize: 5
+            }
+        });
+
+        model.widgetConfig({
+            pagingTable: {
+                $type: "table",
+                bind: "item in pageItems",
+                showHeader: true,
+                sortable: true,
+                sortMode: "local",
+                currentPageOnly: true,
+                height: 300,
+                columns: [
+                    {
+                        bind: ".id",
+                        caption: "产品编号"
+                    },
+                    {
+                        bind: ".title",
+                        caption: "产品名称"
+                    },
+                    {
+                        bind: ".originalPrice",
+                        caption: "价格"
+                    }
+                ]
+            }
+        });
+    });
+</script>
+</body>
+</html>
