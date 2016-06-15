@@ -30546,7 +30546,7 @@
     };
 
     Table.prototype._sysHeaderClick = function(column) {
-      var collection, criteria, parameter, processed, property, provider, ref, sortDirection;
+      var collection, criteria, invoker, parameter, processed, property, sortDirection;
       if (this.get("sortable") && column instanceof cola.TableDataColumn && column.get("sortable")) {
         sortDirection = column.get("sortDirection");
         if (sortDirection === "asc") {
@@ -30584,11 +30584,11 @@
         }
         if (this._sortMode === "remote") {
           if (collection instanceof cola.EntityList) {
-            provider = (ref = collection._providerInvoker) != null ? ref.ajaxService : void 0;
-            if (provider) {
-              parameter = provider.get("parameter");
+            invoker = collection._providerInvoker;
+            if (invoker) {
+              parameter = invoker.invokerOptions.data;
               if (!parameter) {
-                provider.set("parameter", parameter = {});
+                invoker.invokerOptions.data = parameter = {};
               } else if (typeof parameter !== "object" || parameter instanceof Date) {
                 throw new cola.Exception("Can not set sort parameter automatically.");
               }
