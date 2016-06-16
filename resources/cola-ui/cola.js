@@ -11382,15 +11382,17 @@
           templateDom = templateDom.firstElementChild;
         }
         if (templateDom) {
-          ref1 = templateDom.attributes;
-          for (n = 0, len1 = ref1.length; n < len1; n++) {
-            attr = ref1[n];
-            attrName = attr.name;
-            if (attrName === "class") {
-              $fly(dom).addClass(attr.value);
-            } else if (attrName !== "style") {
-              if (!dom.hasAttribute(attrName)) {
-                dom.setAttribute(attrName, attr.value);
+          if (templateDom.attributes) {
+            ref1 = templateDom.attributes;
+            for (n = 0, len1 = ref1.length; n < len1; n++) {
+              attr = ref1[n];
+              attrName = attr.name;
+              if (attrName === "class") {
+                $fly(dom).addClass(attr.value);
+              } else if (attrName !== "style") {
+                if (!dom.hasAttribute(attrName)) {
+                  dom.setAttribute(attrName, attr.value);
+                }
               }
             }
           }
@@ -30079,6 +30081,10 @@
       return TableSelectColumn.__super__.constructor.apply(this, arguments);
     }
 
+    TableSelectColumn.events = {
+      change: null
+    };
+
     TableSelectColumn.attributes = {
       width: {
         defaultValue: "42px"
@@ -30094,6 +30100,15 @@
         this._headerCheckbox = checkbox = new cola.Checkbox({
           "class": "in-cell",
           triState: true,
+          change: (function(_this) {
+            return function(self, arg) {
+              return _this.fire("change", _this, {
+                checkbox: self,
+                oldValue: arg.oldValue,
+                value: arg.value
+              });
+            };
+          })(this),
           click: (function(_this) {
             return function(self) {
               _this.selectAll(self.get("checked"));

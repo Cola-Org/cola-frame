@@ -28,10 +28,16 @@
                 bind: "item in pageItems",
                 showHeader: true,
                 sortable: true,
-                sortMode: "local",
+                sortMode:  "remote",
                 currentPageOnly: true,
                 height: 300,
                 columns: [
+                    {
+                        $type: "select",
+                        change:function(self,arg){
+                            alert(arg.value)
+                        }
+                    },
                     {
                         bind: ".id",
                         caption: "产品编号"
