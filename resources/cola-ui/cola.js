@@ -1,4 +1,4 @@
-/*! Cola UI - 0.9.2
+/*! Cola UI - 0.9.7
  * Copyright (c) 2002-2016 BSTEK Corp. All rights reserved.
  *
  * This file is dual-licensed under the AGPLv3 (http://www.gnu.org/licenses/agpl-3.0.html)
@@ -8,7 +8,7 @@
  * at http://www.bstek.com/contact.
  */
 (function() {
-  var ALIAS_REGEXP, EntityIndex, IGNORE_NODES, LinkedList, ON_NODE_REMOVED_KEY, Page, TYPE_SEVERITY, USER_DATA_KEY, _$, _DOMNodeInsertedListener, _DOMNodeRemovedListener, _Entity, _EntityList, _ExpressionDataModel, _ExpressionScope, _SYS_PARAMS, _compileResourceUrl, _cssCache, _destroyDomBinding, _doRenderDomTemplate, _evalDataPath, _findRouter, _getData, _getEntityPath, _getHashPath, _getNodeDataId, _jsCache, _loadCss, _loadHtml, _loadJs, _matchValue, _nodesToBeRemove, _numberWords, _onHashChange, _onStateChange, _setValue, _switchRouter, _toJSON, _triggerWatcher, _unloadCss, _unwatch, _watch, appendChild, browser, buildContent, cola, colaEventRegistry, createContentPart, createNodeForAppend, currentRoutePath, currentRouter, defaultActionTimestamp, defaultDataTypes, definedSetting, digestExpression, doMergeDefinitions, doms, exceptionStack, getDefinition, hasDefinition, key, oldIE, originalAjax, os, resourceStore, routerRegistry, setAttrs, setting, splitExpression, sprintf, tagSplitter, trimPath, typeRegistry, uniqueIdSeed, value, xCreate,
+  var ACTIVE_PINCH_REG, ACTIVE_ROTATE_REG, ALIAS_REGEXP, EntityIndex, IGNORE_NODES, LinkedList, ON_NODE_REMOVED_KEY, PAN_VERTICAL_events, Page, SWIPE_VERTICAL_events, TYPE_SEVERITY, USER_DATA_KEY, WIDGET_TAGS_REGISTRY, _$, _DOMNodeInsertedListener, _DOMNodeRemovedListener, _Entity, _EntityList, _ExpressionDataModel, _ExpressionScope, _SYS_PARAMS, _compileResourceUrl, _compileWidgetAttribute, _compileWidgetDom, _cssCache, _destroyDomBinding, _destroyRenderableElement, _doRenderDomTemplate, _evalDataPath, _extendWidget, _findRouter, _findWidgetConfig, _getData, _getEntityPath, _getHashPath, _getNodeDataId, _jsCache, _loadCss, _loadHtml, _loadJs, _matchValue, _nodesToBeRemove, _numberWords, _onHashChange, _onStateChange, _setValue, _switchRouter, _toJSON, _triggerWatcher, _unloadCss, _unwatch, _watch, appendChild, browser, buildContent, cola, colaEventRegistry, createContentPart, createNodeForAppend, currentRoutePath, currentRouter, defaultActionTimestamp, defaultDataTypes, definedSetting, digestExpression, doMergeDefinitions, doms, exceptionStack, getDefinition, hasDefinition, key, oldIE, originalAjax, os, resourceStore, routerRegistry, setAttrs, setting, splitExpression, sprintf, tagSplitter, trimPath, typeRegistry, uniqueIdSeed, value, xCreate,
     slice = [].slice,
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
@@ -1036,6 +1036,7 @@
     "cola.date.dayNamesShort": "S,M,T,W,T,F,S",
     "cola.date.amDesignator": "AM",
     "cola.date.pmDesignator": "PM",
+    "cola.date.time": "Time",
     "cola.validator.error.required": "Cannot be empty.",
     "cola.validator.error.length": "Length is not within the correct range.",
     "cola.validator.error.number": "Value is not within the correct range.",
@@ -5147,6 +5148,9 @@
         page._clearElements();
         page = page._next;
       }
+      delete this._currentPage;
+      delete this._first;
+      delete this._last;
       this.timestamp = cola.sequenceNo();
       return this;
     };
@@ -5199,8 +5203,8 @@
       }
       this._reset();
       page = this._findPage(this.pageNo);
-      if (!page) {
-        this._createPage(this.pageNo);
+      if (page == null) {
+        page = this._createPage(this.pageNo);
       }
       if (loadMode === "async") {
         notifyArg = {
@@ -7055,6 +7059,31 @@
       }
     };
 
+    AliasDataModel.prototype.getProperty = function(path) {
+      var dataType, i, property;
+      i = path.indexOf(".");
+      if (i > 0) {
+        if (path.substring(0, i) === this.alias) {
+          dataType = this._targetData instanceof cola.Entity || this._targetData instanceof cola.EntityList ? this._targetData.dataType : null;
+          if (dataType) {
+            property = dataType.getProperty(path.substring(i + 1));
+            dataType = property != null ? property.get("dataType") : void 0;
+          }
+          return dataType;
+        } else {
+          return this.parent.getDataType(path);
+        }
+      } else if (path === this.alias) {
+        if (this._targetData instanceof cola.Entity || this._targetData instanceof cola.EntityList) {
+          return this._targetData.dataType;
+        } else {
+          return null;
+        }
+      } else {
+        return this.parent.getProperty(path);
+      }
+    };
+
     AliasDataModel.prototype.getDataType = function(path) {
       var dataType, i, property, ref;
       i = path.indexOf(".");
@@ -8328,7 +8357,7 @@
     loadingUrls = [];
     failed = false;
     resourceLoadCallback = function(success, result, url) {
-      var error, errorMessage, i, initFunc, l, len1, ref;
+      var error, errorMessage, hasIgnoreDirective, i, initFunc, l, len1, ref;
       if (success) {
         if (!failed) {
           i = loadingUrls.indexOf(url);
@@ -8337,6 +8366,10 @@
           }
           if (loadingUrls.length === 0) {
             $fly(targetDom).removeClass("loading");
+            if (targetDom.hasAttribute(cola.constants.IGNORE_DIRECTIVE)) {
+              hasIgnoreDirective = true;
+              targetDom.removeAttribute(cola.constants.IGNORE_DIRECTIVE);
+            }
             if (context.suspendedInitFuncs.length) {
               ref = context.suspendedInitFuncs;
               for (l = 0, len1 = ref.length; l < len1; l++) {
@@ -8345,6 +8378,9 @@
               }
             } else {
               cola(targetDom, context.model);
+            }
+            if (hasIgnoreDirective) {
+              targetDom.setAttribute(cola.constants.IGNORE_DIRECTIVE, true);
             }
             if (cola.getListeners("ready")) {
               cola.fire("ready", cola);
@@ -10110,7 +10146,7 @@
   };
 
   cola.xRender = function(template, model, context) {
-    var child, div, documentFragment, dom, l, len1, len2, len3, next, node, o, oldScope, processor, q, ref, ref1;
+    var child, div, documentFragment, dom, l, len1, len2, len3, next, node, o, oldScope, processor, q, ref, ref1, templateNode;
     if (!template) {
       return;
     }
@@ -10119,14 +10155,28 @@
     if (template.nodeType) {
       dom = template;
     } else if (typeof template === "string") {
-      documentFragment = document.createDocumentFragment();
-      div = document.createElement("div");
-      div.innerHTML = template;
-      child = div.firstChild;
-      while (child) {
-        next = child.nextSibling;
-        documentFragment.appendChild(child);
-        child = next;
+      if (template.match(/^\#[\w\-\$]*$/)) {
+        templateNode = document.getElementById(template.substring(1));
+        if (templateNode) {
+          if (template.nodeName === "TEMPLATE") {
+            template = templateNode.innerHTML;
+            $fly(templateNode).remove();
+          }
+        } else {
+          template = null;
+          dom = templateNode;
+        }
+      }
+      if (template) {
+        documentFragment = document.createDocumentFragment();
+        div = document.createElement("div");
+        div.innerHTML = template;
+        child = div.firstChild;
+        while (child) {
+          next = child.nextSibling;
+          documentFragment.appendChild(child);
+          child = next;
+        }
       }
     } else {
       cola.currentScope = model;
@@ -10298,6 +10348,7 @@
             if (attrName.indexOf("on") === 0) {
               feature = cola._domFeatureBuilder.event(attrValue, attrName, dom);
             } else {
+              builder = "";
               builder = cola._domFeatureBuilder[attrName];
               feature = (builder || cola._domFeatureBuilder["$"]).call(cola._domFeatureBuilder, attrValue, attrName, dom);
             }
@@ -10559,22 +10610,6 @@
     }
   };
 
-}).call(this);
-
-/*! Cola UI - 0.9.2
- * Copyright (c) 2002-2016 BSTEK Corp. All rights reserved.
- *
- * This file is dual-licensed under the AGPLv3 (http://www.gnu.org/licenses/agpl-3.0.html)
- * and BSDN commercial (http://www.bsdn.org/licenses) licenses.
- *
- * If you are unsure which license is appropriate for your use, please contact the sales department
- * at http://www.bstek.com/contact.
- */
-(function() {
-  var ACTIVE_PINCH_REG, ACTIVE_ROTATE_REG, ALIAS_REGEXP, BLANK_PATH, DEFAULT_DATE_DISPLAY_FORMAT, DEFAULT_DATE_INPUT_FORMAT, DEFAULT_TIME_DISPLAY_FORMAT, DEFAULT_TIME_INPUT_FORMAT, DropBox, LIST_SIZE_PREFIXS, PAN_VERTICAL_events, SAFE_PULL_EFFECT, SAFE_SLIDE_EFFECT, SLIDE_ANIMATION_SPEED, SWIPE_VERTICAL_events, TEMP_TEMPLATE, TipManager, WIDGET_TAGS_REGISTRY, _columnsSetter, _compileWidgetAttribute, _compileWidgetDom, _createGroupArray, _destroyRenderableElement, _extendWidget, _findWidgetConfig, _getEntityId, _pageCodeMap, _pagesItems, _removeTranslateStyle, containerEmptyChildren, currentDate, currentHours, currentMinutes, currentMonth, currentSeconds, currentYear, dateTimeSlotConfigs, dateTypeConfig, dropdownDialogMargin, emptyRadioGroupItems, isIE11, now, oldErrorTemplate, renderTabs, slotAttributeGetter, slotAttributeSetter,
-    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    hasProp = {}.hasOwnProperty;
-
   (function() {
     var escape, isStyleFuncSupported;
     escape = function(text) {
@@ -10657,11 +10692,11 @@
   };
 
   cola.util.hasClass = function(dom, className) {
-    var domClassName, len1, n, name, names;
+    var domClassName, l, len1, name, names;
     names = className.split(/\s+/g);
     domClassName = dom.className ? (" " + dom.className + " ").replace(cola.constants.CLASS_REG, " ") : " ";
-    for (n = 0, len1 = names.length; n < len1; n++) {
-      name = names[n];
+    for (l = 0, len1 = names.length; l < len1; l++) {
+      name = names[l];
       if (domClassName.indexOf(" " + name + " ") < 0) {
         return false;
       }
@@ -10746,11 +10781,11 @@
   };
 
   cola.util.getType = (function() {
-    var classToType, len1, n, name, ref;
+    var classToType, l, len1, name, ref;
     classToType = {};
     ref = "Boolean Number String Function Array Date RegExp Undefined Null".split(" ");
-    for (n = 0, len1 = ref.length; n < len1; n++) {
-      name = ref[n];
+    for (l = 0, len1 = ref.length; l < len1; l++) {
+      name = ref[l];
       classToType["[object " + name + "]"] = name.toLowerCase();
     }
     return function(obj) {
@@ -10775,111 +10810,6 @@
     }
     return rect;
   };
-
-  (function() {
-    var cancelTranslateElement, cssPrefix, docStyle, engine, getTranslate, helperElem, perspectiveProperty, transformProperty, transformStyleName, transitionEndProperty, transitionProperty, transitionStyleName, translate3d, translateElement, vendorPrefix;
-    docStyle = window.document.documentElement.style;
-    translate3d = false;
-    if (window.opera && Object.prototype.toString.call(opera) === '[object Opera]') {
-      engine = 'presto';
-    } else if ('MozAppearance' in docStyle) {
-      engine = 'gecko';
-    } else if ('WebkitAppearance' in docStyle) {
-      engine = 'webkit';
-    } else if (typeof navigator.cpuClass === 'string') {
-      engine = 'trident';
-    }
-    vendorPrefix = {
-      trident: 'ms',
-      gecko: 'Moz',
-      webkit: 'Webkit',
-      presto: 'O'
-    }[engine];
-    cssPrefix = {
-      trident: '-ms-',
-      gecko: '-moz-',
-      webkit: '-webkit-',
-      presto: '-o-'
-    }[engine];
-    helperElem = document.createElement("div");
-    perspectiveProperty = vendorPrefix + "Perspective";
-    transformProperty = vendorPrefix + "Transform";
-    transformStyleName = cssPrefix + "transform";
-    transitionProperty = vendorPrefix + "Transition";
-    transitionStyleName = cssPrefix + "transition";
-    transitionEndProperty = vendorPrefix.toLowerCase() + "TransitionEnd";
-    if (helperElem.style[perspectiveProperty] !== void 0) {
-      translate3d = true;
-    }
-    getTranslate = function(element) {
-      var matches, result, transform;
-      result = {
-        left: 0,
-        top: 0
-      };
-      if (element === null || element.style === null) {
-        return result;
-      }
-      transform = element.style[transformProperty];
-      matches = /translate\(\s*(-?\d+(\.?\d+?)?)px,\s*(-?\d+(\.\d+)?)px\)\s*translateZ\(0px\)/g.exec(transform);
-      if (matches) {
-        result.left = +matches[1];
-        result.top = +matches[3];
-      }
-      return result;
-    };
-    cancelTranslateElement = function(element) {
-      var transformValue;
-      if (element === null || element.style === null) {
-        return;
-      }
-      transformValue = element.style[transformProperty];
-      if (transformValue) {
-        transformValue = transformValue.replace(/translate\(\s*(-?\d+(\.?\d+?)?)px,\s*(-?\d+(\.\d+)?)px\)\s*translateZ\(0px\)/g, "");
-        return element.style[transformProperty] = transformValue;
-      }
-    };
-    translateElement = function(element, x, y) {
-      var translate, value;
-      if (x === null && y === null) {
-        return;
-      }
-      if (element === null || element.style === null) {
-        return;
-      }
-      if (!element.style[transformProperty] && x === 0 && y === 0) {
-        return;
-      }
-      if (x === null || y === null) {
-        translate = getTranslate(element);
-        if (x == null) {
-          x = translate.left;
-        }
-        if (y == null) {
-          y = translate.top;
-        }
-      }
-      cancelTranslateElement(element);
-      value = ' translate(' + (x ? x + 'px' : '0px') + ',' + (y ? y + 'px' : '0px') + ')';
-      if (translate3d) {
-        value += ' translateZ(0px)';
-      }
-      element.style[transformProperty] += value;
-      return element;
-    };
-    return cola.Fx = {
-      transitionEndProperty: transitionEndProperty,
-      translate3d: translate3d,
-      transformProperty: transformProperty,
-      transformStyleName: transformStyleName,
-      transitionProperty: transitionProperty,
-      transitionStyleName: transitionStyleName,
-      perspectiveProperty: perspectiveProperty,
-      getElementTranslate: getTranslate,
-      translateElement: translateElement,
-      cancelTranslateElement: cancelTranslateElement
-    };
-  })();
 
   $.xCreate.templateProcessors.push(function(template) {
     var dom;
@@ -10956,18 +10886,19 @@
     return widgetConfig;
   };
 
-  _compileWidgetDom = function(dom, widgetType) {
-    var attr, attrName, config, isEvent, len1, len2, n, o, prop, ref, removeAttrs;
+  _compileWidgetDom = function(dom, widgetType, config) {
+    var attr, attrName, isEvent, l, len1, len2, o, prop, ref, removeAttrs;
+    if (config == null) {
+      config = {};
+    }
     if (!widgetType.attributes._inited || !widgetType.events._inited) {
       cola.preprocessClass(widgetType);
     }
-    config = {
-      $constr: widgetType
-    };
+    config.$constr = widgetType;
     removeAttrs = null;
     ref = dom.attributes;
-    for (n = 0, len1 = ref.length; n < len1; n++) {
-      attr = ref[n];
+    for (l = 0, len1 = ref.length; l < len1; l++) {
+      attr = ref[l];
       attrName = attr.name;
       if (attrName.indexOf("c-") === 0) {
         prop = attrName.slice(2);
@@ -11029,7 +10960,7 @@
   };
 
   _compileWidgetAttribute = function(scope, dom, context) {
-    var config, importConfig, importName, importNames, ip, iv, len1, n, p, v, widgetConfigStr;
+    var config, importConfig, importName, importNames, ip, iv, l, len1, p, v, widgetConfigStr;
     widgetConfigStr = dom.getAttribute("c-widget");
     if (widgetConfigStr) {
       dom.removeAttribute("c-widget");
@@ -11056,8 +10987,8 @@
           }
         }
         if (importNames) {
-          for (n = 0, len1 = importNames.length; n < len1; n++) {
-            importName = importNames[n];
+          for (l = 0, len1 = importNames.length; l < len1; l++) {
+            importName = importNames[l];
             importConfig = _findWidgetConfig(scope, importName);
             if (importConfig) {
               for (ip in importConfig) {
@@ -11091,13 +11022,13 @@
       config = (ref = context.widgetConfigs) != null ? ref[configKey] : void 0;
     } else {
       config = _compileWidgetAttribute(scope, dom, context);
-      if (!config) {
+      if (!config || (!config.$type && !config.$constr)) {
         widgetType = parentWidget != null ? (ref1 = parentWidget.childTagNames) != null ? ref1[tagName] : void 0 : void 0;
         if (widgetType == null) {
           widgetType = WIDGET_TAGS_REGISTRY[tagName];
         }
         if (widgetType) {
-          config = _compileWidgetDom(dom, widgetType);
+          config = _compileWidgetDom(dom, widgetType, config);
         }
       }
     }
@@ -11159,7 +11090,7 @@
   cola.registerType("widget", "_default", cola.Widget);
 
   cola.widget = function(config, namespace, model) {
-    var c, constr, e, ele, group, len1, len2, n, o, widget;
+    var c, constr, e, ele, group, l, len1, len2, o, widget;
     if (!config) {
       return null;
     }
@@ -11180,8 +11111,8 @@
         }
       } else {
         group = [];
-        for (n = 0, len1 = ele.length; n < len1; n++) {
-          e = ele[n];
+        for (l = 0, len1 = ele.length; l < len1; l++) {
+          e = ele[l];
           widget = cola.util.userData(e, cola.constants.DOM_ELEMENT_KEY);
           if (widget instanceof cola.Widget && (!model || widget._scope === model)) {
             group.push(widget);
@@ -11316,7 +11247,7 @@
       }
       this.on("attributeChange", (function(_this) {
         return function(self, arg) {
-          var attr, value;
+          var attr;
           attr = arg.attribute;
           _this._widgetModel.data._onDataMessage(["@" + attr], cola.constants.MESSAGE_PROPERTY_CHANGE, {});
           value = _this._get(attr);
@@ -11373,7 +11304,7 @@
       }
     };
     cls.prototype._initDom = function(dom) {
-      var attr, attrName, cssName, len1, n, ref1, templateDom;
+      var attr, attrName, cssName, l, len1, ref1, templateDom;
       superCls.prototype._initDom.call(this, dom);
       template = this._template;
       if (template && !this._domCreated) {
@@ -11384,8 +11315,8 @@
         if (templateDom) {
           if (templateDom.attributes) {
             ref1 = templateDom.attributes;
-            for (n = 0, len1 = ref1.length; n < len1; n++) {
-              attr = ref1[n];
+            for (l = 0, len1 = ref1.length; l < len1; l++) {
+              attr = ref1[l];
               attrName = attr.name;
               if (attrName === "class") {
                 $fly(dom).addClass(attr.value);
@@ -11449,10 +11380,869 @@
 
   cola.registerWidget = cola.defineWidget;
 
+  ACTIVE_PINCH_REG = /^pinch/i;
+
+  ACTIVE_ROTATE_REG = /^rotate/i;
+
+  PAN_VERTICAL_events = ["panUp", "panDown"];
+
+  SWIPE_VERTICAL_events = ["swipeUp", "swipeDown"];
+
+  if (typeof document.documentElement.style.flex !== "string") {
+    $(document.documentElement).addClass("flex-unsupported");
+  }
+
 
   /*
-  Template
+      ClassName池对象
+      用于刷新组件时频繁的编辑class name提高性能
    */
+
+  cola.ClassNamePool = (function() {
+    function ClassNamePool(domClass, semanticList) {
+      if (semanticList == null) {
+        semanticList = [];
+      }
+      this.elements = [];
+      domClass = domClass ? (" " + domClass + " ").replace(cola.constants.CLASS_REG, " ") : " ";
+      semanticList.forEach((function(_this) {
+        return function(name) {
+          var klass;
+          klass = " " + name + " ";
+          if (domClass.indexOf(klass) > -1) {
+            domClass = domClass.replace(klass, " ");
+            _this.add(name);
+          }
+        };
+      })(this));
+      $.trim(domClass).split(" ").forEach((function(_this) {
+        return function(klass) {
+          _this.add(klass);
+        };
+      })(this));
+    }
+
+    ClassNamePool.prototype.add = function(className) {
+      var index;
+      if (!className) {
+        return;
+      }
+      index = this.elements.indexOf(className);
+      if (index > -1) {
+        return;
+      }
+      return this.elements.push(className);
+    };
+
+    ClassNamePool.prototype.remove = function(className) {
+      var i;
+      i = this.elements.indexOf(className);
+      if (i > -1) {
+        this.elements.splice(i, 1);
+      }
+      return this;
+    };
+
+    ClassNamePool.prototype.destroy = function() {
+      return delete this["elements"];
+    };
+
+    ClassNamePool.prototype.join = function() {
+      return this.elements.join(" ");
+    };
+
+    ClassNamePool.prototype.toggle = function(className, status) {
+      if (!!status) {
+        this.add(className);
+      } else {
+        this.remove(className);
+      }
+    };
+
+    return ClassNamePool;
+
+  })();
+
+  _destroyRenderableElement = function(node, data) {
+    var element;
+    element = data[cola.constants.DOM_ELEMENT_KEY];
+    if (!(typeof element === "function" ? element(_destroyed) : void 0)) {
+      element._domRemoved = true;
+      element.destroy();
+    }
+  };
+
+
+  /*
+      可渲染元素
+   */
+
+  cola.RenderableElement = (function(superClass) {
+    extend(RenderableElement, superClass);
+
+    RenderableElement.events = {
+      initDom: null,
+      refreshDom: null
+    };
+
+    function RenderableElement(config) {
+      var dom;
+      if (config) {
+        dom = config.dom;
+        if (dom) {
+          delete config.dom;
+        }
+      }
+      if (this._doms == null) {
+        this._doms = {};
+      }
+      RenderableElement.__super__.constructor.call(this, config);
+      if (dom) {
+        this._setDom(dom, true);
+      }
+    }
+
+    RenderableElement.prototype._initDom = function(dom) {};
+
+    RenderableElement.prototype._parseDom = function(dom) {};
+
+    RenderableElement.prototype._setDom = function(dom, parseChild) {
+      var arg;
+      if (!dom) {
+        return;
+      }
+      this._dom = dom;
+      cola.util.userData(dom, cola.constants.DOM_ELEMENT_KEY, this);
+      cola.util.onNodeDispose(dom, _destroyRenderableElement);
+      if (parseChild) {
+        this._parseDom(dom);
+      }
+      this._initDom(dom);
+      arg = {
+        dom: dom
+      };
+      this.fire("initDom", this, arg);
+      this._refreshDom();
+      this._rendered = true;
+    };
+
+    RenderableElement.prototype._createDom = function() {
+      var className, dom;
+      dom = document.createElement(this.constructor.tagName || "div");
+      className = this.constructor.CLASS_NAME || "";
+      if (className) {
+        $fly(dom).addClass("ui " + className);
+      }
+      return dom;
+    };
+
+    RenderableElement.prototype._doSet = function(attr, attrConfig, value) {
+      if ((attrConfig != null ? attrConfig.refreshDom : void 0) && this._dom) {
+        cola.util.delay(this, "refreshDom", 50, this._refreshDom);
+      }
+      return RenderableElement.__super__._doSet.call(this, attr, attrConfig, value);
+    };
+
+    RenderableElement.prototype._doRefreshDom = function() {
+      var className, l, len1, name, names;
+      cola.util.cancelDelay(this, "_refreshDom");
+      if (!this._dom) {
+        return;
+      }
+      className = this.constructor.CLASS_NAME;
+      if (className) {
+        this._classNamePool.add("ui");
+        names = $.trim(className).split(" ");
+        for (l = 0, len1 = names.length; l < len1; l++) {
+          name = names[l];
+          this._classNamePool.add(name);
+        }
+      }
+      this._resetDimension();
+    };
+
+    RenderableElement.prototype._refreshDom = function() {
+      var newClassName;
+      if (!(this._dom || !this._destroyed)) {
+        return;
+      }
+      this._classNamePool = new cola.ClassNamePool(this._dom.className, this.constructor.SEMANTIC_CLASS);
+      this._doRefreshDom();
+      newClassName = $.trim(this._classNamePool.join());
+      this._dom.className = newClassName;
+      this._classNamePool.destroy();
+      delete this["_classNamePool"];
+    };
+
+    RenderableElement.prototype._resetDimension = function() {};
+
+    RenderableElement.prototype.getDom = function() {
+      var dom;
+      if (this._destroyed) {
+        return null;
+      }
+      if (!this._dom) {
+        dom = this._createDom();
+        this._setDom(dom);
+      }
+      return this._dom;
+    };
+
+    RenderableElement.prototype.get$Dom = function() {
+      if (this._destroyed) {
+        return null;
+      }
+      if (this._$dom == null) {
+        this._$dom = $(this.getDom());
+      }
+      return this._$dom;
+    };
+
+    RenderableElement.prototype.refresh = function() {
+      var arg;
+      if (!this._dom) {
+        return this;
+      }
+      this._refreshDom();
+      arg = {
+        dom: this._dom
+      };
+      this.fire("refreshDom", this, arg);
+      return this;
+    };
+
+    RenderableElement.prototype.appendTo = function(parentNode) {
+      if (parentNode && this.getDom()) {
+        $(parentNode).append(this._dom);
+      }
+      return this;
+    };
+
+    RenderableElement.prototype.remove = function() {
+      this.get$Dom().remove();
+      return this;
+    };
+
+    RenderableElement.prototype.destroy = function() {
+      if (this._destroyed) {
+        return;
+      }
+      cola.util.cancelDelay(this, "refreshDom");
+      if (this._dom) {
+        if (!this._domRemoved) {
+          this.remove();
+        }
+        delete this._dom;
+        delete this._$dom;
+      }
+      RenderableElement.__super__.destroy.call(this);
+      this._destroyed = true;
+    };
+
+    RenderableElement.prototype.addClass = function(value, continuous) {
+      if (continuous) {
+        cola.util.addClass(this._dom, value, true);
+      } else {
+        this.get$Dom().addClass(value);
+      }
+      return this;
+    };
+
+    RenderableElement.prototype.removeClass = function(value, continuous) {
+      if (continuous) {
+        cola.util.removeClass(this._dom, value, true);
+      } else {
+        this.get$Dom().removeClass(value);
+      }
+      return this;
+    };
+
+    RenderableElement.prototype.toggleClass = function(value, state, continuous) {
+      if (continuous) {
+        cola.util.toggleClass(this._dom, value, state, true);
+      } else {
+        this.get$Dom().toggleClass(value, state);
+      }
+      return this;
+    };
+
+    RenderableElement.prototype.hasClass = function(value, continuous) {
+      if (continuous) {
+        return cola.util.hasClass(this._dom, value, true);
+      } else {
+        return this.get$Dom().hasClass(value);
+      }
+    };
+
+    return RenderableElement;
+
+  })(cola.Element);
+
+
+  /*
+  Dorado 基础组件
+   */
+
+  cola.Widget = (function(superClass) {
+    extend(Widget, superClass);
+
+    function Widget() {
+      return Widget.__super__.constructor.apply(this, arguments);
+    }
+
+    Widget.SEMANTIC_CLASS = ["left floated", "right floated"];
+
+    Widget.attributes = {
+      display: {
+        defaultValue: true,
+        refreshDom: true,
+        type: "boolean"
+      },
+      float: {
+        refreshDom: true,
+        "enum": ["left", "right", ""],
+        defaultValue: "",
+        setter: function(value) {
+          var oldValue;
+          oldValue = this["_float"];
+          if (this._dom && oldValue && oldValue !== value) {
+            cola.util.removeClass(this._dom, oldValue + " floated", true);
+          }
+          this["_float"] = value;
+        }
+      },
+      "class": {
+        refreshDom: true,
+        setter: function(value) {
+          var oldValue;
+          oldValue = this["_class"];
+          if (oldValue && this._dom && oldValue !== value) {
+            this.get$Dom().removeClass(oldValue);
+          }
+          this["_class"] = value;
+        }
+      },
+      popup: null,
+      dimmer: {
+        setter: function(value) {
+          var k, v;
+          if (this._dimmer == null) {
+            this._dimmer = {};
+          }
+          for (k in value) {
+            v = value[k];
+            this._dimmer[k] = v;
+          }
+        }
+      },
+      height: {
+        refreshDom: true
+      },
+      width: {
+        refreshDom: true
+      }
+    };
+
+    Widget.events = {
+      click: {
+        $event: "click"
+      },
+      dblClick: {
+        $event: "dblclick"
+      },
+      mouseDown: {
+        $event: "mousedown"
+      },
+      mouseUp: {
+        $event: "mouseup"
+      },
+      tap: {
+        hammerEvent: "tap"
+      },
+      press: {
+        hammerEvent: "press"
+      },
+      panStart: {
+        hammerEvent: "panstart"
+      },
+      panMove: {
+        hammerEvent: "panmove"
+      },
+      panEnd: {
+        hammerEvent: "panend"
+      },
+      panCancel: {
+        hammerEvent: "pancancel"
+      },
+      panLeft: {
+        hammerEvent: "panleft"
+      },
+      panRight: {
+        hammerEvent: "panright"
+      },
+      panUp: {
+        hammerEvent: "panup"
+      },
+      panDown: {
+        hammerEvent: "pandown"
+      },
+      pinchStart: {
+        hammerEvent: "pinchstart"
+      },
+      pinchMove: {
+        hammerEvent: "pinchmove"
+      },
+      pinchEnd: {
+        hammerEvent: "pinchend"
+      },
+      pinchCancel: {
+        hammerEvent: "pinchcancel"
+      },
+      pinchIn: {
+        hammerEvent: "pinchin"
+      },
+      pinchOut: {
+        hammerEvent: "pinchout"
+      },
+      rotateStart: {
+        hammerEvent: "rotatestart"
+      },
+      rotateMove: {
+        hammerEvent: "rotatemove"
+      },
+      rotateEnd: {
+        hammerEvent: "rotateend"
+      },
+      rotateCancel: {
+        hammerEvent: "rotatecancel"
+      },
+      swipeLeft: {
+        hammerEvent: "swipeleft"
+      },
+      swipeRight: {
+        hammerEvent: "swiperight"
+      },
+      swipeUp: {
+        hammerEvent: "swipeup"
+      },
+      swipeDown: {
+        hammerEvent: "swipedown"
+      }
+    };
+
+    Widget.prototype._initDom = function(dom) {
+      var popup, popupOptions;
+      Widget.__super__._initDom.call(this, dom);
+      popup = this._popup;
+      if (popup) {
+        popupOptions = {};
+        if (typeof popup === "string" || (popup.constructor === Object.prototype.constructor && popup.tagName) || popup.nodeType === 1) {
+          popupOptions.html = cola.xRender(popup);
+        } else if (popup.constructor === Object.prototype.constructor) {
+          popupOptions = popup;
+          if (popupOptions.content) {
+            popupOptions.html = cola.xRender(popupOptions.content);
+          } else if (popupOptions.html) {
+            popupOptions.html = cola.xRender(popupOptions.html);
+          }
+        }
+        return $(dom).popup(popupOptions);
+      }
+    };
+
+    Widget.prototype._setDom = function(dom, parseChild) {
+      var eventName;
+      if (!dom) {
+        return;
+      }
+      Widget.__super__._setDom.call(this, dom, parseChild);
+      for (eventName in this.constructor.events) {
+        if (this.getListeners(eventName)) {
+          this._bindEvent(eventName);
+        }
+      }
+    };
+
+    Widget.prototype._on = function(eventName, listener, alias) {
+      Widget.__super__._on.call(this, eventName, listener, alias);
+      if (this._dom) {
+        this._bindEvent(eventName);
+      }
+      return this;
+    };
+
+    Widget.prototype.fire = function(eventName, self, arg) {
+      var eventConfig;
+      if (!this._eventRegistry) {
+        return;
+      }
+      eventConfig = this.constructor.events.$get(eventName);
+      if (this.constructor.attributes.hasOwnProperty("disabled") && this.get("disabled") && eventConfig && (eventConfig.$event || eventConfig.hammerEvent)) {
+        return;
+      }
+      if (!this["_hasFireTapEvent"]) {
+        this["_hasFireTapEvent"] = eventName === "tap";
+      }
+      if (eventName === "click" && this["_hasFireTapEvent"]) {
+        return;
+      }
+      return Widget.__super__.fire.call(this, eventName, self, arg);
+    };
+
+    Widget.prototype._doRefreshDom = function() {
+      var l, len1, name, ref;
+      if (!this._dom) {
+        return;
+      }
+      Widget.__super__._doRefreshDom.call(this);
+      if (this._float) {
+        this._classNamePool.add(this._float + " floated");
+      }
+      this._classNamePool.toggle("display-none", !!!this._display);
+      if (!this._rendered && this._class) {
+        ref = this._class.split(" ");
+        for (l = 0, len1 = ref.length; l < len1; l++) {
+          name = ref[l];
+          this._classNamePool.add(name);
+        }
+      }
+    };
+
+    Widget.prototype._bindEvent = function(eventName) {
+      var $dom, eventConfig;
+      if (!this._dom) {
+        return;
+      }
+      if (this._bindedEvents == null) {
+        this._bindedEvents = {};
+      }
+      if (this._bindedEvents[eventName]) {
+        return;
+      }
+      $dom = this.get$Dom();
+      eventConfig = this.constructor.events.$get(eventName);
+      if (eventConfig != null ? eventConfig.$event : void 0) {
+        $dom.on(eventConfig.$event, (function(_this) {
+          return function(evt) {
+            var arg;
+            arg = {
+              dom: _this._dom,
+              event: evt
+            };
+            return _this.fire(eventName, _this, arg);
+          };
+        })(this));
+        this._bindedEvents[eventName] = true;
+        return;
+      }
+      if (eventConfig != null ? eventConfig.hammerEvent : void 0) {
+        if (this._hammer == null) {
+          this._hammer = new Hammer(this._dom, {});
+        }
+        if (ACTIVE_PINCH_REG.test(eventName)) {
+          this._hammer.get("pinch").set({
+            enable: true
+          });
+        }
+        if (ACTIVE_ROTATE_REG.test(eventName)) {
+          this._hammer.get("rotate").set({
+            enable: true
+          });
+        }
+        if (PAN_VERTICAL_events.indexOf(eventName) >= 0) {
+          this._hammer.get("pan").set({
+            direction: Hammer.DIRECTION_ALL
+          });
+        }
+        if (SWIPE_VERTICAL_events.indexOf(eventName) >= 0) {
+          this._hammer.get("swipe").set({
+            direction: Hammer.DIRECTION_ALL
+          });
+        }
+        this._hammer.on(eventConfig.hammerEvent, (function(_this) {
+          return function(evt) {
+            var arg;
+            arg = {
+              dom: _this._dom,
+              event: evt,
+              eventName: eventName
+            };
+            return _this.fire(eventName, _this, arg);
+          };
+        })(this));
+        this._bindedEvents[eventName] = true;
+        return;
+      }
+    };
+
+    Widget.prototype._resetDimension = function() {
+      var $dom, height, unit, width;
+      $dom = this.get$Dom();
+      unit = cola.constants.WIDGET_DIMENSION_UNIT;
+      height = this.get("height");
+      if (isFinite(height)) {
+        height = "" + (parseInt(height)) + unit;
+      }
+      if (height) {
+        $dom.css("height", height);
+      }
+      width = this.get("width");
+      if (isFinite(width)) {
+        width = "" + (parseInt(width)) + unit;
+      }
+      if (width) {
+        $dom.css("width", width);
+      }
+    };
+
+    Widget.prototype.showDimmer = function(options) {
+      var $dom, content, dimmer, dimmerContent, k, v;
+      if (options == null) {
+        options = {};
+      }
+      if (!this._dom) {
+        return this;
+      }
+      content = options.content;
+      if (!content && this._dimmer) {
+        content = this._dimmer.content;
+      }
+      if (content) {
+        if (typeof content === "string") {
+          dimmerContent = $.xCreate({
+            tagName: "div",
+            content: content
+          });
+        } else if (content.constructor === Object.prototype.constructor && content.tagName) {
+          dimmerContent = $.xCreate(content);
+        } else if (content.nodeType === 1) {
+          dimmerContent = content;
+        }
+      }
+      if (this._dimmer == null) {
+        this._dimmer = {};
+      }
+      for (k in options) {
+        v = options[k];
+        if (k !== "content") {
+          this._dimmer[k] = v;
+        }
+      }
+      $dom = this.get$Dom();
+      dimmer = $dom.dimmer("get dimmer");
+      if (dimmerContent) {
+        if (dimmer) {
+          $(dimmer).empty();
+        } else {
+          $dom.dimmer("create");
+        }
+        $dom.dimmer("add content", dimmerContent);
+      }
+      $dom.dimmer(this._dimmer);
+      $dom.dimmer("show");
+      return this;
+    };
+
+    Widget.prototype.hideDimmer = function() {
+      if (!this._dom) {
+        return this;
+      }
+      this.get$Dom().dimmer("hide");
+      return this;
+    };
+
+    Widget.prototype.destroy = function() {
+      if (this._destroyed) {
+        return;
+      }
+      if (this._dom) {
+        delete this._hammer;
+        delete this._bindedEvents;
+        delete this._parent;
+        delete this._doms;
+      }
+      Widget.__super__.destroy.call(this);
+      this._destroyed = true;
+    };
+
+    return Widget;
+
+  })(cola.RenderableElement);
+
+  cola.floatWidget = {
+    _zIndex: 1100,
+    zIndex: function() {
+      return ++cola.floatWidget._zIndex;
+    }
+  };
+
+  cola.Exception.showException = function(ex) {
+    var msg;
+    if (ex instanceof cola.Exception || ex instanceof Error) {
+      msg = ex.message;
+    } else {
+      msg = ex + "";
+    }
+    return cola.alert(msg);
+  };
+
+  cola.WidgetDataModel = (function(superClass) {
+    extend(WidgetDataModel, superClass);
+
+    function WidgetDataModel(model, widget1) {
+      this.widget = widget1;
+      WidgetDataModel.__super__.constructor.call(this, model);
+    }
+
+    WidgetDataModel.prototype.get = function(path, loadMode, context) {
+      var ref;
+      if (path.charCodeAt(0) === 64) {
+        return this.widget.get(path.substring(1));
+      } else {
+        return (ref = this.model.parent) != null ? ref.data.get(path, loadMode, context) : void 0;
+      }
+    };
+
+    WidgetDataModel.prototype.set = function(path, value) {
+      var ref;
+      if (path.charCodeAt(0) === 64) {
+        this.widget.set(path.substring(1), value);
+        this._onDataMessage(path.split("."), cola.constants.MESSAGE_PROPERTY_CHANGE, {});
+      } else {
+        if ((ref = this.model.parent) != null) {
+          ref.data.set(path, value);
+        }
+      }
+    };
+
+    WidgetDataModel.prototype._processMessage = function(bindingPath, path, type, arg) {
+      var attr, e, entity, isParent, ref, relativePath, targetPath;
+      this._onDataMessage(path, type, arg);
+      entity = arg.entity || arg.entityList;
+      if (entity) {
+        ref = this.widget._entityProps;
+        for (attr in ref) {
+          value = ref[attr];
+          isParent = false;
+          e = entity;
+          while (e) {
+            if (e === value) {
+              isParent = true;
+              break;
+            }
+            e = e._parent;
+          }
+          if (isParent) {
+            targetPath = value.getPath();
+            if (targetPath != null ? targetPath.length : void 0) {
+              relativePath = path.slice(targetPath.length);
+              this._onDataMessage(["@" + attr].concat(relativePath), type, arg);
+            }
+          }
+        }
+      }
+    };
+
+    WidgetDataModel.prototype.getDataType = function(path) {
+      var ref;
+      if (path.charCodeAt(0) === 64) {
+        return null;
+      } else {
+        return (ref = this.model.parent) != null ? ref.data.getDataType(path) : void 0;
+      }
+    };
+
+    WidgetDataModel.prototype.getProperty = function(path) {
+      var ref;
+      if (path.charCodeAt(0) === 64) {
+        return null;
+      } else {
+        return (ref = this.model.parent) != null ? ref.data.getDataType(path) : void 0;
+      }
+    };
+
+    WidgetDataModel.prototype.flush = function(name, loadMode) {
+      var ref;
+      if (path.charCodeAt(0) !== 64) {
+        if ((ref = this.model.parent) != null) {
+          ref.data.getDataType(name, loadMode);
+        }
+      }
+      return this;
+    };
+
+    return WidgetDataModel;
+
+  })(cola.AbstractDataModel);
+
+  cola.WidgetModel = (function(superClass) {
+    extend(WidgetModel, superClass);
+
+    function WidgetModel(widget1, parent1) {
+      var ref, widget;
+      this.widget = widget1;
+      this.parent = parent1;
+      widget = this.widget;
+      this.data = new cola.WidgetDataModel(this, widget);
+      if ((ref = this.parent) != null) {
+        ref.data.bind("**", this);
+      }
+      this.action = function(name) {
+        var method;
+        method = widget[name];
+        if (method instanceof Function) {
+          return function() {
+            return method.apply(widget, arguments);
+          };
+        }
+        return widget._scope.action(name);
+      };
+    }
+
+    WidgetModel.prototype.repeatNotification = true;
+
+    WidgetModel.prototype._processMessage = function(bindingPath, path, type, arg) {
+      if (this.messageTimestamp >= arg.timestamp) {
+        return;
+      }
+      return this.data._processMessage(bindingPath, path, type, arg);
+    };
+
+    return WidgetModel;
+
+  })(cola.SubScope);
+
+  cola.TemplateWidget = (function(superClass) {
+    extend(TemplateWidget, superClass);
+
+    function TemplateWidget() {
+      return TemplateWidget.__super__.constructor.apply(this, arguments);
+    }
+
+    return TemplateWidget;
+
+  })(cola.Widget);
+
+}).call(this);
+
+/*! Cola UI - 0.9.7
+ * Copyright (c) 2002-2016 BSTEK Corp. All rights reserved.
+ *
+ * This file is dual-licensed under the AGPLv3 (http://www.gnu.org/licenses/agpl-3.0.html)
+ * and BSDN commercial (http://www.bsdn.org/licenses) licenses.
+ *
+ * If you are unsure which license is appropriate for your use, please contact the sales department
+ * at http://www.bstek.com/contact.
+ */
+
+/*
+Template
+ */
+
+(function() {
+  var BLANK_PATH, DEFAULT_DATE_DISPLAY_FORMAT, DEFAULT_DATE_INPUT_FORMAT, DEFAULT_DATE_TIME_DISPLAY_FORMAT, DEFAULT_TIME_DISPLAY_FORMAT, DEFAULT_TIME_INPUT_FORMAT, DropBox, LIST_SIZE_PREFIXS, SAFE_PULL_EFFECT, SAFE_SLIDE_EFFECT, SLIDE_ANIMATION_SPEED, TEMP_TEMPLATE, TipManager, _columnsSetter, _createGroupArray, _getEntityId, _pageCodeMap, _pagesItems, _removeTranslateStyle, containerEmptyChildren, currentDate, currentHours, currentMinutes, currentMonth, currentSeconds, currentYear, dateTimeSlotConfigs, dateTypeConfig, dropdownDialogMargin, emptyRadioGroupItems, isIE11, now, oldErrorTemplate, renderTabs, slotAttributeGetter, slotAttributeSetter,
+    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    hasProp = {}.hasOwnProperty;
 
   TEMP_TEMPLATE = null;
 
@@ -11474,7 +12264,7 @@
       child = this._dom.firstChild;
       while (child) {
         if (child.nodeName === "TEMPLATE") {
-          this._regTemplate(child);
+          this.regTemplate(child);
         }
         child = child.nextSibling;
       }
@@ -11493,7 +12283,7 @@
         child = next;
       }
     },
-    _regTemplate: function(name, template) {
+    regTemplate: function(name, template) {
       if (arguments.length === 1) {
         template = name;
         if (template.nodeType) {
@@ -11515,10 +12305,10 @@
         if (((ref1 = this._templates) != null ? ref1.hasOwnProperty(name) : void 0) || !template) {
           continue;
         }
-        this._regTemplate(name, template);
+        this.regTemplate(name, template);
       }
     },
-    _getTemplate: function(name, defaultName) {
+    getTemplate: function(name, defaultName) {
       var c, child, html, k, ref, template, templs, widgetConfigs;
       if (name == null) {
         name = "default";
@@ -11862,6 +12652,111 @@
     }
   };
 
+  (function() {
+    var cancelTranslateElement, cssPrefix, docStyle, engine, getTranslate, helperElem, perspectiveProperty, transformProperty, transformStyleName, transitionEndProperty, transitionProperty, transitionStyleName, translate3d, translateElement, vendorPrefix;
+    docStyle = window.document.documentElement.style;
+    translate3d = false;
+    if (window.opera && Object.prototype.toString.call(opera) === '[object Opera]') {
+      engine = 'presto';
+    } else if ('MozAppearance' in docStyle) {
+      engine = 'gecko';
+    } else if ('WebkitAppearance' in docStyle) {
+      engine = 'webkit';
+    } else if (typeof navigator.cpuClass === 'string') {
+      engine = 'trident';
+    }
+    vendorPrefix = {
+      trident: 'ms',
+      gecko: 'Moz',
+      webkit: 'Webkit',
+      presto: 'O'
+    }[engine];
+    cssPrefix = {
+      trident: '-ms-',
+      gecko: '-moz-',
+      webkit: '-webkit-',
+      presto: '-o-'
+    }[engine];
+    helperElem = document.createElement("div");
+    perspectiveProperty = vendorPrefix + "Perspective";
+    transformProperty = vendorPrefix + "Transform";
+    transformStyleName = cssPrefix + "transform";
+    transitionProperty = vendorPrefix + "Transition";
+    transitionStyleName = cssPrefix + "transition";
+    transitionEndProperty = vendorPrefix.toLowerCase() + "TransitionEnd";
+    if (helperElem.style[perspectiveProperty] !== void 0) {
+      translate3d = true;
+    }
+    getTranslate = function(element) {
+      var matches, result, transform;
+      result = {
+        left: 0,
+        top: 0
+      };
+      if (element === null || element.style === null) {
+        return result;
+      }
+      transform = element.style[transformProperty];
+      matches = /translate\(\s*(-?\d+(\.?\d+?)?)px,\s*(-?\d+(\.\d+)?)px\)\s*translateZ\(0px\)/g.exec(transform);
+      if (matches) {
+        result.left = +matches[1];
+        result.top = +matches[3];
+      }
+      return result;
+    };
+    cancelTranslateElement = function(element) {
+      var transformValue;
+      if (element === null || element.style === null) {
+        return;
+      }
+      transformValue = element.style[transformProperty];
+      if (transformValue) {
+        transformValue = transformValue.replace(/translate\(\s*(-?\d+(\.?\d+?)?)px,\s*(-?\d+(\.\d+)?)px\)\s*translateZ\(0px\)/g, "");
+        return element.style[transformProperty] = transformValue;
+      }
+    };
+    translateElement = function(element, x, y) {
+      var translate, value;
+      if (x === null && y === null) {
+        return;
+      }
+      if (element === null || element.style === null) {
+        return;
+      }
+      if (!element.style[transformProperty] && x === 0 && y === 0) {
+        return;
+      }
+      if (x === null || y === null) {
+        translate = getTranslate(element);
+        if (x == null) {
+          x = translate.left;
+        }
+        if (y == null) {
+          y = translate.top;
+        }
+      }
+      cancelTranslateElement(element);
+      value = ' translate(' + (x ? x + 'px' : '0px') + ',' + (y ? y + 'px' : '0px') + ')';
+      if (translate3d) {
+        value += ' translateZ(0px)';
+      }
+      element.style[transformProperty] += value;
+      return element;
+    };
+    return cola.Fx = {
+      transitionEndProperty: transitionEndProperty,
+      translate3d: translate3d,
+      transformProperty: transformProperty,
+      transformStyleName: transformStyleName,
+      transitionProperty: transitionProperty,
+      transitionStyleName: transitionStyleName,
+      perspectiveProperty: perspectiveProperty,
+      getElementTranslate: getTranslate,
+      translateElement: translateElement,
+      cancelTranslateElement: cancelTranslateElement
+    };
+  })();
+
   cola.semantic = {
 
     /*
@@ -11885,849 +12780,6 @@
       };
     }
   };
-
-  ACTIVE_PINCH_REG = /^pinch/i;
-
-  ACTIVE_ROTATE_REG = /^rotate/i;
-
-  PAN_VERTICAL_events = ["panUp", "panDown"];
-
-  SWIPE_VERTICAL_events = ["swipeUp", "swipeDown"];
-
-  if (typeof document.documentElement.style.flex !== "string") {
-    $(document.documentElement).addClass("flex-unsupported");
-  }
-
-
-  /*
-      ClassName池对象
-      用于刷新组件时频繁的编辑class name提高性能
-   */
-
-  cola.ClassNamePool = (function() {
-    function ClassNamePool(domClass, semanticList) {
-      if (semanticList == null) {
-        semanticList = [];
-      }
-      this.elements = [];
-      domClass = domClass ? (" " + domClass + " ").replace(cola.constants.CLASS_REG, " ") : " ";
-      semanticList.forEach((function(_this) {
-        return function(name) {
-          var klass;
-          klass = " " + name + " ";
-          if (domClass.indexOf(klass) > -1) {
-            domClass = domClass.replace(klass, " ");
-            _this.add(name);
-          }
-        };
-      })(this));
-      $.trim(domClass).split(" ").forEach((function(_this) {
-        return function(klass) {
-          _this.add(klass);
-        };
-      })(this));
-    }
-
-    ClassNamePool.prototype.add = function(className) {
-      var index;
-      if (!className) {
-        return;
-      }
-      index = this.elements.indexOf(className);
-      if (index > -1) {
-        return;
-      }
-      return this.elements.push(className);
-    };
-
-    ClassNamePool.prototype.remove = function(className) {
-      var i;
-      i = this.elements.indexOf(className);
-      if (i > -1) {
-        this.elements.splice(i, 1);
-      }
-      return this;
-    };
-
-    ClassNamePool.prototype.destroy = function() {
-      return delete this["elements"];
-    };
-
-    ClassNamePool.prototype.join = function() {
-      return this.elements.join(" ");
-    };
-
-    ClassNamePool.prototype.toggle = function(className, status) {
-      if (!!status) {
-        this.add(className);
-      } else {
-        this.remove(className);
-      }
-    };
-
-    return ClassNamePool;
-
-  })();
-
-  _destroyRenderableElement = function(node, data) {
-    var element;
-    element = data[cola.constants.DOM_ELEMENT_KEY];
-    if (!(typeof element === "function" ? element(_destroyed) : void 0)) {
-      element._domRemoved = true;
-      element.destroy();
-    }
-  };
-
-
-  /*
-      可渲染元素
-   */
-
-  cola.RenderableElement = (function(superClass) {
-    extend(RenderableElement, superClass);
-
-    RenderableElement.events = {
-      initDom: null,
-      refreshDom: null
-    };
-
-    function RenderableElement(config) {
-      var dom;
-      if (config) {
-        dom = config.dom;
-        if (dom) {
-          delete config.dom;
-        }
-      }
-      if (this._doms == null) {
-        this._doms = {};
-      }
-      RenderableElement.__super__.constructor.call(this, config);
-      if (dom) {
-        this._setDom(dom, true);
-      }
-    }
-
-    RenderableElement.prototype._initDom = function(dom) {};
-
-    RenderableElement.prototype._parseDom = function(dom) {};
-
-    RenderableElement.prototype._setDom = function(dom, parseChild) {
-      var arg;
-      if (!dom) {
-        return;
-      }
-      this._dom = dom;
-      cola.util.userData(dom, cola.constants.DOM_ELEMENT_KEY, this);
-      cola.util.onNodeDispose(dom, _destroyRenderableElement);
-      if (parseChild) {
-        this._parseDom(dom);
-      }
-      this._initDom(dom);
-      arg = {
-        dom: dom
-      };
-      this.fire("initDom", this, arg);
-      this._refreshDom();
-      this._rendered = true;
-    };
-
-    RenderableElement.prototype._createDom = function() {
-      var className, dom;
-      dom = document.createElement(this.constructor.tagName || "div");
-      className = this.constructor.CLASS_NAME || "";
-      if (className) {
-        $fly(dom).addClass("ui " + className);
-      }
-      return dom;
-    };
-
-    RenderableElement.prototype._doSet = function(attr, attrConfig, value) {
-      if ((attrConfig != null ? attrConfig.refreshDom : void 0) && this._dom) {
-        cola.util.delay(this, "refreshDom", 50, this._refreshDom);
-      }
-      return RenderableElement.__super__._doSet.call(this, attr, attrConfig, value);
-    };
-
-    RenderableElement.prototype._doRefreshDom = function() {
-      var className, len1, n, name, names;
-      cola.util.cancelDelay(this, "_refreshDom");
-      if (!this._dom) {
-        return;
-      }
-      className = this.constructor.CLASS_NAME;
-      if (className) {
-        this._classNamePool.add("ui");
-        names = $.trim(className).split(" ");
-        for (n = 0, len1 = names.length; n < len1; n++) {
-          name = names[n];
-          this._classNamePool.add(name);
-        }
-      }
-      this._resetDimension();
-    };
-
-    RenderableElement.prototype._refreshDom = function() {
-      var newClassName;
-      if (!(this._dom || !this._destroyed)) {
-        return;
-      }
-      this._classNamePool = new cola.ClassNamePool(this._dom.className, this.constructor.SEMANTIC_CLASS);
-      this._doRefreshDom();
-      newClassName = $.trim(this._classNamePool.join());
-      this._dom.className = newClassName;
-      this._classNamePool.destroy();
-      delete this["_classNamePool"];
-    };
-
-    RenderableElement.prototype._resetDimension = function() {};
-
-    RenderableElement.prototype.getDom = function() {
-      var dom;
-      if (this._destroyed) {
-        return null;
-      }
-      if (!this._dom) {
-        dom = this._createDom();
-        this._setDom(dom);
-      }
-      return this._dom;
-    };
-
-    RenderableElement.prototype.get$Dom = function() {
-      if (this._destroyed) {
-        return null;
-      }
-      if (this._$dom == null) {
-        this._$dom = $(this.getDom());
-      }
-      return this._$dom;
-    };
-
-    RenderableElement.prototype.refresh = function() {
-      var arg;
-      if (!this._dom) {
-        return this;
-      }
-      this._refreshDom();
-      arg = {
-        dom: this._dom
-      };
-      this.fire("refreshDom", this, arg);
-      return this;
-    };
-
-    RenderableElement.prototype.appendTo = function(parentNode) {
-      if (parentNode && this.getDom()) {
-        $(parentNode).append(this._dom);
-      }
-      return this;
-    };
-
-    RenderableElement.prototype.remove = function() {
-      this.get$Dom().remove();
-      return this;
-    };
-
-    RenderableElement.prototype.destroy = function() {
-      if (this._destroyed) {
-        return;
-      }
-      cola.util.cancelDelay(this, "refreshDom");
-      if (this._dom) {
-        if (!this._domRemoved) {
-          this.remove();
-        }
-        delete this._dom;
-        delete this._$dom;
-      }
-      RenderableElement.__super__.destroy.call(this);
-      this._destroyed = true;
-    };
-
-    RenderableElement.prototype.addClass = function(value, continuous) {
-      if (continuous) {
-        cola.util.addClass(this._dom, value, true);
-      } else {
-        this.get$Dom().addClass(value);
-      }
-      return this;
-    };
-
-    RenderableElement.prototype.removeClass = function(value, continuous) {
-      if (continuous) {
-        cola.util.removeClass(this._dom, value, true);
-      } else {
-        this.get$Dom().removeClass(value);
-      }
-      return this;
-    };
-
-    RenderableElement.prototype.toggleClass = function(value, state, continuous) {
-      if (continuous) {
-        cola.util.toggleClass(this._dom, value, state, true);
-      } else {
-        this.get$Dom().toggleClass(value, state);
-      }
-      return this;
-    };
-
-    RenderableElement.prototype.hasClass = function(value, continuous) {
-      if (continuous) {
-        return cola.util.hasClass(this._dom, value, true);
-      } else {
-        return this.get$Dom().hasClass(value);
-      }
-    };
-
-    return RenderableElement;
-
-  })(cola.Element);
-
-
-  /*
-  Dorado 基础组件
-   */
-
-  cola.Widget = (function(superClass) {
-    extend(Widget, superClass);
-
-    function Widget() {
-      return Widget.__super__.constructor.apply(this, arguments);
-    }
-
-    Widget.SEMANTIC_CLASS = ["left floated", "right floated"];
-
-    Widget.attributes = {
-      display: {
-        defaultValue: true,
-        refreshDom: true,
-        type: "boolean"
-      },
-      float: {
-        refreshDom: true,
-        "enum": ["left", "right", ""],
-        defaultValue: "",
-        setter: function(value) {
-          var oldValue;
-          oldValue = this["_float"];
-          if (this._dom && oldValue && oldValue !== value) {
-            cola.util.removeClass(this._dom, oldValue + " floated", true);
-          }
-          this["_float"] = value;
-        }
-      },
-      "class": {
-        refreshDom: true,
-        setter: function(value) {
-          var oldValue;
-          oldValue = this["_class"];
-          if (oldValue && this._dom && oldValue !== value) {
-            this.get$Dom().removeClass(oldValue);
-          }
-          this["_class"] = value;
-        }
-      },
-      popup: null,
-      dimmer: {
-        setter: function(value) {
-          var k, v;
-          if (this._dimmer == null) {
-            this._dimmer = {};
-          }
-          for (k in value) {
-            v = value[k];
-            this._dimmer[k] = v;
-          }
-        }
-      },
-      height: {
-        refreshDom: true
-      },
-      width: {
-        refreshDom: true
-      }
-    };
-
-    Widget.events = {
-      click: {
-        $event: "click"
-      },
-      dblClick: {
-        $event: "dblclick"
-      },
-      mouseDown: {
-        $event: "mousedown"
-      },
-      mouseUp: {
-        $event: "mouseup"
-      },
-      tap: {
-        hammerEvent: "tap"
-      },
-      press: {
-        hammerEvent: "press"
-      },
-      panStart: {
-        hammerEvent: "panstart"
-      },
-      panMove: {
-        hammerEvent: "panmove"
-      },
-      panEnd: {
-        hammerEvent: "panend"
-      },
-      panCancel: {
-        hammerEvent: "pancancel"
-      },
-      panLeft: {
-        hammerEvent: "panleft"
-      },
-      panRight: {
-        hammerEvent: "panright"
-      },
-      panUp: {
-        hammerEvent: "panup"
-      },
-      panDown: {
-        hammerEvent: "pandown"
-      },
-      pinchStart: {
-        hammerEvent: "pinchstart"
-      },
-      pinchMove: {
-        hammerEvent: "pinchmove"
-      },
-      pinchEnd: {
-        hammerEvent: "pinchend"
-      },
-      pinchCancel: {
-        hammerEvent: "pinchcancel"
-      },
-      pinchIn: {
-        hammerEvent: "pinchin"
-      },
-      pinchOut: {
-        hammerEvent: "pinchout"
-      },
-      rotateStart: {
-        hammerEvent: "rotatestart"
-      },
-      rotateMove: {
-        hammerEvent: "rotatemove"
-      },
-      rotateEnd: {
-        hammerEvent: "rotateend"
-      },
-      rotateCancel: {
-        hammerEvent: "rotatecancel"
-      },
-      swipeLeft: {
-        hammerEvent: "swipeleft"
-      },
-      swipeRight: {
-        hammerEvent: "swiperight"
-      },
-      swipeUp: {
-        hammerEvent: "swipeup"
-      },
-      swipeDown: {
-        hammerEvent: "swipedown"
-      }
-    };
-
-    Widget.prototype._initDom = function(dom) {
-      var popup, popupOptions;
-      Widget.__super__._initDom.call(this, dom);
-      popup = this._popup;
-      if (popup) {
-        popupOptions = {};
-        if (typeof popup === "string" || (popup.constructor === Object.prototype.constructor && popup.tagName) || popup.nodeType === 1) {
-          popupOptions.html = cola.xRender(popup);
-        } else if (popup.constructor === Object.prototype.constructor) {
-          popupOptions = popup;
-          if (popupOptions.content) {
-            popupOptions.html = cola.xRender(popupOptions.content);
-          } else if (popupOptions.html) {
-            popupOptions.html = cola.xRender(popupOptions.html);
-          }
-        }
-        return $(dom).popup(popupOptions);
-      }
-    };
-
-    Widget.prototype._setDom = function(dom, parseChild) {
-      var eventName;
-      if (!dom) {
-        return;
-      }
-      Widget.__super__._setDom.call(this, dom, parseChild);
-      for (eventName in this.constructor.events) {
-        if (this.getListeners(eventName)) {
-          this._bindEvent(eventName);
-        }
-      }
-    };
-
-    Widget.prototype._on = function(eventName, listener, alias) {
-      Widget.__super__._on.call(this, eventName, listener, alias);
-      if (this._dom) {
-        this._bindEvent(eventName);
-      }
-      return this;
-    };
-
-    Widget.prototype.fire = function(eventName, self, arg) {
-      var eventConfig;
-      if (!this._eventRegistry) {
-        return;
-      }
-      eventConfig = this.constructor.events.$get(eventName);
-      if (this.constructor.attributes.hasOwnProperty("disabled") && this.get("disabled") && eventConfig && (eventConfig.$event || eventConfig.hammerEvent)) {
-        return;
-      }
-      if (!this["_hasFireTapEvent"]) {
-        this["_hasFireTapEvent"] = eventName === "tap";
-      }
-      if (eventName === "click" && this["_hasFireTapEvent"]) {
-        return;
-      }
-      return Widget.__super__.fire.call(this, eventName, self, arg);
-    };
-
-    Widget.prototype._doRefreshDom = function() {
-      var len1, n, name, ref;
-      if (!this._dom) {
-        return;
-      }
-      Widget.__super__._doRefreshDom.call(this);
-      if (this._float) {
-        this._classNamePool.add(this._float + " floated");
-      }
-      this._classNamePool.toggle("display-none", !!!this._display);
-      if (!this._rendered && this._class) {
-        ref = this._class.split(" ");
-        for (n = 0, len1 = ref.length; n < len1; n++) {
-          name = ref[n];
-          this._classNamePool.add(name);
-        }
-      }
-    };
-
-    Widget.prototype._bindEvent = function(eventName) {
-      var $dom, eventConfig;
-      if (!this._dom) {
-        return;
-      }
-      if (this._bindedEvents == null) {
-        this._bindedEvents = {};
-      }
-      if (this._bindedEvents[eventName]) {
-        return;
-      }
-      $dom = this.get$Dom();
-      eventConfig = this.constructor.events.$get(eventName);
-      if (eventConfig != null ? eventConfig.$event : void 0) {
-        $dom.on(eventConfig.$event, (function(_this) {
-          return function(evt) {
-            var arg;
-            arg = {
-              dom: _this._dom,
-              event: evt
-            };
-            return _this.fire(eventName, _this, arg);
-          };
-        })(this));
-        this._bindedEvents[eventName] = true;
-        return;
-      }
-      if (eventConfig != null ? eventConfig.hammerEvent : void 0) {
-        if (this._hammer == null) {
-          this._hammer = new Hammer(this._dom, {});
-        }
-        if (ACTIVE_PINCH_REG.test(eventName)) {
-          this._hammer.get("pinch").set({
-            enable: true
-          });
-        }
-        if (ACTIVE_ROTATE_REG.test(eventName)) {
-          this._hammer.get("rotate").set({
-            enable: true
-          });
-        }
-        if (PAN_VERTICAL_events.indexOf(eventName) >= 0) {
-          this._hammer.get("pan").set({
-            direction: Hammer.DIRECTION_ALL
-          });
-        }
-        if (SWIPE_VERTICAL_events.indexOf(eventName) >= 0) {
-          this._hammer.get("swipe").set({
-            direction: Hammer.DIRECTION_ALL
-          });
-        }
-        this._hammer.on(eventConfig.hammerEvent, (function(_this) {
-          return function(evt) {
-            var arg;
-            arg = {
-              dom: _this._dom,
-              event: evt,
-              eventName: eventName
-            };
-            return _this.fire(eventName, _this, arg);
-          };
-        })(this));
-        this._bindedEvents[eventName] = true;
-        return;
-      }
-    };
-
-    Widget.prototype._resetDimension = function() {
-      var $dom, height, unit, width;
-      $dom = this.get$Dom();
-      unit = cola.constants.WIDGET_DIMENSION_UNIT;
-      height = this.get("height");
-      if (isFinite(height)) {
-        height = "" + (parseInt(height)) + unit;
-      }
-      if (height) {
-        $dom.css("height", height);
-      }
-      width = this.get("width");
-      if (isFinite(width)) {
-        width = "" + (parseInt(width)) + unit;
-      }
-      if (width) {
-        $dom.css("width", width);
-      }
-    };
-
-    Widget.prototype.showDimmer = function(options) {
-      var $dom, content, dimmer, dimmerContent, k, v;
-      if (options == null) {
-        options = {};
-      }
-      if (!this._dom) {
-        return this;
-      }
-      content = options.content;
-      if (!content && this._dimmer) {
-        content = this._dimmer.content;
-      }
-      if (content) {
-        if (typeof content === "string") {
-          dimmerContent = $.xCreate({
-            tagName: "div",
-            content: content
-          });
-        } else if (content.constructor === Object.prototype.constructor && content.tagName) {
-          dimmerContent = $.xCreate(content);
-        } else if (content.nodeType === 1) {
-          dimmerContent = content;
-        }
-      }
-      if (this._dimmer == null) {
-        this._dimmer = {};
-      }
-      for (k in options) {
-        v = options[k];
-        if (k !== "content") {
-          this._dimmer[k] = v;
-        }
-      }
-      $dom = this.get$Dom();
-      dimmer = $dom.dimmer("get dimmer");
-      if (dimmerContent) {
-        if (dimmer) {
-          $(dimmer).empty();
-        } else {
-          $dom.dimmer("create");
-        }
-        $dom.dimmer("add content", dimmerContent);
-      }
-      $dom.dimmer(this._dimmer);
-      $dom.dimmer("show");
-      return this;
-    };
-
-    Widget.prototype.hideDimmer = function() {
-      if (!this._dom) {
-        return this;
-      }
-      this.get$Dom().dimmer("hide");
-      return this;
-    };
-
-    Widget.prototype.destroy = function() {
-      if (this._destroyed) {
-        return;
-      }
-      if (this._dom) {
-        delete this._hammer;
-        delete this._bindedEvents;
-        delete this._parent;
-        delete this._doms;
-      }
-      Widget.__super__.destroy.call(this);
-      this._destroyed = true;
-    };
-
-    return Widget;
-
-  })(cola.RenderableElement);
-
-  cola.floatWidget = {
-    _zIndex: 1100,
-    zIndex: function() {
-      return ++cola.floatWidget._zIndex;
-    }
-  };
-
-  cola.Exception.showException = function(ex) {
-    var msg;
-    if (ex instanceof cola.Exception || ex instanceof Error) {
-      msg = ex.message;
-    } else {
-      msg = ex + "";
-    }
-    return cola.alert(msg);
-  };
-
-  cola.WidgetDataModel = (function(superClass) {
-    extend(WidgetDataModel, superClass);
-
-    function WidgetDataModel(model, widget1) {
-      this.widget = widget1;
-      WidgetDataModel.__super__.constructor.call(this, model);
-    }
-
-    WidgetDataModel.prototype.get = function(path, loadMode, context) {
-      var ref;
-      if (path.charCodeAt(0) === 64) {
-        return this.widget.get(path.substring(1));
-      } else {
-        return (ref = this.model.parent) != null ? ref.data.get(path, loadMode, context) : void 0;
-      }
-    };
-
-    WidgetDataModel.prototype.set = function(path, value) {
-      var ref;
-      if (path.charCodeAt(0) === 64) {
-        this.widget.set(path.substring(1), value);
-        this._onDataMessage(path.split("."), cola.constants.MESSAGE_PROPERTY_CHANGE, {});
-      } else {
-        if ((ref = this.model.parent) != null) {
-          ref.data.set(path, value);
-        }
-      }
-    };
-
-    WidgetDataModel.prototype._processMessage = function(bindingPath, path, type, arg) {
-      var attr, e, entity, isParent, ref, relativePath, targetPath, value;
-      this._onDataMessage(path, type, arg);
-      entity = arg.entity || arg.entityList;
-      if (entity) {
-        ref = this.widget._entityProps;
-        for (attr in ref) {
-          value = ref[attr];
-          isParent = false;
-          e = entity;
-          while (e) {
-            if (e === value) {
-              isParent = true;
-              break;
-            }
-            e = e._parent;
-          }
-          if (isParent) {
-            targetPath = value.getPath();
-            if (targetPath != null ? targetPath.length : void 0) {
-              relativePath = path.slice(targetPath.length);
-              this._onDataMessage(["@" + attr].concat(relativePath), type, arg);
-            }
-          }
-        }
-      }
-    };
-
-    WidgetDataModel.prototype.getDataType = function(path) {
-      var ref;
-      if (path.charCodeAt(0) === 64) {
-        return null;
-      } else {
-        return (ref = this.model.parent) != null ? ref.data.getDataType(path) : void 0;
-      }
-    };
-
-    WidgetDataModel.prototype.getProperty = function(path) {
-      var ref;
-      if (path.charCodeAt(0) === 64) {
-        return null;
-      } else {
-        return (ref = this.model.parent) != null ? ref.data.getDataType(path) : void 0;
-      }
-    };
-
-    WidgetDataModel.prototype.flush = function(name, loadMode) {
-      var ref;
-      if (path.charCodeAt(0) !== 64) {
-        if ((ref = this.model.parent) != null) {
-          ref.data.getDataType(name, loadMode);
-        }
-      }
-      return this;
-    };
-
-    return WidgetDataModel;
-
-  })(cola.AbstractDataModel);
-
-  cola.WidgetModel = (function(superClass) {
-    extend(WidgetModel, superClass);
-
-    function WidgetModel(widget1, parent1) {
-      var ref, widget;
-      this.widget = widget1;
-      this.parent = parent1;
-      widget = this.widget;
-      this.data = new cola.WidgetDataModel(this, widget);
-      if ((ref = this.parent) != null) {
-        ref.data.bind("**", this);
-      }
-      this.action = function(name) {
-        var method;
-        method = widget[name];
-        if (method instanceof Function) {
-          return function() {
-            return method.apply(widget, arguments);
-          };
-        }
-        return widget._scope.action(name);
-      };
-    }
-
-    WidgetModel.prototype.repeatNotification = true;
-
-    WidgetModel.prototype._processMessage = function(bindingPath, path, type, arg) {
-      if (this.messageTimestamp >= arg.timestamp) {
-        return;
-      }
-      return this.data._processMessage(bindingPath, path, type, arg);
-    };
-
-    return WidgetModel;
-
-  })(cola.SubScope);
-
-  cola.TemplateWidget = (function(superClass) {
-    extend(TemplateWidget, superClass);
-
-    function TemplateWidget() {
-      return TemplateWidget.__super__.constructor.apply(this, arguments);
-    }
-
-    return TemplateWidget;
-
-  })(cola.Widget);
 
   containerEmptyChildren = [];
 
@@ -13516,6 +13568,7 @@
         self._scrolling(left, top, zoom);
       }, options);
       this._bindEvents();
+      ZyngaScroller.__super__.constructor.call(this, options);
     }
 
     ZyngaScroller.prototype.scrollSize = function(dir, container, content) {
@@ -15591,12 +15644,14 @@
     };
 
     SubView.prototype._initDom = function(dom) {
-      var $dom;
+      var $dom, content;
       $dom = $fly(dom);
       if ($dom.find(">.content").length === 0) {
-        $dom.xAppend({
+        content = {
           "class": "content"
-        });
+        };
+        content[cola.constants.IGNORE_DIRECTIVE] = true;
+        $dom.xAppend(content);
       }
       if (this._url) {
         this.load({
@@ -15617,23 +15672,37 @@
       dom = this._dom;
       this.unload();
       if (options) {
-        this._parentModel = options.parentModel;
-        this._modelName = options.modelName;
-        this._url = options.url;
-        this._jsUrl = options.jsUrl;
-        this._cssUrl = options.cssUrl;
-        this._param = options.param;
+        if (options.parentModel) {
+          this._parentModel = options.parentModel;
+        }
+        if (options.modelName) {
+          this._modelName = options.modelName;
+        }
+        if (options.url) {
+          this._url = options.url;
+        }
+        if (options.jsUrl) {
+          this._jsUrl = options.jsUrl;
+        }
+        if (options.cssUrl) {
+          this._cssUrl = options.cssUrl;
+        }
+        if (options.param) {
+          this._param = options.param;
+        }
       }
       if (this._parentModel instanceof cola.Scope) {
         parentModel = this._parentModel;
+      } else if (this._scope) {
+        parentModel = this._scope;
       } else {
         parentModelName = this._parentModel || cola.constants.DEFAULT_PATH;
         parentModel = cola.model(parentModelName);
       }
       if (this._modelName) {
-        model = new cola.Model(this._modelName, parentModel || this._scope);
+        model = new cola.Model(this._modelName, parentModel);
       } else {
-        model = new cola.Model(parentModel || this._scope);
+        model = new cola.Model(parentModel);
       }
       cola.util.userData(dom, "_model", model);
       this._loading = true;
@@ -15662,6 +15731,9 @@
         callback: {
           complete: (function(_this) {
             return function(success, result) {
+              _this._currentUrl = _this._url;
+              _this._currentJsUrl = _this._jsUrl;
+              _this._currentCssUrl = _this._cssUrl;
               if (!_this._showLoadingContent) {
                 $dom.find(">.content").css("visibility", "");
               }
@@ -15686,7 +15758,7 @@
         callback = options;
         options = null;
       }
-      if (this._url === (options != null ? options.url : void 0)) {
+      if (this._currentUrl && this._currentUrl === (options != null ? options.url : void 0) && this._currentJsUrl === options.jsUrl && this._currentCssUrl === options.cssUrl) {
         cola.callback(callback, true);
       } else {
         this.load(options, callback);
@@ -15695,13 +15767,15 @@
 
     SubView.prototype.unload = function() {
       var dom, model;
-      if (!this._dom) {
+      if (!(this._dom || this._currentUrl)) {
         return;
       }
       cola.unloadSubView($fly(this._dom).find(">.content")[0], {
-        htmlUrl: this._url,
-        cssUrl: this._cssUrl
+        htmlUrl: this._currentUrl,
+        cssUrl: this._currentCssUrl
       });
+      delete this._currentUrl;
+      delete this._currentCssUrl;
       dom = this._dom;
       model = cola.util.userData(dom, "_model");
       if (model != null) {
@@ -18518,7 +18592,7 @@
         "class": "caption"
       });
       headerContent.appendChild(this._doms.caption);
-      template = this._getTemplate("tools");
+      template = this.getTemplate("tools");
       cola.xRender(template, this._scope);
       toolsDom = this._doms.tools = $.xCreate({
         "class": "tools"
@@ -18609,7 +18683,7 @@
       while (child) {
         if (child.nodeType === 1) {
           if (child.nodeName === "TEMPLATE") {
-            this._regTemplate(child);
+            this.regTemplate(child);
           } else {
             $child = $(child);
             if (!$child.hasClass("content")) {
@@ -20990,7 +21064,7 @@
       if (property) {
         context.defaultPath += "." + property;
       }
-      template = this._getTemplate("value-content");
+      template = this.getTemplate("value-content");
       if (template) {
         if (template instanceof Array) {
           for (n = 0, len1 = template.length; n < len1; n++) {
@@ -21373,7 +21447,7 @@
       var template;
       Dropdown.__super__._initValueContent.call(this, valueContent, context);
       if (!valueContent.firstChild) {
-        template = this._getTemplate("default");
+        template = this.getTemplate();
         if (template) {
           valueContent.appendChild(this._cloneTemplate(template));
         }
@@ -21423,7 +21497,7 @@
         } else {
           templateName = "list";
         }
-        template = this._getTemplate(templateName);
+        template = this.getTemplate(templateName);
         this._dropdownContent = template = cola.xRender(template, this._scope);
         this._list = list = cola.widget(this._doms.list);
         if (this._templates) {
@@ -21434,12 +21508,12 @@
               if (name === "default") {
                 hasDefaultTemplate = true;
               }
-              list._regTemplate(name, templ);
+              list.regTemplate(name, templ);
             }
           }
         }
         if (!hasDefaultTemplate) {
-          list._regTemplate("default", {
+          list.regTemplate("default", {
             tagName: "li",
             "c-bind": "$default"
           });
@@ -21511,7 +21585,7 @@
         if (this._content) {
           dropdownContent = this._content;
         } else {
-          dropdownContent = this._getTemplate();
+          dropdownContent = this.getTemplate();
         }
         this._dropdownContent = cola.xRender(dropdownContent, this._scope);
       }
@@ -21695,7 +21769,7 @@
         i++;
       }
       $fly(table).on("click", function(event) {
-        var position;
+        var position, value;
         position = cola.calendar.getCellPosition(event);
         if (position && position.element) {
           if (position.row >= picker._rowCount) {
@@ -21703,6 +21777,8 @@
           }
           if (picker._autoSelect) {
             picker.setSelectionCell(position.row, position.column);
+            value = $fly(position.element).attr("cell-date");
+            picker._currentDate = new Date(Date.parse(value));
           }
           return picker.fire("cellClick", picker, position);
         }
@@ -21849,6 +21925,7 @@
 
     DateGrid.prototype.setCurrentDate = function(date) {
       var month, year;
+      this._currentDate = date;
       month = date.getMonth();
       year = date.getFullYear();
       this.setState(year, month);
@@ -21974,11 +22051,7 @@
 
   DEFAULT_DATE_DISPLAY_FORMAT = "yyyy-MM-dd";
 
-  DEFAULT_DATE_INPUT_FORMAT = "yyyyMMdd";
-
-  DEFAULT_TIME_DISPLAY_FORMAT = "HH:mm:ss";
-
-  DEFAULT_TIME_INPUT_FORMAT = "HHmmss";
+  DEFAULT_DATE_TIME_DISPLAY_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
   cola.DatePicker = (function(superClass) {
     extend(DatePicker, superClass);
@@ -21992,12 +22065,8 @@
     DatePicker.CLASS_NAME = "date input drop";
 
     DatePicker.attributes = {
-      displayFormat: {
-        defaultValue: DEFAULT_DATE_DISPLAY_FORMAT
-      },
-      inputFormat: {
-        defaultValue: DEFAULT_DATE_DISPLAY_FORMAT
-      },
+      displayFormat: null,
+      inputFormat: null,
       icon: {
         defaultValue: "calendar"
       },
@@ -22025,7 +22094,14 @@
           readOnly = _this._readOnly;
           if (!readOnly) {
             value = $(_this._doms.input).val();
-            inputFormat = _this._inputFormat || _this._displayFormat || DEFAULT_DATE_DISPLAY_FORMAT;
+            inputFormat = _this._inputFormat || _this._displayFormat;
+            if (!inputFormat) {
+              if (_this._inputType === "date") {
+                inputFormat = DEFAULT_DATE_DISPLAY_FORMAT;
+              } else {
+                inputFormat = DEFAULT_DATE_TIME_DISPLAY_FORMAT;
+              }
+            }
             if (inputFormat && value) {
               value = inputFormat + "||" + value;
               xDate = new XDate(value);
@@ -22104,10 +22180,13 @@
         if (value.toDateString() === "Invalid Date") {
           value = "";
         } else {
-          if (inputType === "date") {
-            format = DEFAULT_DATE_DISPLAY_FORMAT;
-          } else if (inputType === "time") {
-            format = DEFAULT_TIME_DISPLAY_FORMAT;
+          format = this._inputFormat || this._displayFormat;
+          if (!format) {
+            if (inputType === "date") {
+              format = DEFAULT_DATE_DISPLAY_FORMAT;
+            } else {
+              format = DEFAULT_DATE_TIME_DISPLAY_FORMAT;
+            }
           }
           value = (new XDate(value)).toString(format);
         }
@@ -22131,23 +22210,106 @@
     };
 
     DatePicker.prototype.open = function() {
-      var value;
+      var ref, value;
       DatePicker.__super__.open.call(this);
       value = this.get("value");
       if (!value) {
         value = new Date();
       } else {
         if (!(value instanceof Date)) {
-          value = Date.parse(value);
+          value = new Date(Date.parse(value));
         }
       }
       if (value.toDateString() === "Invalid Date") {
         value = new Date();
       }
-      return this._dataGrid.setCurrentDate(value);
+      this._dataGrid.setCurrentDate(value);
+      return (ref = this._timeEditor) != null ? ref.set({
+        hour: value.getHours(),
+        minute: value.getMinutes(),
+        second: value.getSeconds()
+      }) : void 0;
     };
 
     DatePicker.prototype._getDropdownContent = function() {
+      if (this._inputType === "date") {
+        return this._getDateDropdownContent();
+      } else {
+        return this._getDateTimeDropdownContent();
+      }
+    };
+
+    DatePicker.prototype._getDateTimeDropdownContent = function() {
+      var container, context, dateGrid, datePicker;
+      datePicker = this;
+      datePicker._selectedDate = null;
+      if (!this._dropdownContent) {
+        this._dataGrid = dateGrid = new cola.DateGrid({
+          cellClick: (function(_this) {
+            return function(self, arg) {
+              var value;
+              value = $fly(arg.element).attr("cell-date");
+              return datePicker._selectedDate = value;
+            };
+          })(this)
+        });
+        currentDate = new Date();
+        dateGrid.setCurrentDate(currentDate);
+        context = {};
+        container = $.xCreate({
+          "class": "v-box date-time-picker",
+          content: [
+            {
+              "class": "flex-box",
+              contextKey: "dateGridBox"
+            }, {
+              "class": "box",
+              contextKey: "timeBox",
+              content: {
+                "class": "h-box",
+                content: [
+                  {
+                    "class": "label box",
+                    content: (cola.resource("cola.date.time")) + ":"
+                  }, {
+                    "class": "flex-box",
+                    content: {
+                      contextKey: "timeEditorBox"
+                    }
+                  }, {
+                    "class": "box actions",
+                    content: {
+                      "class": "ui button primary",
+                      content: cola.resource("cola.message.approve"),
+                      contextKey: "approveBtn"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }, context);
+        this._timeEditor = new cola.TimeEditor({
+          hour: currentDate.getHours(),
+          minute: currentDate.getMinutes(),
+          second: currentDate.getSeconds()
+        });
+        context.dateGridBox.appendChild(dateGrid.getDom());
+        context.timeEditorBox.appendChild(this._timeEditor.getDom());
+        $(context.approveBtn).on("click", function() {
+          var date;
+          date = datePicker._dataGrid._currentDate;
+          date.setHours(datePicker._timeEditor.get("hour"));
+          date.setMinutes(datePicker._timeEditor.get("minute"));
+          date.setSeconds(datePicker._timeEditor.get("second"));
+          return datePicker.close(date);
+        });
+        this._dropdownContent = container;
+      }
+      return this._dropdownContent;
+    };
+
+    DatePicker.prototype._getDateDropdownContent = function() {
       var dateGrid, datePicker;
       datePicker = this;
       if (!this._dropdownContent) {
@@ -22548,6 +22710,125 @@
     return YearMonthDropDown;
 
   })(cola.CustomDropdown);
+
+  cola.TimeEditor = (function(superClass) {
+    extend(TimeEditor, superClass);
+
+    function TimeEditor() {
+      return TimeEditor.__super__.constructor.apply(this, arguments);
+    }
+
+    TimeEditor.CLASS_NAME = "ui time-editor";
+
+    TimeEditor.attributes = {
+      hour: {
+        defaultValue: "00",
+        refreshDom: true
+      },
+      minute: {
+        defaultValue: "00",
+        refreshDom: true
+      },
+      second: {
+        defaultValue: "00",
+        refreshDom: true
+      }
+    };
+
+    TimeEditor.events = {
+      change: null
+    };
+
+    TimeEditor.prototype._initDom = function(dom) {
+      var childDom, doPost;
+      if (this._doms == null) {
+        this._doms = {};
+      }
+      childDom = $.xCreate({
+        "class": "time-wrapper",
+        content: [
+          {
+            "class": "edit ui input",
+            content: {
+              tagName: "input",
+              "class": "hour",
+              contextKey: "hour"
+            }
+          }, {
+            "class": "separator",
+            content: ":"
+          }, {
+            "class": "edit ui input",
+            content: {
+              tagName: "input",
+              "class": "minute",
+              contextKey: "minute"
+            }
+          }, {
+            "class": "separator",
+            content: ":"
+          }, {
+            "class": "edit ui input",
+            content: {
+              tagName: "input",
+              "class": "second",
+              contextKey: "second"
+            }
+          }
+        ]
+      }, this._doms);
+      doPost = (function(_this) {
+        return function(input) {
+          _this["_" + input.className] = parseInt($(input).val() || "00");
+          return _this.fire("change", _this, {
+            hour: _this._hour,
+            minute: _this._minute,
+            second: _this._second
+          });
+        };
+      })(this);
+      $(childDom).find("input").keyup(function() {
+        var intVal, max, val;
+        val = this.value.replace(/[^\d]/g, '');
+        if (event.keyCode === 37 || event.keyCode === 39) {
+          return;
+        }
+        if (event.keyCode !== 8 && val) {
+          intVal = parseInt(this.value);
+          if (event.keyCode === 38) {
+            intVal++;
+          } else if (event.keyCode === 40) {
+            intVal--;
+          }
+          max = this.className === "hour" ? 24 : 60;
+          if (intVal >= max) {
+            this.value = max - 1;
+          } else if (intVal <= 0) {
+            this.value = val.length >= 2 ? "00" : "0";
+          } else if (intVal > 0 && intVal < 10) {
+            this.value = val.length >= 2 ? "0" + intVal : intVal;
+          } else {
+            this.value = intVal;
+          }
+        }
+        return doPost(this);
+      });
+      return dom.appendChild(childDom);
+    };
+
+    TimeEditor.prototype._doRefreshDom = function() {
+      var len1, n, ref, v;
+      TimeEditor.__super__._doRefreshDom.call(this);
+      ref = ["hour", "minute", "second"];
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        v = ref[n];
+        $fly(this._doms[v]).val(this["_" + v]);
+      }
+    };
+
+    return TimeEditor;
+
+  })(cola.Widget);
 
   cola.registerWidget(cola.DatePicker);
 
@@ -23206,7 +23487,7 @@
         if (!itemsWrapper && nodeName === "UL") {
           itemsWrapper = child;
         } else if (nodeName === "TEMPLATE") {
-          this._regTemplate(child);
+          this.regTemplate(child);
         } else {
           dom.removeChild(child);
         }
@@ -24252,7 +24533,7 @@
           } else if (!doms.indicators && cola.util.hasClass(child, "indicators")) {
             doms.indicators = child;
           } else if (child.nodeName === "TEMPLATE") {
-            this._regTemplate(child);
+            this.regTemplate(child);
           }
         }
         child = child.nextSibling;
@@ -24260,9 +24541,7 @@
       if (doms.indicators) {
         this.refreshIndicators();
       } else {
-        if (!doms.indicators) {
-          this._createIndicatorContainer(dom);
-        }
+        this._createIndicatorContainer(dom);
       }
       if (!doms.wrap) {
         this._createItemsWrap(dom);
@@ -24308,7 +24587,7 @@
       if (!this._doms.wrap) {
         this._createItemsWrap(dom);
       }
-      template = this._getTemplate();
+      template = this.getTemplate();
       if (template) {
         if (this._bind) {
           $fly(template).attr("c-repeat", this._bind);
@@ -25799,7 +26078,7 @@
             doms.wrap = child;
             parseItem(child);
           } else if (child.nodeName === "TEMPLATE") {
-            this._regTemplate(child);
+            this.regTemplate(child);
           }
         }
         child = child.nextSibling;
@@ -25811,7 +26090,7 @@
       if (!this._doms.wrap) {
         this._createItemsWrap(dom);
       }
-      template = this._getTemplate();
+      template = this.getTemplate();
       if (template) {
         if (this._bind) {
           $fly(template).attr("c-repeat", this._bind);
@@ -26859,7 +27138,7 @@
 
     AbstractList.prototype._refreshEmptyItemDom = function() {
       var emptyItemDom, items, itemsWrapper;
-      emptyItemDom = this._emptyItemDom = this._getTemplate("empty-item");
+      emptyItemDom = this._emptyItemDom = this.getTemplate("empty-item");
       if (emptyItemDom) {
         items = this._realItems;
         if (items instanceof cola.EntityList && items.entityCount === 0 || items instanceof Array && items.length === 0) {
@@ -26883,7 +27162,7 @@
         this._pullAction = null;
         if (this._pullDown) {
           hasPullAction = true;
-          pullDownPane = this._getTemplate("pull-down-pane");
+          pullDownPane = this.getTemplate("pull-down-pane");
           if (pullDownPane == null) {
             pullDownPane = $.xCreate({
               tagName: "div"
@@ -26893,7 +27172,7 @@
         }
         if (this._pullUp) {
           hasPullAction = true;
-          pullUpPane = this._getTemplate("pull-up-pane");
+          pullUpPane = this.getTemplate("pull-up-pane");
           if (pullUpPane == null) {
             pullUpPane = $.xCreate({
               tagName: "div"
@@ -27519,7 +27798,7 @@
 
     ListView.prototype._createNewItem = function(itemType, item) {
       var $itemDom, itemDom, klass, template;
-      template = this._getTemplate(itemType);
+      template = this.getTemplate(itemType);
       if (template) {
         itemDom = this._cloneTemplate(template);
       } else {
@@ -27924,8 +28203,8 @@
 
     ListView.prototype._initItemSlide = function() {
       var itemScope, itemsWrapper, leftSlidePaneTemplate, rightSlidePaneTemplate;
-      leftSlidePaneTemplate = this._getTemplate("slide-left-pane");
-      rightSlidePaneTemplate = this._getTemplate("slide-right-pane");
+      leftSlidePaneTemplate = this.getTemplate("slide-left-pane");
+      rightSlidePaneTemplate = this.getTemplate("slide-right-pane");
       if (!(leftSlidePaneTemplate || rightSlidePaneTemplate)) {
         return;
       }
@@ -28031,7 +28310,7 @@
           }
         }
         this._itemSlideDirection = direction;
-        this._itemSlidePane = slidePane = this._getTemplate("slide-" + direction + "-pane");
+        this._itemSlidePane = slidePane = this.getTemplate("slide-" + direction + "-pane");
         if (slidePane) {
           itemScope = cola.util.userData(slidePane, "scope");
           itemScope.data.setTargetData(item);
@@ -28880,7 +29159,7 @@
       child = dom.firstChild;
       while (child) {
         if (child.nodeName === "TEMPLATE") {
-          this._regTemplate(child);
+          this.regTemplate(child);
         }
         child = child.nextSibling;
       }
@@ -29454,13 +29733,13 @@
 
     Tree.prototype._createNewItem = function(itemType, node) {
       var contentDom, itemDom, nodeDom, template;
-      template = this._getTemplate(itemType);
+      template = this.getTemplate(itemType);
       itemDom = this._cloneTemplate(template);
       $fly(itemDom).addClass("tree item " + itemType);
       itemDom._itemType = itemType;
       nodeDom = itemDom.firstChild;
       if (nodeDom && cola.util.hasClass(nodeDom, "node")) {
-        template = this._getTemplate("node-" + itemType, "node");
+        template = this.getTemplate("node-" + itemType, "node");
         if (template) {
           contentDom = this._cloneTemplate(template);
           $fly(contentDom).addClass("node-content");
@@ -30064,9 +30343,7 @@
       property: null,
       bind: null,
       template: null,
-      sortable: {
-        defaultValue: true
-      },
+      sortable: null,
       sortDirection: null
     };
 
@@ -30102,16 +30379,25 @@
           triState: true,
           change: (function(_this) {
             return function(self, arg) {
-              return _this.fire("change", _this, {
-                checkbox: self,
-                oldValue: arg.oldValue,
-                value: arg.value
-              });
+              if (typeof arg.value !== "boolean") {
+                return _this.fire("change", _this, {
+                  checkbox: self,
+                  oldValue: arg.oldValue,
+                  value: arg.value
+                });
+              }
             };
           })(this),
           click: (function(_this) {
             return function(self) {
-              _this.selectAll(self.get("checked"));
+              var checked;
+              checked = self.get("checked");
+              _this.selectAll(checked);
+              _this.fire("change", _this, {
+                checkbox: self,
+                oldValue: !checked,
+                value: checked
+              });
             };
           })(this)
         });
@@ -30272,7 +30558,6 @@
       selectedProperty: {
         defaultValue: "selected"
       },
-      sortable: null,
       sortMode: {
         defaultValue: "remote"
       }
@@ -30502,7 +30787,7 @@
         next = child.nextSibling;
         nodeName = child.nodeName.toLowerCase();
         if (nodeName === "template") {
-          this._regTemplate(child);
+          this.regTemplate(child);
         } else {
           dom.removeChild(child);
         }
@@ -30513,7 +30798,7 @@
 
     AbstractTable.prototype._createNewItem = function(itemType, item) {
       var itemDom, template;
-      template = this._getTemplate(itemType);
+      template = this.getTemplate(itemType);
       itemDom = this._cloneTemplate(template);
       $fly(itemDom).addClass("table item " + itemType);
       itemDom._itemType = itemType;
@@ -30562,7 +30847,7 @@
 
     Table.prototype._sysHeaderClick = function(column) {
       var collection, criteria, invoker, parameter, processed, property, sortDirection;
-      if (this.get("sortable") && column instanceof cola.TableDataColumn && column.get("sortable")) {
+      if (column instanceof cola.TableDataColumn && column.get("sortable")) {
         sortDirection = column.get("sortDirection");
         if (sortDirection === "asc") {
           sortDirection = "desc";
@@ -30863,7 +31148,7 @@
         if (template === void 0) {
           templateName = column._headerTemplate;
           if (templateName) {
-            template = this._getTemplate(templateName);
+            template = this.getTemplate(templateName);
           }
           column._realHeaderTemplate = template || null;
         }
@@ -30956,7 +31241,7 @@
         if (template === void 0) {
           templateName = column._footerTemplate;
           if (templateName) {
-            template = this._getTemplate(templateName);
+            template = this.getTemplate(templateName);
           }
           column._realFooterTemplate = template || null;
         }
@@ -31046,7 +31331,7 @@
         if (template === void 0) {
           templateName = column._template;
           if (templateName) {
-            template = this._getTemplate(templateName);
+            template = this.getTemplate(templateName);
           }
           column._realTemplate = template || null;
         }
@@ -31744,14 +32029,14 @@
 
     TimeLine.prototype._createNewItem = function(itemType, item) {
       var container, contentDom, itemDom, len1, n, name, ref, template;
-      template = this._getTemplate(itemType);
+      template = this.getTemplate(itemType);
       itemDom = this._cloneTemplate(template);
       $fly(itemDom).addClass("item " + itemType);
       itemDom._itemType = itemType;
       ref = ["content", "icon", "label"];
       for (n = 0, len1 = ref.length; n < len1; n++) {
         name = ref[n];
-        template = this._getTemplate(name);
+        template = this.getTemplate(name);
         contentDom = this._cloneTemplate(template, true);
         container = $.xCreate({
           tagName: "div",
