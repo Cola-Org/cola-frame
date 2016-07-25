@@ -1,0 +1,239 @@
+@import "../.global.less";
+
+.positive-text {
+	color: @positiveColor;
+}
+
+.negative-text {
+	color: @negativeTextColor;
+}
+
+.primary-text {
+	color: @primaryColor;
+}
+
+.secondary-text {
+	color: @secondaryColor;
+}
+
+.tertiary-text {
+	color: @tertiaryColor;
+}
+
+.fourthly-text {
+	color: @fourthlyColor;
+}
+
+.error-page {
+	> h1 {
+		color: @descriptionFontColor;
+	}
+}
+
+body > .v-box > .page-header.ui.menu {
+
+	.logo {
+		img {
+			margin-right: 0.6em;
+			width: auto;
+			height: 40px;
+		}
+		span {
+			font-size: 1.4em;
+		}
+	}
+
+}
+
+#rightContainer {
+	background-color: rgba(232, 236, 239, 0.498039215686275);
+}
+
+#viewTab {
+	padding: 0em;
+	> .contents {
+		background-color: transparent;
+	}
+}
+
+html {
+	font-size: @fontSize !important;
+	body {
+		//background-color: #f3f3f4;
+		background-color: #fff;
+		font-size: @fontSize !important;
+		color: @fontColor;
+
+		//background-color: rgba(232, 236, 239, 0.498039215686275);
+		h1, h2, h3, h4, h5 {
+			font-weight: inherit;
+			margin: 0 !important;
+		}
+		h1 {
+			font-size: 1.8rem;
+		}
+		h2 {
+			font-size: 1.6rem;
+		}
+		h3 {
+			font-size: 1.4rem;
+		}
+		h4 {
+			font-size: 1.2rem;
+		}
+		a, .link {
+			color: @linkFontColor;
+			cursor: pointer;
+			&.primary {
+				color: @primaryColorLinkFontColor;
+				&:hover, &:active, &:focus {
+					color: darken(@primaryColorLinkFontColor, 10%);
+				}
+			}
+			&.secondary {
+				color: @secondaryLinkFontColor;
+				&:hover, &:active, &:focus {
+					color: darken(@secondaryLinkFontColor, 10%);
+				}
+			}
+			&.tertiary {
+				color: @tertiaryLinkFontColor;
+				&:hover, &:active, &:focus {
+					color: darken(@secondaryLinkFontColor, 10%);
+				}
+			}
+		}
+
+		small {
+			font-size: 0.85rem;
+		}
+	}
+}
+
+.primary-background {
+	background-color: @primaryColor;
+}
+
+.light-primary-background {
+	background-color: @lightPrimaryColor;
+}
+
+.dark-primary-background {
+	background-color: @darkPrimaryColor;
+}
+
+.secondary-background {
+	background-color: @secondaryColor;
+}
+
+.light-secondary-background {
+	background-color: @lightSecondaryColor;
+}
+
+.dark-secondary-background {
+	background-color: @darkSecondaryColor;
+}
+
+.tertiary-background {
+	background-color: @tertiaryColor;
+}
+
+.light-tertiary-background {
+	background-color: @lightTertiaryColor;
+}
+
+.dark-tertiary-background {
+	background-color: @darkTertiaryColor;
+}
+
+.fourthly-background {
+	background-color: @fourthlyColor;
+}
+
+.light-fourthly-background {
+	background-color: @lightFourthlyColor;
+}
+
+.dark-fourthly-background {
+	background-color: @darkFourthlyColor;
+}
+
+.fifthly-background {
+	background-color: @fifthlyColor;
+}
+
+.light-fifthly-background {
+	background-color: @lightFifthlyColor;
+}
+
+.dark-fifthly-background {
+	background-color: @darkFifthlyColor;
+}
+
+.floating {
+	box-shadow: @floatingShadow;
+}
+
+.default-background {
+	background-color: @backgroundColor;
+}
+
+.light-background {
+	background-color: @lightBackgroundColor;
+}
+
+.dark-background {
+	background-color: @darkBackgroundColor;
+}
+
+.content-background {
+	background-color: @contentBackgroundColor;
+}
+
+.ui.sidebar {
+	.caption-bar {
+		padding: 1em;
+		background-color: @darkBackgroundColor;
+		> span {
+			line-height: 2em;
+		}
+		.tools {
+			position: absolute;
+			right: 0;
+			top: 0;
+			padding-top: 0. 6em;
+		}
+	}
+	.actions {
+		padding: 1em 2em;
+		text-align: right;
+		background-color: @darkBackgroundColor;
+	}
+}
+
+.ui.form .field > label {
+	font-weight: initial;
+}
+
+.ui.mini.input {
+	input {
+		padding: 0.7em 0.8em;
+	}
+}
+
+.ui.mini.button, .ui.mini.label {
+	padding: 0.7em 0.8em;
+}
+
+.desktop .ui.panel {
+	//.box-shadow(0 0 10px 0 rgba(34, 36, 38, 0.15););
+}
+
+.desktop .ui.fragment {
+	.box-shadow(0 2px 6px 0 rgba(34, 36, 38, 0.15););
+}
+
+.ui.widget-table.fused {
+	margin: 0 -0.6em;
+}
+

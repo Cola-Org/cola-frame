@@ -3,18 +3,21 @@ append head
 	link(rel="stylesheet", type="text/css", href="./frame/main-shop.css")
 block body
 	.v-box
-		.box.ui.menu.secondary.attached.page-header
-			.item.logo.header#appHeader
-			.right.menu
-				a.item.msg.icon.mail(c-onclick="messageBtnClick()")
-					i.icon.mail
-					span.badge(c-bind="messages.message")
-				a.item.msg.icon(c-onclick="taskBtnClick()")
-					i.icon.alarm.icon-animated-bell
-					span.badge(c-bind="messages.task")
-				a.item.icon.user(c-onclick="showUserSidebar()")
-					img.ui.image.avatar(c-src="user.avatar")
-					i.icon.dropdown
+		.box.page-header.h-box
+			.brand.box#appHeader
+			.flex-box
+				#topMenu
+			.box.right
+				.ui.menu.secondary
+					a.item.msg.icon.mail(c-onclick="messageBtnClick()")
+						i.icon.mail
+						span.badge(c-bind="messages.message")
+					a.item.msg.icon
+						i.icon.alarm.icon-animated-bell
+						span.badge(c-bind="messages.task")
+					a.item.icon.user(c-onclick="showUserSidebar()")
+						img.ui.image.avatar(c-src="user.avatar")
+						i.icon.dropdown
 		.flex-box
 			.h-box
 				.box#frameworkSidebarBox
@@ -22,7 +25,7 @@ block body
 						i.iconfont.icon-sidebar
 					.shop-menu.wrapper
 						ul
-							li(c-repeat="menu in menus").item.active
+							li(c-repeat="menu in menus" c-class="hasChild(menu)" c-onclick="menuItemClick(menu)").item.active
 								a.title.menu-item
 									i(c-class="menu.icon")
 									span(c-bind="menu.label")

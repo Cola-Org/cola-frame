@@ -1,6 +1,6 @@
 /* 主色调定义 */
 @primaryColor: #40bf97;
-@lightPrimaryColor:  lighten(@primaryColor, 10%);
+@lightPrimaryColor: lighten(@primaryColor, 10%);
 @darkPrimaryColor: darken(@primaryColor, 8%);
 
 @secondaryColor: #d93e50;
@@ -44,11 +44,11 @@
 @lightBorderColor: @lightDividerBorderColor;
 
 /* 主题色定义 */
-@positiveColor           : #21ba45;
-@positiveBackgroundColor : #FCFFF5;
-@positiveBorderColor     : #A3C293;
-@positiveHeaderColor     : #1A531B;
-@positiveTextColor       : #2C662D;
+@positiveColor           : @primaryColor;
+@positiveBackgroundColor : @primaryColor;
+@positiveBorderColor     : @primaryColor;
+@positiveHeaderColor     : @darkPrimaryColor;
+@positiveTextColor       : @primaryColor;
 
 @negativeColor           : #ed5565;
 @negativeBackgroundColor : #FFF6F6;
@@ -77,17 +77,38 @@
 @fontSize: 12px;
 
 /* main page */
-@pageHeaderBackgroundColor: #f3f3f4;
-@pageHeaderBorder: 1px solid #e7eaec;
-@pageHeaderItemFontColor: #888888;
-@sideBarItemIconColor: #aeb9c2;
-@sideBarItemTextColor: rgba(255, 255, 255, 0.7);
-@sideBarPrimaryColor: #212d38;
-@sideBarLightColor: rgb(41, 56, 70);
+@pageHeaderHeight: 60px;
+@pageHeaderBackgroundColor: @primaryColor;
+@appNameFontColor: @invertedFontColor;
+@appNameFontSize: 1em;
+@pageHeaderTopMenuItemBackgroundColor:@darkPrimaryColor;
+@appMsgIconColor: @invertedFontColor;
+@appMsgBadgeMailItemBackgroundColor: #2f886e;
+@appMsgBadgeTaskItemBackgroundColor: #f01b0a;
+@appMsgIconSize: 20px;
 
 @subtleShadow: 0px 1px 2px 0 @borderColor;
 @floatingShadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
 
+@leftMenuWidth: 14em;
+@leftMenuBarBackgroundColor: @lightTertiaryColor;
+@leftMenuBarIconColor: rgba(255, 255, 255, 0.7);
+@leftMenuItemIconColor: #aeb9c2;
+@leftMenuItemFontColor: rgba(255, 255, 255, 0.85);
+@oneLevelMenuBackgroundColor: @darkTertiaryColor;
+@oneLevelMenuHoverBackgroundColor: @lightTertiaryColor;
+@menuHighlightBoxShadow: inset 3px 0px 0px 0px @primaryColor;
 
+@frameRightContainer: #fff;
 
+@subMenuLayerTitleBackgroundColor: #D9DEE4;
+@subMenuLayerTitleFontColor: #000000;
+@subMenuLayerTitleIconColor: rgba(72, 179, 221, 0.81);
+@subMenuTreeBackgroundColor: @backgroundColor;
+@subMenuTreeNodeBackgroundColor: @lightBackgroundColor;
+@subMenuTreeNodeIconColor: #aeb9c2;
+@subMenuLayerBarIconColor: @lightTertiaryColor;
 
+@viewTabBoxShadow: inset 0 2px 0 @primaryColor;
+@viewTabBarHeight: 36px;
+@viewTabButtonRadius: 2px;

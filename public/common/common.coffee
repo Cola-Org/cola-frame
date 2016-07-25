@@ -21,31 +21,32 @@ unless rootApp
 		"service.menus": "./service/menus"
 		"service.user.detail": "./service/user/detail"
 		"menu.exclusive": false
+		"menu.labelProperty": "name"
+#
+#		"message.action":
+#			path: "http://cola-ui.com"
+#			type: "subWindow"
+#			label: "我的消息"
+#			closeable: true
+#			icon: ""
+#			icon: "icon menu"
+#
+#		"task.action":
+#			path: "http://cola-ui.com"
+#			type: "subWindow"
+#			label: "我的任务"
+#			closeable: true
+#			icon: "icon alarm outline"
 
-		"message.action":
-			path: "http://cola-ui.com"
-			type: "subWindow"
-			label: "我的消息"
-			closeable: true
-			icon:""
-			icon:"icon menu"
-
-		"task.action":
-			path: "http://cola-ui.com"
-			type: "subWindow"
-			label: "我的任务"
-			closeable: true
-			icon:"icon alarm outline"
-
-		"workbench":
-			path: "http://cola-ui.com"
-			type: "subWindow"
-			label: "我的工作台"
-			closeable: false
-			icon:"icon dashboard"
+#		"workbench":
+#			path: "./example/yuandong/main"
+#			type: "subWindow"
+#			label: "我的工作台"
+#			closeable: true
+#			icon: "icon dashboard"
 
 		"app.logo.path": "./resources/images/logo.png"
-		"app.name": "Cola-UI Client Framework"
+		"app.name": "Cola Frame"
 		title: "Cola-Frame"
 
 App = window.App =
@@ -122,7 +123,7 @@ App = window.App =
 		if rootApp
 			rootApp.prop(key, value)
 		else
-			if arguments.length == 1
+			if value == undefined or arguments.length == 1
 				if typeof  key == "string"
 					return properties[key]
 				else if key
@@ -130,9 +131,17 @@ App = window.App =
 						if key.hasOwnProperty(p) then properties[p] = key[p]
 			else
 				properties[key] = value
+	getLoginUser: ()->
+		return {
+			"username": "admin",
+			"cname": "系统管理员",
+			"companyName": "上海银联",
+			"orgCode": "123",
+			"companyId": "CUP-DATA"
+		}
 
 title = App.prop("title")
-if title then App.setTitle(title)
+if title and !rootApp then App.setTitle(title)
 if window.cola
 	cola.defaultAction("setting", (key)->
 		return App.prop(key)
@@ -140,7 +149,7 @@ if window.cola
 
 	cola.defaultAction("numberString", (number)->
 		return ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve",
-		        "thirteen", "fourteen", "fifteen", "sixteen"][number - 1];
+			"thirteen", "fourteen", "fifteen", "sixteen"][number - 1];
 	)
 
 	language = $.cookie("_language") || window.navigator.language;

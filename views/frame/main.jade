@@ -3,27 +3,31 @@ append head
 	link(rel="stylesheet", type="text/css", href="./frame/main.css")
 block body
 	.v-box
-		.box.ui.menu.secondary.attached.page-header
-			.item.logo.header#appHeader
-			.right.menu
-				a.item.msg.icon.mail(c-onclick="messageBtnClick()")
-					i.icon.mail
-					span.badge(c-bind="messages.message")
-				a.item.msg.icon(c-onclick="taskBtnClick()")
-					i.icon.alarm.icon-animated-bell
-					span.badge(c-bind="messages.task")
-				a.item.icon.user(c-onclick="showUserSidebar()")
-					img.ui.image.avatar(c-src="user.avatar")
-					i.icon.dropdown
+		.box.page-header.h-box
+			.brand.box#appHeader
+			.flex-box
+				#topMenu
+			.box.right
+				.ui.menu.secondary
+					a.item.msg.icon.mail(c-onclick="messageBtnClick()")
+						i.icon.mail
+						span.badge(c-bind="messages.message")
+					a.item.msg.icon
+						i.icon.alarm.icon-animated-bell
+						span.badge(c-bind="messages.task")
+					a.item.icon.user(c-onclick="showUserSidebar()")
+						img.ui.image.avatar(c-src="user.avatar")
+						i.icon.dropdown
+
 		.flex-box
 			.h-box
-				#frameworkSidebarBox.box.main-menu.ui.segment.inverted.basic.vertical
+				#frameworkSidebarBox.box.main-menu.ui.segment.inverted.basic.vertical.collapsed
 					.side-accordion
 						.bar(c-onclick="toggleSidebar()")
 							i.iconfont.icon-sidebar
 						#frameworkSidebar.ui.accordion
 							div(c-repeat="menu in menus").item.active
-								div.title.menu-item
+								div.title.menu-item(c-onclick="menuItemClick(menu,true)")
 									i(c-class="menu.icon")
 									span(c-bind="menu.label")
 									i.icon.angle.left.dropdown-icon(c-display="dropdownIconVisible(menu)")

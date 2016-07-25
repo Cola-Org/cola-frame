@@ -1,47 +1,99 @@
 @import "../.global.less";
 
-.page-header.ui.menu {
-	.logo {
-		img {
-			margin-right: 0.6em;
-		}
-	}
-	.item.msg {
-		padding-right: 0.52857143em;
-		padding-left: 0.52857143em;
-		position: relative;
-		i {
-			font-size: 1.25em;
-		}
-		span.badge {
-			border-radius: 3px;
-			position: relative;
-			top: -8px;
-			left: 2px;
-			font-size: 0.8em;
-			background-color: #d93e50;
-			color: @invertedFontColor;
-			padding: 0.2em 0.2em 0.1em 0.2em;
-			min-width: 16px;
-			text-align: center;
-			display: inline-block;
-			font-weight: bold;
-		}
-
-		&.mail {
-			span.badge {
-				background-color: #2f886e;
+.page-header {
+	height: @pageHeaderHeight;
+	background-color: @pageHeaderBackgroundColor;
+	padding: 0 10px;
+	> * {
+		&.brand {
+			img {
+				height: 40px;
+				width: auto;
+			}
+			span {
+				margin-left: 10px;
+				font-size: @appNameFontSize;
+				color: @appNameFontColor;
 			}
 		}
-	}
-	.user.item {
-		i {
-			margin: 0em 0em 0em 0.5em;
-		}
-		.avatar {
-			margin: 0;
-		}
+		.display(box);
+		.box-align(center);
+		height: 100%;
+		display: -ms-flexbox;
+		-ms-flex-wrap: nowrap;
 
+		-ms-flex-pack: start;
+		justify-content: flex-start;
+
+		-ms-flex-line-pack: stretch;
+		align-content: stretch;
+
+		-ms-flex-align: center;
+		align-items: center;
+
+
+		&.box.right {
+			margin: 0 !important;
+			i {
+				font-size: @appMsgIconSize;
+				color: @appMsgIconColor;
+			}
+			.item.msg {
+				padding-right: 0.52857143em;
+				padding-left: 0.52857143em;
+				position: relative;
+				span.badge {
+					border-radius: 3px;
+					position: relative;
+					top: -8px;
+					left: 2px;
+					font-size: 0.8em;
+					padding: 0.2em 0.2em 0.1em 0.2em;
+					min-width: 16px;
+					text-align: center;
+					display: inline-block;
+					font-weight: 400;
+					background-color: @appMsgBadgeTaskItemBackgroundColor;
+					color: @invertedFontColor;
+				}
+				span.badge.basic {
+					background-color: #fff;
+					border: 1px solid @appMsgBadgeTaskItemBackgroundColor;
+					color: @appMsgBadgeTaskItemBackgroundColor;
+				}
+				&.mail {
+					span.badge {
+						background-color: @appMsgBadgeMailItemBackgroundColor;
+					}
+					span.badge.basic {
+						border: 1px solid @appMsgBadgeMailItemBackgroundColor;
+						color: @appMsgBadgeMailItemBackgroundColor;
+					}
+				}
+			}
+			float: right;
+		}
+	}
+	.top-menu {
+		overflow: hidden;
+		a {
+			font-size: 16px;
+			color: @invertedFontColor;
+			float: left;
+			cursor: pointer;
+			&.current, &:hover {
+				background-color: @pageHeaderTopMenuItemBackgroundColor;
+			}
+			height: @pageHeaderHeight;
+			> span {
+				line-height: @pageHeaderHeight;
+			}
+			align-items: center;
+			> i {
+				margin-right: 0.4em;
+				font-size: 1.25em;
+			}
+			padding: 0 22px;
+		}
 	}
 }
-

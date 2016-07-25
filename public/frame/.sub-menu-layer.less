@@ -1,11 +1,53 @@
 @import "../.global.less";
 
 
+
 #subMenuLayer {
 	overflow: hidden;
 	width: 16em;
 	.transition(width 0.2s ease-out);
+	> .v-box > .title {
+		height: 65px;
+		i {
+			font-size: 1.2em;
+			margin-right: 0.6em;
+			color: @subMenuLayerTitleFontColor;
+		}
 
+		padding: 1em;
+		background-color: @subMenuLayerTitleBackgroundColor;
+		line-height: 2.7em;
+		color: @subMenuLayerTitleFontColor;
+	}
+	#subMenuTree {
+		background-color: @subMenuTreeBackgroundColor;
+		.child-nodes {
+			overflow: visible;
+			margin-left: 1.8em !important;
+		}
+	}
+	.tree.item {
+		background-color: @subMenuTreeNodeBackgroundColor;
+	}
+	.tree.node {
+		> .expand-button {
+			width: 1.2em;
+		}
+		> .node-content {
+			> i {
+				position: absolute;
+				color: @subMenuTreeNodeIconColor;
+				width: 1.4em;
+				text-align: center;
+			}
+
+			> span {
+				margin-left: 1.8em;
+				font-size: 0.95em;
+
+			}
+		}
+	}
 	&.collapsed {
 		width: 1.2em;
 		> .title {
@@ -62,54 +104,11 @@
 			}
 			background-color: #ffffff;
 			i {
-
 				line-height: 24px;
-
 			}
-			color: @lightTertiaryColor;
+			color: @subMenuLayerBarIconColor;
 		}
 
 	}
-	>.v-box>.title {
-		height: 65px;
-		i {
-			font-size: 1.2em;
-			margin-right: 0.6em;
-			color: rgba(72, 179, 221, 0.81);
-		}
 
-		padding: 1em;
-		background-color: #D9DEE4;
-		line-height: 2.7em;
-		color: #000000;
-	}
-	#subMenuTree {
-		background-color: @backgroundColor;
-		.child-nodes {
-			overflow: visible;
-			margin-left: 1.8em !important;
-		}
-	}
-	.tree.item {
-		background-color: @lightBackgroundColor;
-	}
-	.tree.node {
-		> .expand-button {
-			width: 1.2em;
-		}
-		> .node-content {
-			> i {
-				position: absolute;
-				color: #aeb9c2;
-				width: 1.4em;
-				text-align: center;
-			}
-
-			> span {
-				margin-left: 1.8em;
-				font-size: 0.95em;
-
-			}
-		}
-	}
 }

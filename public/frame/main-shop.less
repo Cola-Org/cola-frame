@@ -9,6 +9,7 @@
 
 @menuLineHeight: 2.6em;
 @shopMenuWidth: 14em;
+@shopMenuMinHeight: 14em;
 @shopMenuDropDownWidth: 40em;
 @subMenuFontColor: #666;
 
@@ -16,6 +17,7 @@
 	background-color: @tertiaryColor;
 	width: @shopMenuWidth;
 	position: relative;
+
 	height: 100%;
 	.transition(width 0.2s ease-out);
 	> ul {
@@ -65,6 +67,7 @@
 					border-top: none;
 					border-left: none;
 					background-color: @contentBackgroundColor;
+					min-height: @shopMenuMinHeight;
 
 					> .channel {
 					}
@@ -76,13 +79,14 @@
 							> dt {
 								line-height: @menuLineHeight*0.8;
 								color: @fontColor;
-								min-width: 6em;
+								min-width: 8em;
 								text-align: right;
 								a {
 									white-space: nowrap;
 									font-size: 12px;
 									font-weight: bold;
 									color: @subMenuFontColor;
+									cursor: pointer;
 								}
 
 								i.dropdown-icon {
@@ -108,6 +112,7 @@
 									white-space: nowrap;
 									display: inline-block;
 									margin-right: 5px;
+									cursor: pointer;
 								}
 
 								border-bottom: 1px solid rgba(204, 204, 204, 0.36);
@@ -141,13 +146,13 @@
 	> .bar {
 		//line-height: 1.4em;
 		height: 24px;
-		background-color: @sideBarPrimaryColor;
+		background-color: @leftMenuBarBackgroundColor;
 		text-align: center;
 		cursor: pointer;
 		padding-top: 4px;
 		i {
 			display: inline-block;
-			color: @sideBarItemTextColor;
+			color: @leftMenuBarIconColor;
 			&:before {
 				font-size: 14px;
 			}

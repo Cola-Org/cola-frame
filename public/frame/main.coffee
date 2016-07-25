@@ -1,23 +1,29 @@
 cola((model)->
 	logo = App.prop("app.logo.path")
 	appName = App.prop("app.name")
+
 	if logo
 		$("#appHeader").append($.xCreate({
 			tagName: "img"
 			class: "img ui mini image"
 			src: logo
 		}))
+
 	if appName
 		$("#appHeader").append($.xCreate({
 			tagName: "span"
 			content: appName
 		}))
 
-
 	model.describe("menus", {
 		provider:
 			url: App.prop("service.menus")
+			success: (self, arg)->
+				parser = App.prop("parseMenus")
+				if parser and typeof parser is "function"
+					parser(model.get("menus"))
 	})
+
 
 	model.describe("user", {
 		provider:
@@ -145,15 +151,14 @@ cola((model)->
 			$.ajax({
 				type: "POST",
 				url: App.prop("service.logout")
-			}).done((result) ->
-				if result.type
-					window.location.reload()
+			}).done(() ->
+				window.location.reload()
 			).fail(() ->
 				alert("退出失败，请检查网络连接！")
 				return
 			)
 
-		menuItemClick: (item)->
+		menuItemClick: (item, rootItem)->
 			data = item.toJSON()
 			menus = data.menus
 			recursive = (d)->
@@ -166,7 +171,7 @@ cola((model)->
 				recursive(data) for menu in menus
 				model.set("subMenu", menus)
 				model.set("currentMenu", data)
-				cola.widget("subMenuLayer").show()
+				if not rootItem then cola.widget("subMenuLayer").show()
 			else
 				model.set("subMenu", [])
 				cola.widget("subMenuLayer").hide()
@@ -201,7 +206,6 @@ cola((model)->
 	$("#rightContainer>.layer-dimmer").on("click", ()->
 		cola.widget("subMenuLayer").hide();
 	)
-
 )
 
 cola.ready(()->

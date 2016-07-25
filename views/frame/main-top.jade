@@ -3,23 +3,26 @@ append head
 	link(rel="stylesheet", type="text/css", href="./frame/main-top.css")
 block body
 	.v-box
-		.box.page-header
-			.brand#appHeader
-			.top-menu
-				a.item.icon(c-repeat="menu in menus" c-onclick="changeMain(menu)")
-					i(c-class="menu.icon")
-					span(c-bind="menu.label")
-			.right-floated
+		.box.page-header.h-box
+			.brand.box#appHeader
+			.flex-box
+				div
+					.top-menu
+						a.item.icon(c-repeat="menu in menus" c-onclick="changeMain(menu)")
+							i(c-class="menu.icon")
+							span(c-bind="menu.label")
+			.box.right
 				.ui.menu.secondary
 					a.item.msg.icon.mail(c-onclick="messageBtnClick()")
 						i.icon.mail
 						span.badge(c-bind="messages.message")
-					a.item.msg.icon(c-onclick="taskBtnClick()")
+					a.item.msg.icon
 						i.icon.alarm.icon-animated-bell
 						span.badge(c-bind="messages.task")
 					a.item.icon.user(c-onclick="showUserSidebar()")
 						img.ui.image.avatar(c-src="user.avatar")
 						i.icon.dropdown
+
 		.flex-box
 			.h-box
 				.h-box

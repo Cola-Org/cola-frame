@@ -5,7 +5,6 @@ cola((model)->
 		password:
 			validators: {$type: "required", message: ""}
 	)
-#	mainPath = "#{window.location.origin}#{App.prop("mainView")}"
 	mainPath = "#{App.prop("mainView")}"
 	model.set("userName", $.cookie("_userName"), {path: "/"})
 

@@ -132,6 +132,14 @@ cola((model)->
 			return result
 		showUserSidebar: ()->
 			cola.widget("userSidebar").show()
+		hasChild: (item)->
+			menu = item.toJSON()
+			if menu.menus?.length
+				return ""
+			else
+				return "link"
+
+
 		logout: ()->
 			$.ajax({
 				type: "POST",
@@ -147,16 +155,10 @@ cola((model)->
 		menuItemClick: (item)->
 			data = item.toJSON()
 			menus = data.menus
-			recursive = (d)->
-				if d.menus
-					recursive(item) for item in d.menus
-				else
-					d.hasChild = false
-			unless menus
+			unless menus?.length
 				model.set("subMenu", [])
 				cola.widget("subMenuLayer").hide()
 				App.open(data.path, data)
-
 				$(".shop-menu.wrapper>ul>li.hover").removeClass("hover")
 
 		hideSubMenuLayer: ()->
@@ -179,7 +181,7 @@ cola((model)->
 	})
 
 	setTimeout(()->
-		$(".shop-menu.wrapper>ul>li").hover(()->
+		$(".shop-menu.wrapper>ul>li:not(.link)").hover(()->
 			oldItem = $(@).parent().children('li.hover')[0]
 			if oldItem
 				if oldItem is @
