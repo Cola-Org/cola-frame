@@ -498,21 +498,6 @@ template {
   justify-content: flex-end;
 }
 
-.field.required {
-  padding-right: 1em;
-  position: relative;
-}
-.field.required:after {
-  float: right;
-  font-family: Icons;
-  content: "\f069";
-  position: absolute;
-  right: 0;
-  top: 50%;
-  margin-top: -10px;
-  color: #db2828;
-  transform: scale(0.5);
-}
 
 [class*="block-grid-"] {
   display: block;
@@ -4669,8 +4654,11 @@ template {
 }
 .ui.title-bar .title {
   -webkit-box-align: center;
+  -moz-box-align: center;
   -webkit-box-pack: center;
+  -moz-box-pack: center;
   -webkit-box-orient: horizontal;
+  -moz-box-orient: horizontal;
   position: absolute;
   display: -webkit-box;
   display: -moz-box;
@@ -4989,13 +4977,13 @@ template {
 .ui.stack {
   height: 100%;
 }
-.ui.stack .items-wrap {
+.ui.stack > .items-wrap {
   position: relative;
   height: 100%;
   overflow: hidden;
   width: 100%;
 }
-.ui.stack .items-wrap .item {
+.ui.stack > .items-wrap > .item {
   position: absolute;
   left: 0px;
   top: 0px;
@@ -5228,7 +5216,7 @@ html.ios body {
 }
 .ui.time-line > .items {
   list-style: none;
-  padding: 0;
+  padding: 0.6em 0;
   height: 100%;
   overflow: auto;
 }
@@ -5844,7 +5832,12 @@ html.ios body {
 .ui.panel {
   box-shadow: 0 2px 4px 0 rgba(34, 36, 38, 0.12), 0 2px 10px 0 rgba(34, 36, 38, 0.08);
   padding: 0.6em;
+  display: block;
+  margin-bottom: 0.8em;
   overflow: hidden;
+}
+.ui.panel:last-child {
+  margin-bottom: 0;
 }
 .ui.panel > .header {
   margin: -0.6em -0.6em 0.6em -0.6em;
@@ -5869,6 +5862,9 @@ html.ios body {
   height: 2.8rem;
 }
 .ui.panel > .header > .content > .tools > * {
+  display: inline-block;
+}
+.ui.panel > .header > .content > .tools > i {
   height: inherit;
   position: relative;
   display: inline-block;
@@ -5876,7 +5872,7 @@ html.ios body {
   cursor: pointer;
   line-height: 2.8rem;
 }
-.ui.panel > .header > .content > .tools > *:before {
+.ui.panel > .header > .content > .tools > i:before {
   position: absolute;
 }
 .ui.panel > .header > .content > .tools .collapse-btn:before {
@@ -6253,5 +6249,6 @@ textarea.error {
 .mobile #c-notify-tip-container {
   left: 1em;
   right: 1em;
+  bottom: 4em;
   width: auto;
 }
