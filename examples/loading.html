@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css"
+          href="../resources/cola-ui/semantic.min.css">
+    <link rel="stylesheet" type="text/css" href="../resources/cola-ui/cola.min.css">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-2.2.3.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/3rd.min.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/semantic.min.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/cola.js"></script>
+</head>
+<body style="padding: 1em">
+<div class="ui segment" id="tableContainer">
+    <div id="pagingTable"></div>
+</div>
+<script>
+    cola(function (model) {
+        model.dataType({
+            name: "Product",
+            properties: {
+                id: {
+                    required: true
+                }
+            }
+        });
+        model.describe("pageItems", {
+            dataType: "Product",
+            provider: {
+                url: "http://cola-ui.com/data/items",
+                pageSize: 5,
+                complete:function(){
+                    $("#tableContainer").removeClass("loading");
+                }
+            }
+        });
+        model.action({
+            flush: function () {
+                $("#tableContainer").addClass("loading");
+                model.flush("pageItems")
+            }
+        });
+
+        model.widgetConfig({
+            pagingTable: {
+                $type: "table",
+                bind: "item in pageItems",
+                showHeader: true,
+                sortMode: "remote",
+                currentPageOnly: true,
+                height: 300,
+                columns: [
+                    {
+                        $type: "select",
+                        change: function (self, arg) {
+                            alert(arg.value)
+                        }
+                    },
+                    {
+                        bind: ".id",
+                        caption: "产品编号",
+                        sortable: true
+                    },
+                    {
+                        bind: ".title",
+                        caption: "产品名称",
+                        sortable: true
+                    },
+                    {
+                        bind: ".originalPrice",
+                        caption: "价格",
+                        sortable: true
+                    }
+                ]
+            }
+        });
+    });
+</script>
+<c-pager c-bind="item in pageItems"></c-pager>
+<c-button caption="刷新" click="flush"></c-button>
+</body>
+</html>
