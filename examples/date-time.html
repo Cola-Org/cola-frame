@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css"
+          href="../resources/cola-ui/semantic.min.css">
+    <link rel="stylesheet" type="text/css" href="../resources/cola-ui/cola.css">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-2.2.3.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/3rd.min.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/semantic.min.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/cola.js"></script>
+</head>
+<body style="padding: 1em">
+
+<div id="pagingTable"></div>
+<script>
+    cola(function (model) {
+        model.set("dateTime", new Date());
+    });
+</script>
+<c-datepicker c-bind="dateTime"></c-datepicker>
+<span c-bind="formatDate(dateTime,'HH:mm')"></span>
+<c-input displayFormat="HH:mm" inputFormat="HH:mm" c-bind="dateTime"></c-input>
+</body>
+</html>

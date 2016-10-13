@@ -54,8 +54,9 @@
                         sortable: true
                     },
                     {
-                        bind: ".originalPrice",
+                        bind: "formatNumber(item.originalPrice,'##,##.00')",
                         caption: "价格",
+                        property:"originalPrice",
                         sortable: true
                     }
                 ]
