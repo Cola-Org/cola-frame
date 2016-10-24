@@ -1,4 +1,4 @@
-/*! Cola UI - 0.9.7
+/*! Cola UI - 0.9.8
  * Copyright (c) 2002-2016 BSTEK Corp. All rights reserved.
  *
  * This file is dual-licensed under the AGPLv3 (http://www.gnu.org/licenses/agpl-3.0.html)
@@ -200,8 +200,11 @@ template {
 .mobile ::-webkit-scrollbar-thumb {
   background: #888;
 }
+.show-on-ready {
+  visibility: hidden;
+}
 .display-none {
-  display: none;
+  display: none !important;
 }
 .text-center {
   text-align: center;
@@ -387,6 +390,57 @@ template {
 }
 .ui.fragment.grey:before {
   background-color: rgba(118, 118, 118, 0.8);
+}
+.ui.city-selector {
+  width: 320px;
+  height: 280px;
+  display: inline-block;
+  overflow: hidden;
+  border: 1px solid #2185d0;
+}
+.ui.city-selector .content .province,
+.ui.city-selector .content .cities,
+.ui.city-selector .content .hot {
+  display: none;
+}
+.ui.city-selector .content .province .name,
+.ui.city-selector .content .cities .name,
+.ui.city-selector .content .hot .name {
+  width: 25%;
+  cursor: pointer;
+  display: inline-block;
+}
+.ui.city-selector .content .province .name:hover,
+.ui.city-selector .content .cities .name:hover,
+.ui.city-selector .content .hot .name:hover {
+  color: #2185d0;
+}
+.ui.city-selector .content .province.active,
+.ui.city-selector .content .cities.active,
+.ui.city-selector .content .hot.active {
+  display: block;
+}
+.ui.city-selector .content .city.active {
+  display: block;
+}
+.ui.city-selector .tab-buttons {
+  width: 100%;
+  display: table;
+}
+.ui.city-selector .tab-buttons > .item {
+  display: table-cell;
+  text-align: center;
+  width: 33.33%;
+  cursor: pointer;
+}
+.ui.city-selector .tab-buttons > .item.active,
+.ui.city-selector .tab-buttons > .item:active {
+  background-color: #2185d0;
+  color: #fff;
+}
+.ui.city-selector .tab-buttons > .item:hover {
+  background-color: rgba(33, 133, 208, 0.8);
+  color: #fff;
 }
 
 .mobile .v-box,
@@ -3103,8 +3157,8 @@ template {
   overflow: hidden;
   padding: 0.6em 0.4em;
 }
-.ui.widget-table table tbody tr:first-child td {
-  border-top: 2px solid #edf0f3;
+.ui.widget-table table thead tr:first-child th {
+  border-bottom: 2px solid #edf0f3;
 }
 .ui.widget-table table tbody tr:last-child td {
   border-bottom: 2px solid #edf0f3;
@@ -3173,6 +3227,9 @@ template {
 .ui.widget-table.inverted table thead th {
   background: #474a4d;
   border-color: #65696c;
+}
+.ui.widget-table.inverted table thead tr:last-child th {
+  border-bottom-color: #65696c;
 }
 .ui.widget-table.inverted table tbody tr:last-child td {
   border-bottom-color: #65696c;
@@ -3652,7 +3709,9 @@ template {
 }
 .ui.message-box {
   width: auto;
+  max-width: 90%;
   height: auto;
+  max-height: 90%;
   position: fixed !important;
 }
 .ui.message-box .close-btn.hidden,
@@ -4063,16 +4122,12 @@ template {
   right: -1.25rem;
   z-index: 1;
   border-radius: 50%;
-  opacity: 0.8;
   font-size: 1.25em;
   color: #ffffff;
   line-height: 2rem;
   width: 2rem;
   height: 2rem;
   padding: 0;
-}
-.ui.dialog .close-btn:hover {
-  opacity: 1;
 }
 /*--------------
      Header
@@ -4460,6 +4515,8 @@ template {
   position: relative;
   -webkit-box-orient: vertical;
   -moz-box-orient: vertical;
+  -ms-flex-direction: column;
+  flex-direction: column;
 }
 .ui.c-tab.top-tab > .tab-bar,
 .ui.c-tab.bottom-tab > .tab-bar {
@@ -4508,6 +4565,8 @@ template {
 .ui.c-tab.top-tab {
   display: -webkit-box;
   display: -moz-box;
+  display: -ms-flexbox;
+  display: flex;
 }
 .ui.c-tab.left-tab > .tab-bar,
 .ui.c-tab.right-tab > .tab-bar,
@@ -4516,6 +4575,8 @@ template {
   position: relative;
   -webkit-box-flex: 0;
   -moz-box-flex: 0;
+  -ms-flex: 0 1 auto;
+  flex: 0 1 auto;
 }
 .ui.c-tab.left-tab > .contents,
 .ui.c-tab.right-tab > .contents,
@@ -4523,6 +4584,8 @@ template {
 .ui.c-tab.top-tab > .contents {
   -webkit-box-flex: 1;
   -moz-box-flex: 1;
+  -ms-flex: 1 1 auto;
+  flex: 1 1 auto;
   position: relative;
 }
 .ui.c-tab.left-tab > .contents > .item,
@@ -4539,6 +4602,8 @@ template {
 .ui.c-tab.right-tab {
   -webkit-box-orient: horizontal;
   -moz-box-orient: horizontal;
+  -ms-flex-direction: row;
+  flex-direction: row;
 }
 .ui.c-tab.left-tab > .tab-bar,
 .ui.c-tab.right-tab > .tab-bar {
@@ -4628,13 +4693,15 @@ template {
 }
 .ui.c-tab.right-tab > .tab-bar,
 .ui.c-tab.bottom-tab > .tab-bar {
-  -webkit-box-ordinal-group: 2;
-  -moz-box-ordinal-group: 2;
+  -webkit-order: 2;
+  -ms-flex-order: 2;
+  order: 2;
 }
 .ui.c-tab.right-tab > .contents,
 .ui.c-tab.bottom-tab > .contents {
-  -webkit-box-ordinal-group: 1;
-  -moz-box-ordinal-group: 1;
+  -webkit-order: 1;
+  -ms-flex-order: 1;
+  order: 1;
 }
 .ui.c-tab.bottom-tab {
   -webkit-box-orient: vertical;
@@ -4679,6 +4746,9 @@ template {
 .ui.title-bar.bottom {
   border-top-width: 1px;
   border-bottom-width: 0;
+}
+.ui.title-bar.inverted {
+  color: #fff;
 }
 .ui.title-bar.shadow {
   box-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15);
@@ -5830,7 +5900,6 @@ html.ios body {
 /*---  Dark Tones  ---*/
 /*---  Light Tones  ---*/
 .ui.panel {
-  box-shadow: 0 2px 4px 0 rgba(34, 36, 38, 0.12), 0 2px 10px 0 rgba(34, 36, 38, 0.08);
   padding: 0.6em;
   display: block;
   margin-bottom: 0.8em;
@@ -5861,8 +5930,15 @@ html.ios body {
   float: right;
   height: 2.8rem;
 }
-.ui.panel > .header > .content > .tools > * {
+.ui.panel > .header > .content > .tools > *:not(i) {
+  float: left;
+  line-height: 2.8rem;
   display: inline-block;
+}
+.ui.panel > .header > .content > .tools > *:not(i) .ui.button,
+.ui.panel > .header > .content > .tools > *:not(i) .ui.input > input {
+  padding: 0.6em 1em;
+  font-size: 0.9rem;
 }
 .ui.panel > .header > .content > .tools > i {
   height: inherit;
@@ -5884,7 +5960,6 @@ html.ios body {
 .ui.panel.fieldset,
 .ui.panel.groupbox {
   position: relative;
-  box-shadow: none;
 }
 .ui.panel.fieldset.basic,
 .ui.panel.groupbox.basic {
@@ -5939,7 +6014,13 @@ html.ios body {
   margin-bottom: 0;
 }
 .ui.panel.basic {
-  box-shadow: none;
+  box-shadow: inset 0px 0px 0px 1px #e7eaec;
+}
+.ui.panel.basic > .header {
+  box-shadow: inset 0px 0px 0px 1px #e7eaec;
+}
+.ui.panel.basic > .header > .content {
+  background-color: transparent;
 }
 .ui.panel.basic > .header > .content:before {
   border: none;
@@ -5979,6 +6060,19 @@ html.ios body {
 }
 .ui.panel.grey > .header {
   border-left: 2.5px solid #767676;
+}
+.ui.panel.v-box {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  padding: 0;
+}
+.ui.panel.v-box .header {
+  margin: 0px;
+}
+.ui.panel.v-box > .flex-box > div {
+  padding: 0.6em;
 }
 
 .ui.input > .editor {
