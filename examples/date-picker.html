@@ -16,8 +16,10 @@
 <script>
     cola(function (model) {
         model.set("dateTime", new Date());
+        model.set("date", new Date());
     });
 </script>
 <c-datepicker bind="dateTime" inputType="time"></c-datepicker>
+<c-datepicker bind="date"></c-datepicker>
 </body>
 </html>
