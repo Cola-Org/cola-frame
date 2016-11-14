@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css"
+          href="../resources/cola-ui/semantic.min.css">
+    <link rel="stylesheet" type="text/css" href="../resources/cola-ui/cola.min.css">
+    <link rel="stylesheet" type="text/css" href="../resources/jquery-ui/jquery-ui.css">
+    <link rel="stylesheet" type="text/css" href="../resources/jquery-ui/jquery-ui.structure.css">
+    <link rel="stylesheet" type="text/css" href="../resources/jquery-ui/jquery-ui.theme.css">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-2.2.3.js"></script>
+    <script type="text/javascript" src="../resources/jquery-ui/jquery-ui.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/3rd.min.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/semantic.min.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/cola.js"></script>
+    <style>
+        body {
+            padding: 8px;
+        }
+
+        body > div {
+            width: 40%;
+            height: 100%;
+            float: left;
+            display: inline-block;
+        }
+
+        .menu-box ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+
+        }
+
+        .ui-state-hover {
+            background-color: rgba(30, 129, 80, 0.2);
+        }
+
+        .menu-box li {
+            height: 80px;
+            padding: 1px;
+            /*border: 1px solid #c5c5c5;*/
+        }
+
+        .menu-box li > div {
+            display: inline-block;
+            width: 100%;
+            height: 100%;
+            line-height: 78px;
+            text-align: center;
+            position: relative;
+            border: 1px dashed #c5c5c5;
+        }
+
+        .menu-box li {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .menu-box li.lock:hover .del-btn {
+            display: block;
+        }
+
+        .menu-box li .del-btn {
+            display: none;
+            position: absolute;
+            right: 4px;
+            top: 4px;
+            line-height: 10px;
+            height: 12px;
+            width: 12px;
+            text-align: center;
+            border-radius: 2px;
+            content: "-";
+            border: 1px solid red;
+            color: red;
+        }
+
+        .menu-source li {
+            cursor: pointer;
+            width: 100px;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="menu-box">
+    <ul class="small-block-grid-4">
+    </ul>
+</div>
+<div class="menu-source">
+    <ul>
+        <li c-repeat="menu in menus" c-bind="menu.label" c-label="menu.label"></li>
+    </ul>
+</div>
+<script>
+    cola(function (model) {
+        model.set("menus", [
+            {label: "元定义"},
+            {label: "样例"},
+            {label: "基础数据"},
+            {label: "保单"},
+            {label: "产品维护"},
+            {label: "规则"}
+        ]);
+
+        cola.on("ready", function () {
+            function getMenus() {
+                var shortcutMenus = window.localStorage.getItem("shortcutMenus");
+                if (shortcutMenus) {
+                    shortcutMenus = JSON.parse(shortcutMenus);
+                } else {
+                    shortcutMenus = {};
+                }
+                return shortcutMenus;
+            }
+
+            var shortcutMenus = getMenus();
+
+            function makeMenuDom(config) {
+                return $.xCreate({
+                    content: config.label,
+                    label: config.label
+                });
+            }
+
+            var max = 12;
+            while (max > 0) {
+                $(".menu-box >ul").append($.xCreate({
+                    tagName: "li",
+                    content: [
+                        {
+                            tagName: "div", class: "del-btn"
+                        },
+                        {
+                            tagName: "div", class: "content"
+                        }
+                    ]
+                }));
+                max--;
+            }
+            for (var key in shortcutMenus) {
+                if (shortcutMenus.hasOwnProperty(key)) {
+                    var item = shortcutMenus[key];
+                    var container = $(".menu-box >ul").children()[item.index];
+                    var menuDom = makeMenuDom(item);
+                    $(container).addClass("lock").find(">.content").append(menuDom);
+                    $(menuDom).draggable({
+                        helper: "clone"
+                    });
+                }
+            }
+
+            $(".menu-source li").draggable({
+                helper: "clone"
+            });
+            $(".menu-box li>.content").droppable({
+                greedy: true,
+                hoverClass: "ui-state-hover",
+                drop: function (event, ui) {
+                    var draggable = ui.draggable;
+                    var label = draggable.attr("label");
+                    var $parent = $(this).parent();
+                    $parent.addClass("lock");
+                    var dom = $.xCreate({
+                        content: label,
+                        wid: label
+                    });
+                    $(this).append(dom);
+                    $(dom).draggable({
+                        helper: "clone"
+                    });
+                    draggable.remove();
+                    var ms = getMenus();
+                    ms[label] = {label: label, wid: label, index: $parent.index()};
+                    window.localStorage.setItem("shortcutMenus", JSON.stringify(ms));
+                }
+            });
+        }, 1000)
+    })
+</script>
+</body>
+</html>

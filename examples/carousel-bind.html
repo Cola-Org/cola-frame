@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css"
+          href="../resources/cola-ui/semantic.min.css">
+    <link rel="stylesheet" type="text/css" href="../resources/cola-ui/cola.css">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-2.2.3.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/3rd.min.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/semantic.min.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/cola.js"></script>
+    <script type="text/javascript">
+        cola(function (model) {
+            model.set("items", [
+                {image: "../resources/images/avatar/large/ade.jpg"},
+                {image: "../resources/images/avatar/large/chris.jpg"},
+                {image: "../resources/images/avatar/large/daniel.jpg"},
+                {image: "../resources/images/avatar/large/christian.jpg"},
+                {image: "../resources/images/avatar/large/helen.jpg"},
+                {image: "../resources/images/avatar/large/laura.jpg"}
+            ]);
+        });
+    </script>
+</head>
+<body style="padding: 20px;">
+<c-carousel bind="item in items" height="400">
+    <template>
+        <a href="#" style="display:block">
+            <img c-widget="image; src:{{item.image}}; class:centered;"/>
+        </a>
+    </template>
+</c-carousel>
+</body>
+</html>
