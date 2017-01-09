@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css"
+          href="../resources/cola-ui/semantic.min.css">
+    <link rel="stylesheet" type="text/css" href="../resources/cola-ui/cola.css">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-2.2.3.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/3rd.min.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/semantic.min.js"></script>
+    <script type="text/javascript" src="../resources/cola-ui/cola.js"></script>
+    <style>
+        .ui.items-view.widget-table.empty:before{
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 30px;
+            bottom: 0;
+            content: "";
+            background: #fffa90;
+        }
+
+    </style>
+
+</head>
+<body style="padding: 1em">
+
+<c-menu>
+    <div class="items">
+        <c-button caption="add" click="add"></c-button>
+    </div>
+</c-menu>
+
+
+<div id="pagingTable" c-class="empty:isEmpty(items)">
+
+    <div class="placeholder"></div>
+
+</div>
+<script>
+    cola(function (model) {
+        model.set("items", []);
+        model.action({
+            add: function () {
+                model.get("items").insert({})
+            }
+        });
+
+        model.widgetConfig({
+            pagingTable: {
+                $type: "table",
+                bind: "item in items",
+                showHeader: true,
+
+                sortMode: "remote",
+                currentPageOnly: true,
+                height: 300,
+                columns: [
+
+                    {
+                        bind: ".id",
+                        caption: "产品编号",
+                        sortable: true
+                    },
+                    {
+                        bind: ".title",
+                        caption: "产品名称",
+                        sortable: true
+                    }
+                ]
+            }
+        });
+    });
+</script>
+</body>
+</html>
