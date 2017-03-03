@@ -17,3 +17,5 @@ function includeAll(root) {
 }
 
 includeAll(location.protocol + "//cola-org.github.io/cola-frame/release/0.9.8/");
+document.write("<style>"
+	+ "body{ padding: 1em; background: #f0f0f0;}" + +"</style>")
