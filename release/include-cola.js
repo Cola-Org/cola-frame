@@ -9,7 +9,7 @@ function includeAll(root) {
 
 	writeStyleSheet("semantic.min.css");
 	writeStyleSheet("cola.min.css");
-	document.write("<link rel=\"stylesheet\" type=\"text/css\" charset=\"utf-8\" href=\"//code.jquery.com/jquery-2.2.3.js\" />");
+	document.write("<link rel=\"stylesheet\" type=\"text/css\" charset=\"utf-8\" href=\"https://code.jquery.com/jquery-2.2.3.js\" />");
 
 	writeScriptlet("3rd.min.js");
 	writeScriptlet("semantic.min.js");
