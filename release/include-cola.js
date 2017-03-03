@@ -11,9 +11,9 @@ function includeAll(root) {
 	writeStyleSheet("cola.min.css");
 	document.write("<script language=\"JavaScript\" type=\"text/javascript\" charset=\"utf-8\"  href=\"https://code.jquery.com/jquery-2.2.3.js\" ></script>");
 
-	writeScriptlet("3rd.min.js");
+	writeScriptlet("3rd.js");
 	writeScriptlet("semantic.min.js");
-	writeScriptlet("cola.min.js");
+	writeScriptlet("cola.js");
 }
 
 includeAll(location.protocol + "//cola-org.github.io/cola-frame/release/0.9.8/");
