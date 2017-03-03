@@ -16,4 +16,4 @@ function includeAll(root) {
 	writeScriptlet("cola.min.js");
 }
 
-includeAll(location.protocol + "//" + location.host + "/cola-frame/release/0.9.8/");
+includeAll(location.protocol + "//cola-org.github.io/cola-frame/release/0.9.8/");
