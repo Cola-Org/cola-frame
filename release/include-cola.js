@@ -16,6 +16,6 @@ function includeAll(root) {
 	writeScriptlet("cola.min.js");
 }
 
-includeAll(location.protocol + "//cola-org.github.io/cola-frame/release/0.9.8/");
+includeAll(location.protocol + "//cola-org.github.io/cola-frame/release/1.0.8/");
 document.write("<style>"
 	+ "body{ padding: 1em; background: transparent;}" + "</style>");
