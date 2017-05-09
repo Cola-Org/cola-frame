@@ -1,4 +1,4 @@
-/*! Cola UI - 1.0.6
+/*! Cola UI - 1.0.8
  * Copyright (c) 2002-2016 BSTEK Corp. All rights reserved.
  *
  * This file is dual-licensed under the AGPLv3 (http://www.gnu.org/licenses/agpl-3.0.html)
@@ -13168,7 +13168,7 @@
 
 }).call(this);
 
-/*! Cola UI - 1.0.6
+/*! Cola UI - 1.0.8
  * Copyright (c) 2002-2016 BSTEK Corp. All rights reserved.
  *
  * This file is dual-licensed under the AGPLv3 (http://www.gnu.org/licenses/agpl-3.0.html)
@@ -19139,27 +19139,27 @@ Template
     };
 
     Tab.prototype.removeTab = function(tab) {
-      var contentContainer, index, newIndex, obj;
-      index = -1;
-      if (typeof tab === "number") {
-        index = tab;
-        obj = this._tabs[index];
-      } else if (tab instanceof cola.TabButton) {
-        index = this._tabs.indexOf(tab);
+      var contentContainer, obj, tabDom, targetDom, targetTab;
+      if (tab instanceof cola.TabButton) {
         obj = tab;
       } else if (typeof tab === "string") {
         obj = this.getTab(tab);
-        index = this._tabs.indexOf(obj);
       }
-      if (index > -1 && obj) {
+      if (obj) {
         if (this.get("currentTab") === obj) {
-          newIndex = index === (this._tabs.length - 1) ? index - 1 : index + 1;
-          if (!this.setCurrentTab(newIndex)) {
-            return false;
+          tabDom = obj._dom;
+          targetDom = tabDom.previousElementSibling || tabDom.nextElementSibling;
+          if (targetDom) {
+            targetTab = cola.widget(targetDom);
+            if (!this.setCurrentTab(targetTab)) {
+              return false;
+            }
           }
         }
-        this._tabs.splice(index, 1);
         contentContainer = obj.get("contentContainer");
+        if (!contentContainer) {
+          contentContainer = this._getTabContentDom(obj);
+        }
         obj.remove();
         if ((contentContainer != null ? contentContainer.parentNode : void 0) === this._doms.contents) {
           $(contentContainer).remove();
@@ -19433,7 +19433,7 @@ Template
     };
 
     TabButton.prototype.close = function() {
-      var arg, ref;
+      var arg, tab;
       arg = {
         tab: this
       };
@@ -19441,9 +19441,8 @@ Template
       if (arg.processDefault === false) {
         return this;
       }
-      if ((ref = this._parent) != null) {
-        ref.removeTab(this);
-      }
+      tab = cola.findWidget(this._dom, cola.Tab);
+      tab.removeTab(this);
       this.destroy();
       this.fire("afterClose", this, arg);
       return this;
@@ -20839,7 +20838,10 @@ Template
 
     AbstractInput.prototype._refreshButton = function() {
       var actionButton, btnDom, buttonPosition, leftAction;
-      actionButton = this.get("actionButton");
+      btnDom = $(this._dom).find(">.ui.button");
+      if (btnDom.length > 0) {
+        actionButton = cola.widget(btnDom[0]);
+      }
       buttonPosition = this.get("buttonPosition");
       this._classNamePool.remove("left action");
       this._classNamePool.remove("action");
@@ -20918,9 +20920,6 @@ Template
       AbstractInput.__super__._doRefreshDom.call(this);
       this._finalReadOnly = !!this.get("readOnly");
       this._refreshIcon();
-      this._refreshButton();
-      this._refreshCorner();
-      this._refreshLabel();
       this._refreshInput();
     };
 
@@ -24229,6 +24228,21 @@ Template
 
   })(cola.CustomDropdown);
 
+  cola.YearMonthPicker = (function(superClass) {
+    extend(YearMonthPicker, superClass);
+
+    function YearMonthPicker() {
+      return YearMonthPicker.__super__.constructor.apply(this, arguments);
+    }
+
+    YearMonthPicker.tagName = "c-monthpicker";
+
+    YearMonthPicker.CLASS_NAME = "year-month input date drop";
+
+    return YearMonthPicker;
+
+  })(cola.YearMonthDropDown);
+
   cola.TimeEditor = (function(superClass) {
     extend(TimeEditor, superClass);
 
@@ -24351,6 +24365,8 @@ Template
   cola.registerWidget(cola.DatePicker);
 
   cola.registerWidget(cola.YearMonthDropDown);
+
+  cola.registerWidget(cola.YearMonthPicker);
 
   isIE11 = /Trident\/7\./.test(navigator.userAgent);
 
