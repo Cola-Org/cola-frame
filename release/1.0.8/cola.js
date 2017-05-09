@@ -25861,427 +25861,41 @@ Template
 
   cola.Element.mixin(cola.ItemsView, cola.DataItemsWidgetMixin);
 
-  if (cola.breadcrumb == null) {
-    cola.breadcrumb = {};
-  }
-
-  cola.breadcrumb.Section = (function(superClass) {
-    extend(Section, superClass);
-
-    function Section() {
-      return Section.__super__.constructor.apply(this, arguments);
-    }
-
-    Section.CLASS_NAME = "section";
-
-    Section.tagName = "a";
-
-    Section.attributes = {
-      text: {
-        refreshDom: true
-      },
-      active: {
-        type: "boolean",
-        refreshDom: true,
-        defaultValue: false
-      },
-      href: {
-        refreshDom: true
-      },
-      target: {
-        refreshDom: true
-      }
-    };
-
-    Section.prototype._parseDom = function(dom) {
-      var href, target, text;
-      if (!this._text) {
-        text = cola.util.getTextChildData(dom);
-        if (text) {
-          this._text = text;
-        }
-      }
-      if (!this._href) {
-        href = dom.getAttribute("href");
-        if (href) {
-          this._href = href;
-        }
-      }
-      if (!this._target) {
-        target = dom.getAttribute("target");
-        if (target) {
-          this._target = target;
-        }
-      }
-    };
-
-    Section.prototype._doRefreshDom = function() {
-      var $dom, text;
-      if (!this._dom) {
-        return;
-      }
-      Section.__super__._doRefreshDom.call(this);
-      text = this.get("text");
-      this.get$Dom().text(text || "");
-      this._classNamePool.toggle("active", this._active);
-      $dom = this.get$Dom();
-      if (this._href) {
-        $dom.attr("href", this._href);
-      } else {
-        $dom.removeAttr("href");
-      }
-      $dom.attr("target", this._target || "");
-    };
-
-    return Section;
-
-  })(cola.Widget);
-
-  cola.Breadcrumb = (function(superClass) {
-    extend(Breadcrumb, superClass);
-
-    function Breadcrumb() {
-      return Breadcrumb.__super__.constructor.apply(this, arguments);
-    }
-
-    Breadcrumb.tagName = "c-breadcrumb";
-
-    Breadcrumb.CHILDREN_TYPE_NAMESPACE = "breadcrumb";
-
-    Breadcrumb.CLASS_NAME = "breadcrumb";
-
-    Breadcrumb.attributes = {
-      divider: {
-        "enum": ["chevron", "slash"],
-        defaultValue: "chevron"
-      },
-      size: {
-        "enum": ["mini", "tiny", "small", "medium", "large", "big", "huge", "massive"],
-        refreshDom: true,
-        setter: function(value) {
-          var oldValue;
-          oldValue = this["_size"];
-          if (oldValue && oldValue !== value && this._dom) {
-            this.get$Dom().removeClass(oldValue);
+  cola.defineWidget({
+    tagName: "c-breadcrumb",
+    attributes: {
+      bind: null
+    },
+    events: {
+      itemClick: null
+    },
+    template: {
+      "class": "ui breadcrumb",
+      content: {
+        tagName: "item",
+        "c-repeat": "item in @bind",
+        "c-onclick": "itemClick(item,$dom)",
+        content: [
+          {
+            tagName: "a",
+            "c-bind": "item.text",
+            "c-href": "item.href||'#'",
+            "c-target": "item.target||'_black'"
+          }, {
+            tagName: "i"
           }
-          this["_size"] = value;
-          return this;
-        }
-      },
-      sections: {
-        refreshDom: true,
-        setter: function(value) {
-          var len1, n, section;
-          this.clear();
-          for (n = 0, len1 = value.length; n < len1; n++) {
-            section = value[n];
-            this.addSection(section);
-          }
-          return this;
-        }
-      },
-      currentIndex: {
-        type: "number",
-        setter: function(value) {
-          this._currentIndex = value;
-          return this.setCurrent(value);
-        },
-        getter: function() {
-          if (this._current && this._sections) {
-            return this._sections.indexOf(this._current);
-          } else {
-            return -1;
-          }
-        }
+        ]
       }
-    };
-
-    Breadcrumb.events = {
-      sectionClick: null,
-      change: null
-    };
-
-    Breadcrumb.prototype._initDom = function(dom) {
-      var active, activeSection, len1, n, ref, ref1, section;
-      Breadcrumb.__super__._initDom.call(this, dom);
-      if ((ref = this._sections) != null ? ref.length : void 0) {
-        ref1 = this._sections;
-        for (n = 0, len1 = ref1.length; n < len1; n++) {
-          section = ref1[n];
-          this._rendSection(section);
-          if (section.get("active")) {
-            active = section;
-          }
-        }
-        if (active) {
-          this._doChange(active);
-        }
-      }
-      activeSection = (function(_this) {
-        return function(targetDom) {
-          _this.fire("sectionClick", _this, {
-            sectionDom: targetDom
-          });
-          return _this._doChange(targetDom);
-        };
-      })(this);
-      return this.get$Dom().delegate(">.section", "click", function(event) {
-        return activeSection(this, event);
+    },
+    itemClick: function(item, dom) {
+      this.fire("itemClick", this, {
+        item: item,
+        dom: dom
       });
-    };
-
-    Breadcrumb.prototype._parseDom = function(dom) {
-      var child, section, sectionConfig;
-      if (!dom) {
-        return;
+      if (!item.get("href")) {
+        return event.preventDefault();
       }
-      child = dom.firstChild;
-      while (child) {
-        if (child.nodeType === 1) {
-          section = cola.widget(child);
-          if (!section && cola.util.hasClass(child, "section")) {
-            sectionConfig = {
-              dom: child
-            };
-            if (cola.util.hasClass(child, "active")) {
-              sectionConfig.active = true;
-            }
-            section = new cola.breadcrumb.Section(sectionConfig);
-          }
-          if (section instanceof cola.breadcrumb.Section) {
-            this.addSection(section);
-          }
-        }
-        child = child.nextSibling;
-      }
-    };
-
-    Breadcrumb.prototype._doRefreshDom = function() {
-      var size;
-      if (!this._dom) {
-        return;
-      }
-      Breadcrumb.__super__._doRefreshDom.call(this);
-      size = this.get("size");
-      if (size) {
-        this._classNamePool.add(size);
-      }
-    };
-
-    Breadcrumb.prototype._makeDivider = function() {
-      var divider;
-      divider = this.get("divider");
-      if (divider === "chevron") {
-        return $.xCreate({
-          tagName: "i",
-          "class": "right chevron icon divider"
-        });
-      } else {
-        return $.xCreate({
-          tagName: "div",
-          "class": "divider",
-          content: "/"
-        });
-      }
-    };
-
-    Breadcrumb.prototype._rendSection = function(section) {
-      var divider, index, prev, sectionDom;
-      index = this._sections.indexOf(section);
-      if (this._dividers == null) {
-        this._dividers = [];
-      }
-      sectionDom = section.getDom();
-      if (sectionDom.parentNode !== this._dom) {
-        if (this._dividers.length < index) {
-          divider = this._makeDivider();
-          this._dividers.push(divider);
-          this._dom.appendChild(divider);
-        }
-        this._dom.appendChild(section.getDom());
-      } else if (index > 0) {
-        prev = sectionDom.previousElementSibling;
-        if (prev && !cola.util.hasClass(prev, "divider")) {
-          divider = this._makeDivider();
-          this._dividers.push(divider);
-          section.get$Dom().before(divider);
-        }
-      }
-    };
-
-    Breadcrumb.prototype._doChange = function(section) {
-      var len1, n, ref, s, targetDom, targetSection;
-      if (section.nodeType === 1) {
-        targetDom = section;
-      } else if (section instanceof cola.breadcrumb.Section) {
-        targetDom = section.getDom();
-      } else {
-        return;
-      }
-      $(">.section.active", this._dom).each(function(index, itemDom) {
-        if (itemDom !== targetDom) {
-          section = cola.widget(itemDom);
-          if (section) {
-            section.set("active", false);
-          } else {
-            $fly(itemDom).removeClass("active");
-          }
-        }
-      });
-      targetSection = cola.widget(targetDom);
-      ref = this._sections;
-      for (n = 0, len1 = ref.length; n < len1; n++) {
-        s = ref[n];
-        if (s !== targetSection) {
-          s.set("active", false);
-        }
-      }
-      this._current = targetSection;
-      if (targetSection) {
-        targetSection.set("active", true);
-      } else {
-        $fly(targetDom).addClass("active");
-      }
-      if (this._rendered) {
-        this.fire("change", this, {
-          currentDom: targetDom
-        });
-      }
-    };
-
-    Breadcrumb.prototype.addSection = function(config) {
-      var active, section;
-      if (this._destroyed) {
-        return this;
-      }
-      if (this._sections == null) {
-        this._sections = [];
-      }
-      if (config instanceof cola.breadcrumb.Section) {
-        section = config;
-      } else if (typeof config === "string") {
-        section = new cola.breadcrumb.Section({
-          text: config
-        });
-      } else if (config.constructor === Object.prototype.constructor) {
-        section = new cola.breadcrumb.Section(config);
-      }
-      if (section) {
-        this._sections.push(section);
-        if (this._dom) {
-          this._rendSection(section);
-        }
-        active = section.get("active");
-        if (active) {
-          this._doChange(section);
-        }
-      }
-      return this;
-    };
-
-    Breadcrumb.prototype.removeSection = function(section) {
-      if (!this._sections) {
-        return this;
-      }
-      if (typeof section === "number") {
-        section = this._sections[section];
-      }
-      if (section) {
-        this._doRemove(section);
-      }
-      return this;
-    };
-
-    Breadcrumb.prototype._doRemove = function(section) {
-      var dIndex, divider, index;
-      index = this._sections.indexOf(section);
-      if (index > -1) {
-        this._sections.splice(index, 1);
-        step.remove();
-        if (index > 0 && this._dividers) {
-          dIndex = index - 1;
-          divider = this._dividers[dIndex];
-          $(divider).remove();
-          this._dividers.splice(dIndex, 1);
-        }
-      }
-    };
-
-    Breadcrumb.prototype.clear = function() {
-      if (!this._sections) {
-        return this;
-      }
-      if (this._dom) {
-        this.get$Dom().empty();
-      }
-      if (this._sections.length) {
-        this._sections = [];
-      }
-      return this;
-    };
-
-    Breadcrumb.prototype.getSection = function(index) {
-      var el, len1, n, section, sections;
-      sections = this._sections || [];
-      if (typeof index === "number") {
-        section = sections[index];
-      } else if (typeof index === "string") {
-        for (n = 0, len1 = sections.length; n < len1; n++) {
-          el = sections[n];
-          if (index === el.get("text")) {
-            section = el;
-            break;
-          }
-        }
-      }
-      return section;
-    };
-
-    Breadcrumb.prototype.setCurrent = function(section) {
-      var currentSection;
-      if (section instanceof cola.breadcrumb.Section) {
-        currentSection = section;
-      } else {
-        currentSection = this.getSection(section);
-      }
-      if (currentSection) {
-        this._doChange(currentSection);
-      }
-      return this;
-    };
-
-    Breadcrumb.prototype.getCurrent = function() {
-      return this._current;
-    };
-
-    Breadcrumb.prototype.getCurrentIndex = function() {
-      if (this._cuurent) {
-        return this._sections.indexOf(this._current);
-      }
-    };
-
-    Breadcrumb.prototype.destroy = function() {
-      if (this._destroyed) {
-        return;
-      }
-      Breadcrumb.__super__.destroy.call(this);
-      delete this._current;
-      delete this._sections;
-      delete this._dividers;
-    };
-
-    return Breadcrumb;
-
-  })(cola.Widget);
-
-  cola.registerWidget(cola.Breadcrumb);
-
-  cola.registerType("breadcrumb", "_default", cola.breadcrumb.Section);
-
-  cola.registerType("breadcrumb", "section", cola.breadcrumb.Section);
-
-  cola.registerTypeResolver("breadcrumb", function(config) {
-    return cola.resolveType("widget", config);
+    }
   });
 
   cola.CardBook = (function(superClass) {
@@ -26307,6 +25921,22 @@ Template
       }
     };
 
+    CardBook.prototype._parseDom = function(dom) {};
+
+    CardBook.prototype.setCurrent = function(name) {
+      var $dom, index, target;
+      if (!this._dom) {
+        return;
+      }
+      $dom = this.get$Dom();
+      target = $dom.find(">[name='" + name + "']");
+      if (target.length > 0) {
+        index = $(target).index();
+        this.setCurrentIndex(index);
+      }
+      return this;
+    };
+
     CardBook.prototype.setCurrentIndex = function(index) {
       var $dom, arg, children, newItem, oldItem;
       if (this._currentIndex == null) {
@@ -26315,8 +25945,8 @@ Template
       arg = {};
       if (this._dom) {
         $dom = $(this._dom);
-        children = $dom.find(">.item");
-        oldItem = $dom.find(">.item.active")[0];
+        children = $dom.find(">.item,>item");
+        oldItem = $dom.find(">.item.active,>item.active")[0];
         if (children.length > index) {
           newItem = children[index];
           if (newItem === oldItem) {

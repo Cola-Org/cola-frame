@@ -6246,13 +6246,21 @@ messages {
   background-position: -32px -32px;
 }
 
-.ui.card-book {
+.ui.card-book,
+c-cardbook {
   overflow: hidden;
+  display: block;
 }
-.ui.card-book > .item {
+.ui.card-book > .item,
+c-cardbook > .item,
+.ui.card-book > item,
+c-cardbook > item {
   display: none;
 }
-.ui.card-book > .item.active {
+.ui.card-book > .item.active,
+c-cardbook > .item.active,
+.ui.card-book > item.active,
+c-cardbook > item.active {
   display: block;
 }
 tab {
@@ -8682,4 +8690,24 @@ c-toolbar > .right.box,
   -webkit-box-flex: 1;
   box-flex: 1;
   -ms-flex: 1;
+}
+
+.ui.breadcrumb > item > a,
+c-breadcrumb > item > a {
+  color: rgba(0, 0, 0, 0.87);
+}
+.ui.breadcrumb > item > i,
+c-breadcrumb > item > i {
+  width: 1em;
+  display: inline-block;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.4);
+}
+.ui.breadcrumb > item > i:before,
+c-breadcrumb > item > i:before {
+  content: "/";
+}
+.ui.breadcrumb > item:last-of-type > i,
+c-breadcrumb > item:last-of-type > i {
+  display: none;
 }
