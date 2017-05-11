@@ -21175,10 +21175,6 @@ Template
       }
     };
 
-    Progress.events = {
-      change: null
-    };
-
     Progress.prototype._initDom = function(dom) {
       var progressDom;
       if (this._doms == null) {
@@ -21204,7 +21200,7 @@ Template
     };
 
     Progress.prototype._doRefreshDom = function() {
-      var $dom, dashOffset, perimeter, pool, progressDom, status, total, trackDom, value;
+      var $dom, dashOffset, pValue, perimeter, pool, progress, progressDom, status, total, trackDom, value;
       if (!this._dom) {
         return;
       }
@@ -21218,6 +21214,8 @@ Template
       } else if (value > total) {
         status = "exception";
       }
+      pValue = Math.ceil(Math.round(value / total * 10000) / 100);
+      progress = pValue + "%";
       if (this._circle) {
         perimeter = 2 * Math.PI * 47;
         progressDom = $dom.find(">svg>path.progress")[0];
@@ -21230,19 +21228,28 @@ Template
           dashOffset = (1 - value / total) * perimeter + 'px';
         }
         progressDom.setAttribute("stroke-dashoffset", dashOffset);
+      } else {
+        $dom.find(">.track>.progress").css("width", status !== "exception" ? progress : "100%");
+        $dom.hasClass("inline") && $dom.find("text").css("right", status !== "exception" ? (100 - pValue) + "%" : "0%");
       }
-      $dom.find(">text").text(Math.ceil(Math.round(value / total * 10000) / 100) + "%");
+      $dom.find(">text").text(progress);
       pool = this._classNamePool;
       pool.remove("exception");
       pool.remove("success");
       status && pool.add(status);
     };
 
-    Progress.prototype.reset = function() {};
+    Progress.prototype.reset = function() {
+      return this.set("value", 0);
+    };
 
-    Progress.prototype.progress = function(progress) {};
+    Progress.prototype.progress = function(progress) {
+      return this.set("value", progress);
+    };
 
-    Progress.prototype.complete = function() {};
+    Progress.prototype.complete = function() {
+      return this.set("value", this.get("total") || 100);
+    };
 
     Progress.prototype.destroy = function() {
       var ref;

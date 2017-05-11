@@ -8716,7 +8716,7 @@ c-progress,
 .ui.progress {
   background-color: #fff !important;
   position: relative;
-  margin: 0;
+  margin: 0 !important;
 }
 c-progress.circle > svg,
 .ui.progress.circle > svg {
@@ -8729,6 +8729,7 @@ c-progress.circle > svg path.track,
 }
 c-progress.circle > svg path.progress,
 .ui.progress.circle > svg path.progress {
+  stroke-linecap: round;
   stroke: #2185d0;
   fill: none;
   transition: stroke-dashoffset 0.6s ease 0s, stroke 0.6s ease;
@@ -8796,8 +8797,9 @@ c-progress:not(.circle),
 .ui.progress:not(.circle) {
   height: 2em;
 }
-c-progress > .track,
-.ui.progress > .track {
+c-progress:not(.circle) > .track,
+.ui.progress:not(.circle) > .track {
+  border-radius: 0.5em;
   background-color: #e5e9f2;
   height: 1em;
   position: absolute;
@@ -8806,31 +8808,65 @@ c-progress > .track,
   right: 4em;
   margin-top: -0.5em;
 }
-c-progress > .track .progress,
-.ui.progress > .track .progress {
+c-progress:not(.circle) > .track .progress,
+.ui.progress:not(.circle) > .track .progress {
+  border-radius: 0.5em;
   background-color: #2185d0;
   height: 1em;
   transition: all 0.4s cubic-bezier(0.08, 0.82, 0.17, 1) 0s;
 }
-c-progress > text,
-.ui.progress > text {
+c-progress:not(.circle) > text,
+.ui.progress:not(.circle) > text {
   position: absolute;
   right: 0px;
   top: 0px;
   width: 4em;
   line-height: 2em;
 }
-c-progress.inline > .track,
-.ui.progress.inline > .track {
+c-progress:not(.circle).inline > .track,
+.ui.progress:not(.circle).inline > .track {
   right: 0;
   margin-top: -0.5em;
 }
-c-progress.inline > text,
-.ui.progress.inline > text {
+c-progress:not(.circle).inline > text,
+.ui.progress:not(.circle).inline > text {
   width: initial;
   position: absolute;
   right: 50%;
   top: 0px;
   color: #fff;
   line-height: 2em;
+}
+c-progress:not(.circle).success > .track,
+.ui.progress:not(.circle).success > .track,
+c-progress:not(.circle).positive > .track,
+.ui.progress:not(.circle).positive > .track {
+  background-color: #a3c293;
+  position: absolute;
+}
+c-progress:not(.circle).success > .track .progress,
+.ui.progress:not(.circle).success > .track .progress,
+c-progress:not(.circle).positive > .track .progress,
+.ui.progress:not(.circle).positive > .track .progress {
+  background-color: #21ba45;
+}
+c-progress:not(.circle).exception > .track,
+.ui.progress:not(.circle).exception > .track,
+c-progress:not(.circle).negative > .track,
+.ui.progress:not(.circle).negative > .track {
+  background-color: #e0b4b4;
+}
+c-progress:not(.circle).exception > .track .progress,
+.ui.progress:not(.circle).exception > .track .progress,
+c-progress:not(.circle).negative > .track .progress,
+.ui.progress:not(.circle).negative > .track .progress {
+  background-color: #db2828;
+}
+c-progress:not(.circle).warning > .track,
+.ui.progress:not(.circle).warning > .track {
+  background-color: #c9ba9b;
+}
+c-progress:not(.circle).warning > .track .progress,
+.ui.progress:not(.circle).warning > .track .progress {
+  background-color: #f2c037;
 }
