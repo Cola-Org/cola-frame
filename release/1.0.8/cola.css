@@ -8838,6 +8838,26 @@ c-progress.circle.warning > text,
 .ui.progress.circle.warning > text {
   color: #f2c037;
 }
+c-progress.plain text,
+.ui.progress.plain text {
+  display: none !important;
+}
+c-progress.plain:not(.circle),
+.ui.progress.plain:not(.circle) {
+  height: 4px;
+}
+c-progress.plain:not(.circle) > .track,
+.ui.progress.plain:not(.circle) > .track {
+  top: 0;
+  margin-top: 0;
+  border-radius: 0;
+  height: 4px;
+}
+c-progress.plain:not(.circle) > .track .progress,
+.ui.progress.plain:not(.circle) > .track .progress {
+  border-radius: 0;
+  height: 4px;
+}
 c-progress:not(.circle),
 .ui.progress:not(.circle) {
   height: 2em;
@@ -8866,6 +8886,7 @@ c-progress:not(.circle) > text,
   right: 0px;
   top: 0px;
   width: 4em;
+  transform: scale(0.85, 0.85);
   line-height: 2em;
 }
 c-progress:not(.circle).inline > .track,
@@ -8881,6 +8902,7 @@ c-progress:not(.circle).inline > text,
   top: 0px;
   color: #fff;
   line-height: 2em;
+  transform: scale(0.75, 0.75);
 }
 c-progress:not(.circle).success > .track,
 .ui.progress:not(.circle).success > .track,

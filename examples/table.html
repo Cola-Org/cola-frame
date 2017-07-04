@@ -14,55 +14,55 @@
 
 <div id="pagingTable"></div>
 <script>
-    cola(function (model) {
-        model.describe("pageItems", {
-            provider: {
-                url: "http://cola-ui.com/data/items",
-                pageSize: 5
-            }
-        });
-        model.action({
-            flush:function(){
-                model.get("pageItems").flush()
-            }
-        });
+	cola(function (model) {
+		model.describe("pageItems", {
+			provider: {
+				url: "http://legacy.cola-ui.com/data/items",
+				pageSize: 5
+			}
+		});
+		model.action({
+			flush: function () {
+				model.flush("pageItems");
+			}
+		});
 
-        model.widgetConfig({
-            pagingTable: {
-                $type: "table",
-                bind: "item in pageItems",
-                showHeader: true,
+		model.widgetConfig({
+			pagingTable: {
+				$type: "table",
+				bind: "item in pageItems",
+				showHeader: true,
 
-                sortMode:  "remote",
-                currentPageOnly: true,
-                height: 300,
-                columns: [
-                    {
-                        $type: "select",
-                        change:function(self,arg){
-                            alert(arg.value)
-                        }
-                    },
-                    {
-                        bind: ".id",
-                        caption: "产品编号",
-                        sortable: true
-                    },
-                    {
-                        bind: ".title",
-                        caption: "产品名称",
-                        sortable: true
-                    },
-                    {
-                        bind: "formatNumber(item.originalPrice,'##,##.00')",
-                        caption: "价格",
-                        property:"originalPrice",
-                        sortable: true
-                    }
-                ]
-            }
-        });
-    });
+				sortMode: "remote",
+				currentPageOnly: true,
+				height: 300,
+				columns: [
+					{
+						$type: "select",
+						change: function (self, arg) {
+							alert(arg.value)
+						}
+					},
+					{
+						bind: ".id",
+						caption: "产品编号",
+						sortable: true
+					},
+					{
+						bind: ".title",
+						caption: "产品名称",
+						sortable: true
+					},
+					{
+						bind: "formatNumber(item.originalPrice,'##,##.00')",
+						caption: "价格",
+						property: "originalPrice",
+						sortable: true
+					}
+				]
+			}
+		});
+	});
 </script>
 <c-pager c-bind="item in pageItems"></c-pager>
 <c-button caption="刷新当前" click="flush"></c-button>
