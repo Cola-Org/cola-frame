@@ -571,7 +571,7 @@
   cola.util.getItemByItemDom = function(itemDom) {
     itemDom = cola.util.userData(itemDom, cola.constants.DOM_BINDING_KEY);
     if (itemDom.scope && itemDom.scope instanceof cola.ItemScope) {
-      return itemDom.scope.data.getTargetData();
+      return itemDom.scope.data.getItemData();
     }
     return null;
   };
@@ -625,13 +625,13 @@
   dictionaryMap = {};
 
   cola.util.dictionary = function(name, keyValues) {
-    var dictionary, l, len1, pair;
+    var dictionary, key, l, len1, pair, value, values;
     if (keyValues === null) {
       delete keyValuesMap[name];
       delete dictionaryMap[name];
     } else if (keyValues === void 0) {
       return keyValuesMap[name];
-    } else {
+    } else if (keyValues instanceof Array) {
       keyValuesMap[name] = keyValues;
       dictionaryMap[name] = dictionary = {};
       for (l = 0, len1 = keyValues.length; l < len1; l++) {
@@ -639,6 +639,17 @@
         dictionary[pair.key || ""] = pair.value;
       }
       return dictionary;
+    } else {
+      keyValuesMap[name] = values = [];
+      for (key in keyValues) {
+        value = keyValues[key];
+        values.push({
+          key: key,
+          value: value
+        });
+        dictionaryMap[name] = keyValues;
+      }
+      return keyValues;
     }
   };
 
@@ -2254,7 +2265,7 @@
 
   cola.Expression = (function() {
     function Expression(exprStr) {
-      var fc, i, l, len1, path, ref, watchPathStr, watchPaths;
+      var fc, i, l, len1, len2, o, path, ref, ref1, watchPathStr, watchPaths;
       this.raw = exprStr;
       i = exprStr.indexOf(" on ");
       if ((0 < i && i < (exprStr.length - 1))) {
@@ -2288,6 +2299,14 @@
       }
       if (watchPaths) {
         this.paths = watchPaths;
+      }
+      if (this.paths) {
+        this.splittedPaths = [];
+        ref1 = this.paths;
+        for (o = 0, len2 = ref1.length; o < len2; o++) {
+          path = ref1[o];
+          this.splittedPaths.push(path.split("."));
+        }
       }
     }
 
@@ -3513,7 +3532,7 @@
           Array.prototype.push.apply(children, r);
         }
       } else {
-        if (typeof value === "array") {
+        if (value instanceof Array) {
           r = _filterCollection(value, criteria, option);
           Array.prototype.push.apply(children, r);
         } else if (typeof value === "object" && !(value instanceof Date)) {
@@ -4797,10 +4816,10 @@
       } else if (json.hasOwnProperty("data$")) {
         json = rawJson.data$;
       }
-      if (!(json instanceof Array)) {
+      if (json && !(json instanceof Array)) {
         throw new cola.Exception("Unmatched DataType. expect \"Array\" but \"Object\".");
       }
-      if (json.length) {
+      if (json != null ? json.length : void 0) {
         dataType = entityList.dataType;
         for (l = 0, len1 = json.length; l < len1; l++) {
           data = json[l];
@@ -6312,6 +6331,8 @@
   cola.Model = (function(superClass) {
     extend(Model, superClass);
 
+    Model.prototype.repeatNotification = true;
+
     function Model(name, parent) {
       var parentName;
       if (cola.currentScope == null) {
@@ -6391,9 +6412,64 @@
   cola.SubScope = (function(superClass) {
     extend(SubScope, superClass);
 
-    function SubScope() {
-      return SubScope.__super__.constructor.apply(this, arguments);
+    SubScope.prototype.repeatNotification = true;
+
+    function SubScope(parent1, expressions) {
+      this.parent = parent1;
+      this.action = this.parent.action;
+      this.parent.registerChild(this);
+      if (expressions) {
+        this.setExpressions(expressions);
+      }
     }
+
+    SubScope.prototype.destroy = function() {
+      var ref;
+      if (this.parent) {
+        this.unwatchPath();
+      }
+      if ((ref = this.data) != null) {
+        if (typeof ref.destroy === "function") {
+          ref.destroy();
+        }
+      }
+    };
+
+    SubScope.prototype.setExpressions = function(expressions) {
+      var expression, l, len1, len2, o, path, ref;
+      if (!expressions) {
+        return;
+      }
+      this.data = new cola.SubDataModel(this);
+      this.aliasExpressions = {};
+      this.aliasPaths = {};
+      for (l = 0, len1 = expressions.length; l < len1; l++) {
+        expression = expressions[l];
+        this.aliasExpressions[expression.alias] = expression;
+        if (!expression.paths && expression.hasComplexStatement && !expression.hasDefinedPath) {
+          this.aliasPaths = null;
+          break;
+        } else if (expression.paths) {
+          ref = expression.paths;
+          for (o = 0, len2 = ref.length; o < len2; o++) {
+            path = ref[o];
+            if (path === "**") {
+              this.aliasPaths = null;
+              break;
+            }
+            this.aliasPaths[path] = null;
+          }
+        }
+        this.data.addAlias(expression.alias, expression.writeablePath);
+      }
+      if (this.aliasPaths) {
+        for (path in this.aliasPaths) {
+          this.watchPath(path);
+        }
+      } else {
+        this.watchAllMessages();
+      }
+    };
 
     SubScope.prototype.watchPath = function(path) {
       var l, len1, p, parent, paths;
@@ -6461,9 +6537,93 @@
       }
     };
 
-    SubScope.prototype.destroy = function() {
-      if (this.parent) {
-        this.unwatchPath();
+    SubScope.prototype.evaluate = function(expression, scope, loadMode, dataCtx) {
+      if (loadMode == null) {
+        loadMode = "async";
+      }
+      if (dataCtx == null) {
+        dataCtx = {};
+      }
+      return expression != null ? expression.evaluate(scope, loadMode, dataCtx) : void 0;
+    };
+
+    SubScope.prototype.setAliasTargetData = function(alias, data) {
+      this.data.setAliasTargetData(alias, data);
+    };
+
+    SubScope.prototype.retrieveAliasData = function(alias) {
+      var data;
+      cola.util.cancelDelay(this, "retrieve");
+      data = this.evaluate(this.aliasExpressions[alias], this);
+      this.setAliasTargetData(alias, data);
+    };
+
+    SubScope.prototype.isParentOfTarget = function(expressionPaths, changedPath) {
+      var i, isParent, l, len1, len2, o, part, targetPart, targetPath;
+      if (!expressionPaths.length) {
+        return false;
+      }
+      if (!changedPath) {
+        return true;
+      }
+      for (l = 0, len1 = expressionPaths.length; l < len1; l++) {
+        targetPath = expressionPaths[l];
+        isParent = true;
+        for (i = o = 0, len2 = changedPath.length; o < len2; i = ++o) {
+          part = changedPath[i];
+          targetPart = targetPath[i];
+          if (targetPart && targetPart.charCodeAt(targetPart.length - 1) === 35) {
+            targetPart = targetPart.substring(0, targetPart.length - 1);
+          }
+          if (part !== targetPart) {
+            if (targetPart === "**") {
+              continue;
+            } else if (targetPart === "*") {
+              if (i === changedPath.length - 1) {
+                continue;
+              }
+            }
+            isParent = false;
+            break;
+          }
+        }
+        if (isParent) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    SubScope.prototype.processMessage = function(bindingPath, path, type, arg) {
+      var ref;
+      if (this.messageTimestamp >= arg.timestamp) {
+        return;
+      }
+      this._processMessage(bindingPath, path, type, arg);
+      if ((ref = this.data) != null) {
+        ref.onDataMessage(path, type, arg);
+      }
+    };
+
+    SubScope.prototype._processMessage = function(bindingPath, path, type, arg) {
+      var alias, expression, isParent, ref;
+      if (type === cola.constants.MESSAGE_REFRESH || type === cola.constants.MESSAGE_CURRENT_CHANGE || type === cola.constants.MESSAGE_PROPERTY_CHANGE || type === cola.constants.MESSAGE_REMOVE) {
+        ref = this.aliasExpressions;
+        for (alias in ref) {
+          expression = ref[alias];
+          if (!expression.paths && expression.hasComplexStatement && !expression.hasDefinedPath) {
+            cola.util.delay(this, "retrieve", 100, (function(_this) {
+              return function() {
+                _this.retrieveAliasData(alias);
+              };
+            })(this));
+          } else {
+            isParent = this.isParentOfTarget(expression.splittedPaths, path);
+            if (isParent) {
+              this.retrieveAliasData(alias);
+            }
+          }
+        }
       }
     };
 
@@ -6471,187 +6631,17 @@
 
   })(cola.Scope);
 
-  cola.ExpressionScope = (function(superClass) {
-    extend(ExpressionScope, superClass);
-
-    function ExpressionScope() {
-      return ExpressionScope.__super__.constructor.apply(this, arguments);
-    }
-
-    ExpressionScope.prototype.repeatNotification = true;
-
-    ExpressionScope.prototype.setExpression = function(expression) {
-      var l, len1, path, ref;
-      this.expression = expression;
-      if (this.expressionPaths == null) {
-        this.expressionPaths = [];
-      }
-      if (expression) {
-        if (expression.paths) {
-          ref = this.expression.paths;
-          for (l = 0, len1 = ref.length; l < len1; l++) {
-            path = ref[l];
-            this.expressionPaths.push(path.split("."));
-          }
-        }
-        if (!expression.paths && expression.hasComplexStatement && !expression.hasDefinedPath) {
-          this.watchAllMessages();
-        } else {
-          this.watchPath(expression.paths);
-        }
-      } else {
-        this.unwatchPath();
-      }
-    };
-
-    ExpressionScope.prototype.evaluate = function(scope, loadMode, dataCtx) {
-      var ref;
-      if (loadMode == null) {
-        loadMode = "async";
-      }
-      if (dataCtx == null) {
-        dataCtx = {};
-      }
-      return (ref = this.expression) != null ? ref.evaluate(scope, loadMode, dataCtx) : void 0;
-    };
-
-    ExpressionScope.prototype.isParentOfTarget = function(changedPath) {
-      var expressionPaths, i, isParent, l, len1, len2, o, part, targetPart, targetPath;
-      expressionPaths = this.expressionPaths;
-      if (!expressionPaths.length) {
-        return false;
-      }
-      if (!changedPath) {
-        return true;
-      }
-      if (expressionPaths.length) {
-        for (l = 0, len1 = expressionPaths.length; l < len1; l++) {
-          targetPath = expressionPaths[l];
-          isParent = true;
-          for (i = o = 0, len2 = changedPath.length; o < len2; i = ++o) {
-            part = changedPath[i];
-            targetPart = targetPath[i];
-            if (part !== targetPart) {
-              if (targetPart === "**") {
-                continue;
-              } else if (targetPart === "*") {
-                if (i === changedPath.length - 1) {
-                  continue;
-                }
-              }
-              isParent = false;
-              break;
-            }
-          }
-          if (isParent) {
-            return true;
-          }
-        }
-      }
-      return false;
-    };
-
-    return ExpressionScope;
-
-  })(cola.SubScope);
-
-  cola.AliasScope = (function(superClass) {
-    extend(AliasScope, superClass);
-
-    function AliasScope(parent1, expression) {
-      this.parent = parent1;
-      this.setExpression(expression);
-      this.data = new cola.AliasDataModel(this, expression.alias, this.dataType);
-      this.action = this.parent.action;
-    }
-
-    AliasScope.prototype.destroy = function() {
-      AliasScope.__super__.destroy.call(this);
-      this.data.destroy();
-    };
-
-    AliasScope.prototype.setExpression = function(expression) {
-      AliasScope.__super__.setExpression.call(this, expression);
-      if (expression && typeof expression.writable) {
-        this.dataType = this.parent.data.getDataType(expression.writeablePath || expression.paths[0]);
-      }
-    };
-
-    AliasScope.prototype.setTargetData = function(data) {
-      this.data.setTargetData(data);
-    };
-
-    AliasScope.prototype.retrieveData = function() {
-      var data;
-      cola.util.cancelDelay(this, "retrieve");
-      data = this.evaluate(this);
-      this.setTargetData(data);
-    };
-
-    AliasScope.prototype.refreshTargetData = function() {
-      this.data.onDataMessage([this.expression.alias], cola.constants.MESSAGE_REFRESH, {
-        data: this.data.getTargetData()
-      });
-    };
-
-    AliasScope.prototype.processMessage = function(bindingPath, path, type, arg) {
-      var allProcessed;
-      if (this.messageTimestamp >= arg.timestamp) {
-        return;
-      }
-      allProcessed = this._processMessage(bindingPath, path, type, arg);
-      if (!allProcessed) {
-        this.data.onDataMessage(path, type, arg);
-      }
-    };
-
-    AliasScope.prototype._processMessage = function(bindingPath, path, type, arg) {
-      var allProcessed, isParent;
-      if (type === cola.constants.MESSAGE_REFRESH || type === cola.constants.MESSAGE_CURRENT_CHANGE || type === cola.constants.MESSAGE_PROPERTY_CHANGE || type === cola.constants.MESSAGE_REMOVE) {
-        isParent = this.isParentOfTarget(path);
-        if (isParent) {
-          this.retrieveData(isParent < 2);
-          this.refreshTargetData();
-          allProcessed = true;
-        } else if (this.expression) {
-          if (!this.expressionPaths && this.expression.hasComplexStatement && !this.expression.hasDefinedPath) {
-            cola.util.delay(this, "retrieve", 100, (function(_this) {
-              return function() {
-                _this.retrieveData();
-                _this.refreshTargetData();
-              };
-            })(this));
-            allProcessed = true;
-          }
-        }
-      }
-      return allProcessed;
-    };
-
-    return AliasScope;
-
-  })(cola.ExpressionScope);
-
   cola.ItemScope = (function(superClass) {
     extend(ItemScope, superClass);
 
-    function ItemScope(parent1, alias) {
+    function ItemScope(parent, alias) {
       var ref;
-      this.parent = parent1;
+      ItemScope.__super__.constructor.call(this, parent);
       this.data = new cola.ItemDataModel(this, alias, (ref = this.parent) != null ? ref.dataType : void 0);
       this.action = this.parent.action;
     }
 
     ItemScope.prototype.watchPath = function() {};
-
-    ItemScope.prototype.watchAllMessages = function() {
-      var ref;
-      if ((ref = this.parent) != null) {
-        if (typeof ref.watchAllMessages === "function") {
-          ref.watchAllMessages();
-        }
-      }
-    };
 
     ItemScope.prototype.processMessage = function(bindingPath, path, type, arg) {
       return this.data.onDataMessage(path, type, arg);
@@ -6669,6 +6659,33 @@
       this.setExpression(expression);
     }
 
+    ItemsScope.prototype.setExpression = function(expression) {
+      var l, len1, path, ref;
+      this.expression = expression;
+      this.alias = expression ? expression.alias : "item";
+      if (this.expressionPaths == null) {
+        this.expressionPaths = [];
+      }
+      if (expression) {
+        if (expression.paths) {
+          ref = this.expression.splittedPaths;
+          for (l = 0, len1 = ref.length; l < len1; l++) {
+            path = ref[l];
+            this.expressionPaths.push(path);
+          }
+        }
+        if (!expression.paths && expression.hasComplexStatement && !expression.hasDefinedPath) {
+          this.watchAllMessages();
+        } else {
+          this.watchPath(expression.paths);
+        }
+      } else {
+        this.unwatchPath();
+      }
+    };
+
+    ItemsScope.prototype.registerChild = function() {};
+
     ItemsScope.prototype.setParent = function(parent) {
       if (this.parent) {
         this.unwatchPath();
@@ -6683,11 +6700,6 @@
       }
     };
 
-    ItemsScope.prototype.setExpression = function(expression) {
-      ItemsScope.__super__.setExpression.call(this, expression);
-      this.alias = expression ? expression.alias : "item";
-    };
-
     ItemsScope.prototype.setItems = function(items) {
       this._setItems(items);
     };
@@ -6698,7 +6710,7 @@
       if (this._retrieveItems) {
         this._retrieveItems();
       } else if (this.expression) {
-        items = this.evaluate(this.parent);
+        items = this.evaluate(this.expression, this.parent);
         this.setItems(items);
       }
     };
@@ -6897,7 +6909,7 @@
           if (typeof this.onCurrentItemChange === "function") {
             this.onCurrentItemChange(arg);
           }
-        } else if (this.isParentOfTarget(path)) {
+        } else if (this.isParentOfTarget(this.expressionPaths, path)) {
           this.retrieveData();
           this.refreshItems();
           allProcessed = true;
@@ -6905,7 +6917,7 @@
           processMoreMessage = true;
         }
       } else if (type === cola.constants.MESSAGE_PROPERTY_CHANGE) {
-        if (this.isParentOfTarget(path)) {
+        if (this.isParentOfTarget(this.expressionPaths, path)) {
           this.retrieveData();
           this.refreshItems();
           allProcessed = true;
@@ -6922,7 +6934,7 @@
           if (typeof this.onCurrentItemChange === "function") {
             this.onCurrentItemChange(arg);
           }
-        } else if (this.isParentOfTarget(path)) {
+        } else if (this.isParentOfTarget(this.expressionPaths, path)) {
           this.retrieveData();
           this.refreshItems();
           allProcessed = true;
@@ -6961,16 +6973,16 @@
           processMoreMessage = true;
         }
       } else if (type === cola.constants.MESSAGE_LOADING_START) {
-        if (this.isParentOfTarget(path)) {
+        if (this.isParentOfTarget(this.expressionPaths, path)) {
           this.itemsLoadingStart(arg);
         }
       } else if (type === cola.constants.MESSAGE_LOADING_END) {
-        if (this.isParentOfTarget(path)) {
+        if (this.isParentOfTarget(this.expressionPaths, path)) {
           this.itemsLoadingEnd(arg);
         }
       }
       if (processMoreMessage && this.expression) {
-        if (!this.expressionPaths && this.expression.hasComplexStatement && !this.expression.hasDefinedPath) {
+        if ((this.expressionPaths == null) && this.expression.hasComplexStatement && !this.expression.hasDefinedPath) {
           cola.util.delay(this, "retrieve", 100, (function(_this) {
             return function() {
               _this.retrieveData();
@@ -6984,7 +6996,7 @@
 
     return ItemsScope;
 
-  })(cola.ExpressionScope);
+  })(cola.SubScope);
 
 
   /*
@@ -6994,25 +7006,37 @@
   cola.AbstractDataModel = (function() {
     AbstractDataModel.prototype.disableObserverCount = 0;
 
-    function AbstractDataModel(model1) {
-      this.model = model1;
+    function AbstractDataModel(model) {
+      var parentModel;
+      if (!model) {
+        return;
+      }
+      this.model = model;
+      parentModel = model.parent;
+      while (parentModel) {
+        if (parentModel.data) {
+          this.parent = parentModel.data;
+          break;
+        }
+        parentModel = parentModel.parent;
+      }
     }
 
     AbstractDataModel.prototype.get = function(path, loadMode, context) {
-      var aliasData, aliasHolder, callback, firstPart, i, prop, ref, ref1, returnCurrent, rootData;
+      var aliasData, callback, firstPart, i, prop, ref, ref1, returnCurrent, rootData, shortcutHolder;
       if (!path) {
-        return this._getRootData() || ((ref = this.model.parent) != null ? ref.get() : void 0);
+        return this._getRootData() || ((ref = this.parent) != null ? ref.get() : void 0);
       }
-      if (this._aliasMap) {
+      if (this._shortcutMap) {
         i = path.indexOf('.');
         firstPart = i > 0 ? path.substring(0, i) : path;
         if (firstPart.charCodeAt(firstPart.length - 1) === 35) {
           returnCurrent = true;
           firstPart = firstPart.substring(0, firstPart.length - 1);
         }
-        aliasHolder = this._aliasMap[firstPart];
-        if (aliasHolder) {
-          aliasData = aliasHolder.data;
+        shortcutHolder = this._shortcutMap[firstPart];
+        if (shortcutHolder) {
+          aliasData = shortcutHolder.data;
           if (aliasData && aliasData instanceof _EntityList && returnCurrent) {
             aliasData = aliasData.current;
           }
@@ -7029,7 +7053,7 @@
       }
       rootData = this._rootData;
       if (rootData != null) {
-        if (this.model.parent) {
+        if (this.parent) {
           i = path.indexOf('.');
           if (i > 0) {
             prop = path.substring(0, i);
@@ -7039,18 +7063,18 @@
           if (rootData.hasValue(prop)) {
             return rootData.get(path, loadMode, context);
           } else {
-            return this.model.parent.data.get(path, loadMode, context);
+            return this.parent.get(path, loadMode, context);
           }
         } else {
           return rootData.get(path, loadMode, context);
         }
       } else {
-        return (ref1 = this.model.parent) != null ? ref1.data.get(path, loadMode, context) : void 0;
+        return (ref1 = this.parent) != null ? ref1.get(path, loadMode, context) : void 0;
       }
     };
 
     AbstractDataModel.prototype.set = function(path, data, context) {
-      var aliasHolder, firstPart, i, p, rootData;
+      var firstPart, i, p, rootData, shortcutHolder;
       if (path) {
         rootData = this._getRootData();
         if (typeof path === "string") {
@@ -7062,22 +7086,22 @@
           i = path.indexOf('.');
           if (i > 0) {
             firstPart = path.substring(0, i);
-            if (this._aliasMap) {
-              aliasHolder = this._aliasMap[firstPart];
-              if (aliasHolder) {
-                if (aliasHolder.data) {
-                  cola.Entity._setValue(aliasHolder.data, path.substring(i + 1), data, context);
+            if (this._shortcutMap) {
+              shortcutHolder = this._shortcutMap[firstPart];
+              if (shortcutHolder) {
+                if (shortcutHolder.data) {
+                  cola.Entity._setValue(shortcutHolder.data, path.substring(i + 1), data, context);
                 } else {
                   throw new cola.Exception("Cannot set value to \"" + path + "\"");
                 }
                 return this;
               }
             }
-            if (this.model.parent) {
+            if (this.parent) {
               if (rootData.hasValue(firstPart)) {
                 rootData.set(path, data, context);
               } else {
-                this.model.parent.data.set(path, data, context);
+                this.parent.set(path, data, context);
               }
             } else {
               rootData.set(path, data, context);
@@ -7099,8 +7123,8 @@
       var hasValue, property, provider, ref, rootData, rootDataType;
       rootData = this._rootData;
       hasValue = rootData.hasValue(prop);
-      if ((ref = this._aliasMap) != null ? ref[prop] : void 0) {
-        this.removeAlias(prop);
+      if ((ref = this._shortcutMap) != null ? ref[prop] : void 0) {
+        this.removeShortcut(prop);
       }
       if (data != null) {
         if (data.$provider || data.$dataType) {
@@ -7124,45 +7148,45 @@
       }
       if (!provider || hasValue) {
         if (data && (data instanceof cola.Entity || data instanceof cola.EntityList) && data.parent && data !== rootData._data[prop]) {
-          if (this._aliasMap == null) {
-            this._aliasMap = {};
-          }
-          this.addAlias(prop, data);
+          this.addShortcut(prop, data);
         } else {
           rootData.set(prop, data, context);
         }
       }
     };
 
-    AbstractDataModel.prototype.addAlias = function(alias, data) {
-      var aliasHolder, dataModel, oldAliasData, path, ref, ref1;
+    AbstractDataModel.prototype.addShortcut = function(shortcut, data) {
+      var dataModel, oldShortcutData, path, ref, ref1, shortcutHolder;
+      if (this._shortcutMap == null) {
+        this._shortcutMap = {};
+      }
       path = data.getPath("always");
-      oldAliasData = (ref = this._aliasMap) != null ? (ref1 = ref[alias]) != null ? ref1.data : void 0 : void 0;
+      oldShortcutData = (ref = this._shortcutMap) != null ? (ref1 = ref[shortcut]) != null ? ref1.data : void 0 : void 0;
       dataModel = this;
-      this._aliasMap[alias] = aliasHolder = {
+      this._shortcutMap[shortcut] = shortcutHolder = {
         data: data,
         path: path,
         bindingPath: path.slice(0).concat("**"),
         processMessage: function(bindingPath, path, type, arg) {
           var relativePath;
           relativePath = path.slice(this.path.length);
-          dataModel.onDataMessage([alias].concat(relativePath), type, arg);
+          dataModel.onDataMessage([shortcut].concat(relativePath), type, arg);
         }
       };
-      this.bind(aliasHolder.bindingPath, aliasHolder);
-      this.onDataMessage([alias], cola.constants.MESSAGE_PROPERTY_CHANGE, {
+      this.bind(shortcutHolder.bindingPath, shortcutHolder);
+      this.onDataMessage([shortcut], cola.constants.MESSAGE_PROPERTY_CHANGE, {
         entity: this._rootData,
-        property: alias,
-        oldValue: oldAliasData,
+        property: shortcut,
+        oldValue: oldShortcutData,
         value: data
       });
     };
 
-    AbstractDataModel.prototype.removeAlias = function(alias) {
+    AbstractDataModel.prototype.removeShortcut = function(shortcut) {
       var oldAliasHolder, ref;
-      if ((ref = this._aliasMap) != null ? ref[alias] : void 0) {
-        oldAliasHolder = this._aliasMap[alias];
-        delete this._aliasMap[alias];
+      if ((ref = this._shortcutMap) != null ? ref[shortcut] : void 0) {
+        oldAliasHolder = this._shortcutMap[shortcut];
+        delete this._shortcutMap[shortcut];
         this.unbind(oldAliasHolder.bindingPath, oldAliasHolder);
       }
     };
@@ -7290,7 +7314,6 @@
     };
 
     AbstractDataModel.prototype.onDataMessage = function(path, type, arg) {
-      var anyChildNode, anyPropNode, i, l, lastIndex, len1, node, oldScope, part;
       if (arg == null) {
         arg = {};
       }
@@ -7300,45 +7323,54 @@
       if (this.disableObserverCount > 0) {
         return;
       }
+      return this._onDataMessage(path, type, arg);
+    };
+
+    AbstractDataModel.prototype._onDataMessage = function(path, type, arg) {
+      var anyChildNode, anyPropNode, i, l, lastIndex, len1, node, oldScope, part;
+      if (arg == null) {
+        arg = {};
+      }
       oldScope = cola.currentScope;
       cola.currentScope = this;
       try {
         if (arg.timestamp == null) {
           arg.timestamp = cola.sequenceNo();
         }
-        if (path) {
-          node = this.bindingRegistry;
-          lastIndex = path.length - 1;
-          for (i = l = 0, len1 = path.length; l < len1; i = ++l) {
-            part = path[i];
-            if (i === lastIndex) {
-              anyPropNode = node["*"];
-              if (anyPropNode) {
-                this.processDataMessage(anyPropNode, path, type, arg);
+        node = this.bindingRegistry;
+        if (node) {
+          if (path) {
+            lastIndex = path.length - 1;
+            for (i = l = 0, len1 = path.length; l < len1; i = ++l) {
+              part = path[i];
+              if (i === lastIndex) {
+                anyPropNode = node["*"];
+                if (anyPropNode) {
+                  this.processDataMessage(anyPropNode, path, type, arg);
+                }
               }
+              anyChildNode = node["**"];
+              if (anyChildNode) {
+                this.processDataMessage(anyChildNode, path, type, arg);
+              }
+              node = node[part];
+              if (!node) {
+                break;
+              }
+            }
+          } else {
+            anyPropNode = node["*"];
+            if (anyPropNode) {
+              this.processDataMessage(anyPropNode, null, type, arg);
             }
             anyChildNode = node["**"];
             if (anyChildNode) {
-              this.processDataMessage(anyChildNode, path, type, arg);
-            }
-            node = node[part];
-            if (!node) {
-              break;
+              this.processDataMessage(anyChildNode, null, type, arg);
             }
           }
-        } else {
-          node = this.bindingRegistry;
-          anyPropNode = node["*"];
-          if (anyPropNode) {
-            this.processDataMessage(anyPropNode, null, type, arg);
+          if (node) {
+            this.processDataMessage(node, path, type, arg, true);
           }
-          anyChildNode = node["**"];
-          if (anyChildNode) {
-            this.processDataMessage(anyChildNode, null, type, arg);
-          }
-        }
-        if (node) {
-          this.processDataMessage(node, path, type, arg, true);
         }
       } finally {
         cola.currentScope = oldScope;
@@ -7434,31 +7466,25 @@
     };
 
     DataModel.prototype.getProperty = function(path) {
-      var dataModel, dataType, i, path1, path2, ref, ref1, rootDataType;
-      i = path.indexOf(".");
-      if (i > 0) {
-        path1 = path.substring(0, i);
-        path2 = path.substring(i + 1);
-      } else {
-        path1 = null;
-        path2 = path;
-      }
-      dataModel = this;
-      while (dataModel) {
-        rootDataType = dataModel._rootDataType;
-        if (rootDataType) {
-          if (path1) {
-            dataType = (ref = rootDataType.getProperty(path1)) != null ? ref.get("dataType") : void 0;
-          } else {
-            dataType = rootDataType;
-          }
-          if (dataType) {
-            break;
-          }
+      var dataType, i, path1, path2, ref, ref1;
+      if (this._rootDataType) {
+        i = path.indexOf(".");
+        if (i > 0) {
+          path1 = path.substring(0, i);
+          path2 = path.substring(i + 1);
+        } else {
+          path1 = null;
+          path2 = path;
         }
-        dataModel = (ref1 = dataModel.model.parent) != null ? ref1.data : void 0;
+        if (path1) {
+          dataType = (ref = this._rootDataType.getProperty(path1)) != null ? ref.get("dataType") : void 0;
+        } else {
+          dataType = this._rootDataType;
+        }
+        return dataType != null ? dataType.getProperty(path2) : void 0;
+      } else {
+        return (ref1 = this.parent) != null ? ref1.getProperty(path) : void 0;
       }
-      return dataType != null ? dataType.getProperty(path2) : void 0;
     };
 
     DataModel.prototype.getDataType = function(path) {
@@ -7563,35 +7589,269 @@
 
   })(cola.AbstractDataModel);
 
-  cola.AliasDataModel = (function(superClass) {
-    extend(AliasDataModel, superClass);
+  cola.SubDataModel = (function(superClass) {
+    extend(SubDataModel, superClass);
 
-    function AliasDataModel(model1, alias1, dataType1) {
-      var parentModel;
-      this.model = model1;
-      this.alias = alias1;
-      this.dataType = dataType1;
-      this.defaultDataType = this.dataType;
-      parentModel = this.model.parent;
-      while (parentModel) {
-        if (parentModel.data) {
-          this.parent = parentModel.data;
-          break;
-        }
-        parentModel = parentModel.parent;
-      }
+    function SubDataModel(model) {
+      SubDataModel.__super__.constructor.call(this, model);
+      this._aliasMap = {};
     }
 
-    AliasDataModel.prototype.getTargetData = function() {
-      return this._targetData;
+    SubDataModel.prototype.definition = function(name) {
+      return this.parent.definition(name);
     };
 
-    AliasDataModel.prototype.setTargetData = function(data, silence) {
-      var oldData;
-      oldData = this._targetData;
-      this._targetData = data;
+    SubDataModel.prototype.regDefinition = function(definition) {
+      return this.parent.regDefinition(definition);
+    };
+
+    SubDataModel.prototype.unregDefinition = function(definition) {
+      return this.parent.unregDefinition(definition);
+    };
+
+    SubDataModel.prototype.dataType = function(name) {
+      return this.parent.dataType(name);
+    };
+
+    SubDataModel.prototype.disableObservers = function() {
+      this.parent.disableObservers();
+      return this;
+    };
+
+    SubDataModel.prototype.enableObservers = function() {
+      this.parent.enableObservers();
+      return this;
+    };
+
+    SubDataModel.prototype.notifyObservers = function(path) {
+      this.parent.notifyObservers(path);
+      return this;
+    };
+
+    SubDataModel.prototype.addAlias = function(alias, path) {
+      this._aliasMap[alias] = {
+        data: void 0,
+        alias: alias,
+        path: path,
+        splittedPath: (path != null ? path.split(".") : void 0) || []
+      };
+    };
+
+    SubDataModel.prototype.getAliasTargetData = function(alias) {
+      return this._aliasMap[alias].data;
+    };
+
+    SubDataModel.prototype.setAliasTargetData = function(alias, data, silence) {
+      var holder, oldData;
+      holder = this._aliasMap[alias];
+      oldData = holder.data;
+      holder.data = data;
       if (data instanceof cola.Entity || data instanceof cola.EntityList) {
-        this.dataType = data.dataType || this.defaultDataType;
+        holder.dataType = data.dataType;
+      }
+      if (!silence) {
+        this.onDataMessage([alias], cola.constants.MESSAGE_PROPERTY_CHANGE, {
+          entity: null,
+          property: alias,
+          value: data,
+          oldValue: oldData
+        });
+      }
+    };
+
+    SubDataModel.prototype.describe = function(property, config) {
+      if (this._aliasMap[property]) {
+        return SubDataModel.__super__.describe.call(this, property, config);
+      } else {
+        return this.parent.describe(property, config);
+      }
+    };
+
+    SubDataModel.prototype.getProperty = function(path) {
+      var holder, i;
+      i = path.indexOf(".");
+      if (i > 0) {
+        holder = this._aliasMap[path.substring(0, i)];
+        if (holder != null ? holder.path : void 0) {
+          path = holder.path + path.substring(i);
+        }
+      } else {
+        holder = this._aliasMap[path];
+        if (holder != null ? holder.path : void 0) {
+          path = holder.path;
+        }
+      }
+      return this.parent.getProperty(path);
+    };
+
+    SubDataModel.prototype.getDataType = function(path) {
+      var holder, i;
+      i = path.indexOf(".");
+      if (i > 0) {
+        holder = this._aliasMap[path.substring(0, i)];
+        if (holder != null ? holder.path : void 0) {
+          path = holder.path + path.substring(i);
+        }
+      } else {
+        holder = this._aliasMap[path];
+        if (holder != null ? holder.path : void 0) {
+          path = holder.path;
+        }
+      }
+      return this.parent.getDataType(path);
+    };
+
+    SubDataModel.prototype._isExBindingPath = function(path) {
+      return !this._aliasMap[path[0]];
+    };
+
+    SubDataModel.prototype._bind = function(path, processor) {
+      SubDataModel.__super__._bind.call(this, path, processor);
+      if (!this._exBindingProcessed && this._isExBindingPath(path)) {
+        this._exBindingProcessed = true;
+        this.model.setHasExBinding(true);
+        this.model.watchAllMessages();
+      }
+    };
+
+    SubDataModel.prototype.get = function(path, loadMode, context) {
+      var data, holder, i;
+      if (path) {
+        i = path.indexOf(".");
+        if (i > 0) {
+          holder = this._aliasMap[path.substring(0, i)];
+          if (holder) {
+            data = holder.data;
+            if (data instanceof cola.Entity) {
+              return data.get(path.substring(i + 1), loadMode, context);
+            } else if (data && typeof data === "object") {
+              return data[path.substring(i + 1)];
+            }
+          } else {
+            return this.parent.get(path, loadMode, context);
+          }
+        } else {
+          holder = this._aliasMap[path];
+          if (holder) {
+            return holder.data;
+          } else {
+            return this.parent.get(path, loadMode, context);
+          }
+        }
+      } else {
+        return this.parent.get(path, loadMode, context);
+      }
+    };
+
+    SubDataModel.prototype.set = function(path, data, context) {
+      var holder, i, ref;
+      i = path.indexOf(".");
+      if (i > 0) {
+        holder = this._aliasMap[path.substring(0, i)];
+        if (holder) {
+          if ((ref = holder.data) != null) {
+            ref.set(path.substring(i + 1), data, context);
+          }
+        } else {
+          this.parent.set(path, data, context);
+        }
+      } else {
+        holder = this._aliasMap[path];
+        if (holder) {
+          this.parent.set(holder.path, data, context);
+        } else {
+          this.parent.set(path, data, context);
+        }
+      }
+      return this;
+    };
+
+    SubDataModel.prototype.flush = function(path, loadMode) {
+      var holder, i, ref;
+      i = path.indexOf(".");
+      if (i > 0) {
+        holder = this._aliasMap[path.substring(0, i)];
+        if (holder) {
+          if ((ref = holder.data) != null) {
+            ref.flush(path.substring(i + 1), loadMode);
+          }
+        } else {
+          this.parent.flush(path, loadMode);
+        }
+      } else {
+        holder = this._aliasMap[path];
+        if (holder) {
+          path = holder.path;
+        }
+        if (path) {
+          this.parent.flush(path, loadMode);
+        }
+      }
+      return this;
+    };
+
+    SubDataModel.prototype.onDataMessage = function(path, type, arg) {
+      var alias, aliasSubPath, data, holder, i, isChildData, l, len1, matches, part, ref, ref1;
+      SubDataModel.__super__.onDataMessage.call(this, path, type, arg);
+      isChildData = function(data, targetData) {
+        var isChild;
+        isChild = false;
+        while (data) {
+          if (data === targetData) {
+            isChild = true;
+            break;
+          }
+          data = data.parent;
+        }
+        return isChild;
+      };
+      data = arg.data || arg.entityList || arg.entity;
+      ref = this._aliasMap;
+      for (alias in ref) {
+        holder = ref[alias];
+        if (data === null || isChildData(data, holder.data)) {
+          if (path.length >= holder.splittedPath.length) {
+            matches = true;
+            ref1 = holder.splittedPath;
+            for (i = l = 0, len1 = ref1.length; l < len1; i = ++l) {
+              part = ref1[i];
+              if (part !== path[i]) {
+                matches = false;
+                break;
+              }
+            }
+            if (matches) {
+              aliasSubPath = [].concat(holder.alias, path.slice(holder.splittedPath.length));
+              this._onDataMessage(aliasSubPath, type, arg);
+            }
+          }
+        }
+      }
+    };
+
+    return SubDataModel;
+
+  })(cola.AbstractDataModel);
+
+  cola.ItemDataModel = (function(superClass) {
+    extend(ItemDataModel, superClass);
+
+    function ItemDataModel(model, alias1, dataType1) {
+      this.alias = alias1;
+      this.dataType = dataType1;
+      ItemDataModel.__super__.constructor.call(this, model);
+    }
+
+    ItemDataModel.prototype.getItemData = function() {
+      return this._itemData;
+    };
+
+    ItemDataModel.prototype.setItemData = function(data, silence) {
+      var oldData;
+      oldData = this._itemData;
+      this._itemData = data;
+      if (data instanceof cola.Entity || data instanceof cola.EntityList) {
+        this.dataType = data.dataType;
       }
       if (!silence) {
         this.onDataMessage([this.alias], cola.constants.MESSAGE_PROPERTY_CHANGE, {
@@ -7603,46 +7863,37 @@
       }
     };
 
-    AliasDataModel.prototype.describe = function(property, config) {
-      if (property === this.alias) {
-        return AliasDataModel.__super__.describe.call(this, property, config);
-      } else {
-        return this.parent.describe(property, config);
-      }
-    };
-
-    AliasDataModel.prototype.getProperty = function(path) {
+    ItemDataModel.prototype.getProperty = function(path) {
       var dataType, i, property;
       i = path.indexOf(".");
       if (i > 0) {
         if (path.substring(0, i) === this.alias) {
-          dataType = this._targetData instanceof cola.Entity || this._targetData instanceof cola.EntityList ? this._targetData.dataType : null;
+          dataType = this._itemData instanceof cola.Entity || this._itemData instanceof cola.EntityList ? this._itemData.dataType : null;
+          if (dataType == null) {
+            dataType = this.dataType;
+          }
           if (dataType) {
             property = dataType.getProperty(path.substring(i + 1));
-            dataType = property != null ? property.get("dataType") : void 0;
           }
-          return dataType;
+          return property;
         } else {
-          return this.parent.getDataType(path);
+          return this.parent.getProperty(path);
         }
       } else if (path === this.alias) {
-        if (this._targetData instanceof cola.Entity || this._targetData instanceof cola.EntityList) {
-          return this._targetData.dataType;
-        } else {
-          return null;
-        }
+        dataType = this._itemData instanceof cola.Entity || this._itemData instanceof cola.EntityList ? this._itemData.dataType : null;
+        return dataType || this.dataType;
       } else {
         return this.parent.getProperty(path);
       }
     };
 
-    AliasDataModel.prototype.getDataType = function(path) {
+    ItemDataModel.prototype.getDataType = function(path) {
       var dataType, i, property, ref;
       i = path.indexOf(".");
       if (i > 0) {
         if (path.substring(0, i) === this.alias) {
-          if (this._rootDataType) {
-            property = (ref = this._rootDataType) != null ? ref.getProperty(path.substring(i + 1)) : void 0;
+          if (this.dataType) {
+            property = (ref = this.dataType) != null ? ref.getProperty(path.substring(i + 1)) : void 0;
             dataType = property != null ? property.get("dataType") : void 0;
           }
           return dataType;
@@ -7656,162 +7907,11 @@
       }
     };
 
-    AliasDataModel.prototype.definition = function(name) {
-      return this.parent.definition(name);
+    ItemDataModel.prototype._isExBindingPath = function(path) {
+      var firstPart;
+      firstPart = path[0];
+      return !this._aliasMap[firstPart] && firstPart !== this.alias && firstPart !== cola.constants.REPEAT_INDEX;
     };
-
-    AliasDataModel.prototype.regDefinition = function(definition) {
-      return this.parent.regDefinition(definition);
-    };
-
-    AliasDataModel.prototype.unregDefinition = function(definition) {
-      return this.parent.unregDefinition(definition);
-    };
-
-    AliasDataModel.prototype._bind = function(path, processor) {
-      AliasDataModel.__super__._bind.call(this, path, processor);
-      if (!this._exBindingProcessed && path[0] !== this.alias) {
-        this._exBindingProcessed = true;
-        this.model.setHasExBinding(true);
-        this.model.watchAllMessages();
-      }
-    };
-
-    AliasDataModel.prototype.get = function(path, loadMode, context) {
-      var alias, aliasLen, c, firstPart, i, targetData;
-      alias = this.alias;
-      if ((path != null ? path.charCodeAt(0) : void 0) === 64) {
-        i = path.indexOf('.');
-        firstPart = i > 0 ? path.substring(0, i) : path;
-        firstPart = this.get(firstPart.substring(1));
-        path = firstPart + (i > 0 ? path.substring(i + 1) : "");
-      }
-      aliasLen = alias.length;
-      if ((path != null ? path.substring(0, aliasLen) : void 0) === alias) {
-        c = path.charCodeAt(aliasLen);
-        if (c === 46) {
-          if (path.indexOf(".") > 0) {
-            targetData = this._targetData;
-            if (targetData instanceof cola.Entity) {
-              return targetData.get(path.substring(aliasLen + 1), loadMode, context);
-            } else if (targetData && typeof targetData === "object") {
-              return targetData[path.substring(aliasLen + 1)];
-            }
-          }
-        } else if (isNaN(c)) {
-          return this._targetData;
-        }
-      }
-      return this.parent.get(path, loadMode, context);
-    };
-
-    AliasDataModel.prototype.set = function(path, data, context) {
-      var alias, aliasLen, c, firstPart, i, ref;
-      alias = this.alias;
-      if (path.charCodeAt(0) === 64) {
-        i = path.indexOf('.');
-        firstPart = i > 0 ? path.substring(0, i) : path;
-        firstPart = this.get(firstPart.substring(1));
-        path = firstPart + (i > 0 ? path.substring(i + 1) : "");
-      }
-      aliasLen = alias.length;
-      if (path && path.substring(0, aliasLen) === alias) {
-        c = path.charCodeAt(aliasLen);
-        if (c === 46) {
-          if (path.indexOf(".") > 0) {
-            if ((ref = this._targetData) != null) {
-              ref.set(path.substring(aliasLen + 1), data, context);
-            }
-            return this;
-          }
-        } else if (isNaN(c)) {
-          this.setTargetData(data);
-          return this;
-        }
-      }
-      this.parent.set(path, data, context);
-      return this;
-    };
-
-    AliasDataModel.prototype.dataType = function(path) {
-      return this.parent.dataType(path);
-    };
-
-    AliasDataModel.prototype.regDefinition = function(name, definition) {
-      this.parent.regDefinition(name, definition);
-      return this;
-    };
-
-    AliasDataModel.prototype.unregDefinition = function(name) {
-      return this.parent.unregDefinition(name);
-    };
-
-    AliasDataModel.prototype.flush = function(path, loadMode) {
-      var alias, c, ref, ref1;
-      alias = this.alias;
-      if (path.substring(0, alias.length) === alias) {
-        c = path.charCodeAt(1);
-        if (c === 46) {
-          if ((ref = this._targetData) != null) {
-            ref.flush(path.substring(alias.length + 1), loadMode);
-          }
-          return this;
-        } else if (isNaN(c)) {
-          if ((ref1 = this._targetData) != null) {
-            ref1.flush(loadMode);
-          }
-          return this;
-        }
-      }
-      this.parent.flush(path, loadMode);
-      return this;
-    };
-
-    AliasDataModel.prototype.disableObservers = function() {
-      this.parent.disableObservers();
-      return this;
-    };
-
-    AliasDataModel.prototype.enableObservers = function() {
-      this.parent.enableObservers();
-      return this;
-    };
-
-    AliasDataModel.prototype.notifyObservers = function(path) {
-      this.parent.notifyObservers(path);
-      return this;
-    };
-
-    AliasDataModel.prototype.onDataMessage = function(path, type, arg) {
-      var entity, isChild, relativePath, targetData;
-      AliasDataModel.__super__.onDataMessage.call(this, path, type, arg);
-      if (this._targetData) {
-        targetData = this._targetData;
-        entity = arg.data || arg.entityList || arg.entity;
-        while (entity) {
-          if (entity === targetData) {
-            isChild = true;
-            break;
-          }
-          entity = entity.parent;
-        }
-        if (isChild) {
-          relativePath = path.slice(targetData.getPath().length);
-          AliasDataModel.__super__.onDataMessage.call(this, [this.alias].concat(relativePath), type, arg);
-        }
-      }
-    };
-
-    return AliasDataModel;
-
-  })(cola.AbstractDataModel);
-
-  cola.ItemDataModel = (function(superClass) {
-    extend(ItemDataModel, superClass);
-
-    function ItemDataModel() {
-      return ItemDataModel.__super__.constructor.apply(this, arguments);
-    }
 
     ItemDataModel.prototype.getIndex = function() {
       return this._index;
@@ -7829,24 +7929,78 @@
     };
 
     ItemDataModel.prototype.get = function(path, loadMode, context) {
+      var alias, aliasLen, c, itemData;
       if (path === cola.constants.REPEAT_INDEX) {
         return this.getIndex();
       } else {
-        return ItemDataModel.__super__.get.call(this, path, loadMode, context);
+        alias = this.alias;
+        aliasLen = alias.length;
+        if ((path != null ? path.substring(0, aliasLen) : void 0) === alias) {
+          c = path.charCodeAt(aliasLen);
+          if (c === 46) {
+            if (path.indexOf(".") > 0) {
+              itemData = this._itemData;
+              if (itemData instanceof cola.Entity) {
+                return itemData.get(path.substring(aliasLen + 1), loadMode, context);
+              } else if (itemData && typeof itemData === "object") {
+                return itemData[path.substring(aliasLen + 1)];
+              }
+            }
+          } else if (isNaN(c)) {
+            return this._itemData;
+          }
+        }
+        return this.parent.get(path, loadMode, context);
       }
     };
 
     ItemDataModel.prototype.set = function(path, data, context) {
-      if (path === cola.constants.REPEAT_INDEX) {
-        this.setIndex(data);
-      } else {
-        ItemDataModel.__super__.set.call(this, path, data, context);
+      var alias, aliasLen, c, ref;
+      if (path === cola.constants.REPEAT_INDEX || path === this.alias) {
+        throw new cola.Exception("Can not set \"" + path + "\" of ItemScope.");
+      }
+      alias = this.alias;
+      aliasLen = alias.length;
+      if (path.substring(0, aliasLen) === alias) {
+        c = path.charCodeAt(aliasLen);
+        if (c === 46) {
+          if (path.indexOf(".") > 0) {
+            if ((ref = this._itemData) != null) {
+              ref.set(path.substring(aliasLen + 1), data, context);
+            }
+            return this;
+          }
+        } else if (isNaN(c)) {
+          throw new cola.Exception("Can not change \"" + alias + "\" of ItemScope.");
+        }
+      }
+      this.parent.set(path, data, context);
+      return this;
+    };
+
+    ItemDataModel.prototype.onDataMessage = function(path, type, arg) {
+      var entity, isChild, itemData, relativePath;
+      ItemDataModel.__super__.onDataMessage.call(this, path, type, arg);
+      if (this._itemData) {
+        itemData = this._itemData;
+        entity = arg.data || arg.entityList || arg.entity;
+        while (entity) {
+          if (entity === itemData) {
+            isChild = true;
+            break;
+          }
+          entity = entity.parent;
+        }
+        if (isChild) {
+          relativePath = path.slice(itemData.getPath().length);
+          ItemDataModel.__super__.onDataMessage.call(this, [this.alias].concat(relativePath), type, arg);
+        }
       }
     };
 
     return ItemDataModel;
 
-  })(cola.AliasDataModel);
+  })(cola.SubDataModel);
 
 
   /*
@@ -7964,67 +8118,6 @@
     return ElementAttrBinding;
 
   })();
-
-  cola.submit = function(options, callback) {
-    var data, filter, originalOptions, p, v;
-    originalOptions = options;
-    options = {};
-    for (p in originalOptions) {
-      v = originalOptions[p];
-      options[p] = v;
-    }
-    data = options.data;
-    if (data) {
-      if (!(data instanceof cola.Entity || data instanceof cola.EntityList)) {
-        throw new cola.Exception("Invalid submit data.");
-      }
-      if (this.dataFilter) {
-        filter = cola.submit.filter[this.dataFilter];
-        data = filter ? filter(data) : data;
-      }
-    }
-    if (data || options.alwaysSubmit) {
-      if (options.parameter) {
-        options.data = {
-          data: data,
-          parameter: options.parameter
-        };
-      } else {
-        options.data = data;
-      }
-      $.post(options.url, options.data).done(function(result) {
-        cola.callback(callback, true, result);
-      }).fail(function(result) {
-        cola.callback(callback, true, result);
-      });
-      return true;
-    } else {
-      return false;
-    }
-  };
-
-  cola.submit.filter = {
-    "dirty": function(data) {
-      var filtered;
-      if (data instanceof cola.EntityList) {
-        filtered = [];
-        data.each(function(entity) {
-          if (entity.state !== cola.Entity.STATE_NONE) {
-            filtered.push(entity);
-          }
-        });
-      } else if (data.state !== cola.Entity.STATE_NONE) {
-        filtered = data;
-      }
-      return filtered;
-    },
-    "child-dirty": function(data) {
-      return data;
-    },
-    "dirty-tree": function(data) {
-      return data;
-    }
-  };
 
 
   /*
@@ -8410,22 +8503,6 @@
     return cola.resource.apply(cola, [key].concat(slice.call(params)));
   };
 
-  _matchValue = function(value, propFilter) {
-    if (propFilter.strict) {
-      if (!propFilter.caseSensitive && typeof propFilter.value === "string") {
-        return (value + "").toLowerCase() === propFilter.value;
-      } else {
-        return value === propFilter.value;
-      }
-    } else {
-      if (!propFilter.caseSensitive) {
-        return (value + "").toLowerCase().indexOf(propFilter.value) > -1;
-      } else {
-        return (value + "").indexOf(propFilter.value) > -1;
-      }
-    }
-  };
-
   cola.defaultAction.filter = cola.util.filter;
 
   cola.defaultAction.sort = cola.util.sort;
@@ -8748,7 +8825,7 @@
           if (typeof v === "string") {
             if (v.charCodeAt(0) === 123 && v.match(/^{{\$[\w-]+}}$/)) {
               if (options.originData == null) {
-                options.originData = $.extend(data, null);
+                options.originData = $.extend({}, data);
               }
               data[p] = this[v.substring(3, v.length - 2)];
               changed = true;
@@ -8984,7 +9061,7 @@
           display: "none"
         }
       });
-      doms.hiddenDiv.setAttribute(cola.constants.IGNORE_DIRECTIVE, true);
+      doms.hiddenDiv.setAttribute(cola.constants.IGNORE_DIRECTIVE, "");
       document.body.appendChild(doms.hiddenDiv);
     }
     doms.hiddenDiv.appendChild(ele);
@@ -9341,7 +9418,7 @@
             }
             cola._renderDomTemplate(targetDom, model);
             if (hasIgnoreDirective) {
-              targetDom.setAttribute(cola.constants.IGNORE_DIRECTIVE, true);
+              targetDom.setAttribute(cola.constants.IGNORE_DIRECTIVE, "");
             }
             if (cola.getListeners("ready")) {
               cola.fire("ready", cola);
@@ -10044,8 +10121,8 @@
   cola._ExpressionFeature = (function(superClass) {
     extend(_ExpressionFeature, superClass);
 
-    function _ExpressionFeature(expressionStr) {
-      this.expressionStr = expressionStr;
+    function _ExpressionFeature(expressionStr1) {
+      this.expressionStr = expressionStr1;
     }
 
     _ExpressionFeature.prototype.init = function(domBinding, force) {
@@ -10117,38 +10194,125 @@
   cola._AliasFeature = (function(superClass) {
     extend(_AliasFeature, superClass);
 
-    function _AliasFeature() {
-      return _AliasFeature.__super__.constructor.apply(this, arguments);
-    }
-
     _AliasFeature.prototype.expressionType = "alias";
 
     _AliasFeature.prototype.ignoreBind = true;
 
-    _AliasFeature.prototype.compile = function(scope) {
-      _AliasFeature.__super__.compile.call(this, scope);
-      return this.alias = this.expression.alias;
-    };
+    function _AliasFeature(expressionText) {
+      this.expressions = {};
+      this.expressionStrs = expressionText != null ? expressionText.split(/;/) : void 0;
+    }
 
     _AliasFeature.prototype.init = function(domBinding, force) {
-      _AliasFeature.__super__.init.call(this, domBinding, force);
-      if (!this.prepared) {
+      var expression, expressionStr, hasDynaExpression, l, len1, len2, o, ref, ref1, scope, shouldInit;
+      if (!force) {
+        ref = this.expressionStrs;
+        for (l = 0, len1 = ref.length; l < len1; l++) {
+          expressionStr = ref[l];
+          if (expressionStr.charCodeAt(0) === 63) {
+            hasDynaExpression = true;
+            break;
+          }
+        }
+        shouldInit = !hasDynaExpression;
+      } else {
+        shouldInit = true;
+      }
+      if (shouldInit && !this.prepared) {
+        scope = domBinding.scope;
+        this.expressionArray = [];
+        ref1 = this.expressionStrs;
+        for (o = 0, len2 = ref1.length; o < len2; o++) {
+          expressionStr = ref1[o];
+          expression = this.compile(scope, expressionStr);
+          this.expressionArray.push(expression);
+          this.expressions[expression.alias] = {
+            expression: expression
+          };
+        }
+        this.prepared = true;
+      }
+      if (this.prepared && !domBinding.subScopeCreated) {
+        domBinding.scope = new cola.SubScope(domBinding.scope);
+        domBinding.scope.setExpressions(this.expressionArray);
+        domBinding.subScopeCreated = true;
+        this._refresh(domBinding);
+      }
+    };
+
+    _AliasFeature.prototype.compile = function(scope, expressionStr) {
+      var expression;
+      expression = cola._compileExpression(scope, expressionStr, this.expressionType);
+      this.expressions[expression.alias] = {
+        expression: expression
+      };
+      this.isStatic = expression.isStatic;
+      this.paths = expression.paths || [];
+      if (!this.paths.length && expression.hasComplexStatement) {
+        this.paths = ["**"];
+        if (!this.isStatic) {
+          this.delay = true;
+        }
+        this.watchingMoreMessage = !expression.hasDefinedPath;
+      }
+      return expression;
+    };
+
+    _AliasFeature.prototype.evaluate = function(domBinding, alias, dataCtx, loadMode) {
+      var expressionHolder, scope;
+      if (dataCtx == null) {
+        dataCtx = {};
+      }
+      if (loadMode == null) {
+        loadMode = "async";
+      }
+      expressionHolder = this.expressions[alias];
+      if (!expressionHolder) {
         return;
       }
-      domBinding.scope = new cola.AliasScope(domBinding.scope, this.expression);
-      this._refresh(domBinding);
-      domBinding.subScopeCreated = true;
+      scope = domBinding.scope;
+      if (dataCtx.vars == null) {
+        dataCtx.vars = {};
+      }
+      dataCtx.vars.$dom = domBinding.dom;
+      return expressionHolder.expression.evaluate(scope, loadMode, dataCtx);
+    };
+
+    _AliasFeature.prototype.refresh = function(domBinding, force, dataCtx) {
+      if (dataCtx == null) {
+        dataCtx = {};
+      }
+      if (!(this.prepared && this._refresh)) {
+        return;
+      }
+      if (this.delay && !force) {
+        cola.util.delay(domBinding, "refresh", 100, (function(_this) {
+          return function() {
+            _this._refresh(domBinding, dataCtx);
+            if (_this.isStatic && !dataCtx.unloaded) {
+              _this.disabled = true;
+            }
+          };
+        })(this));
+      } else {
+        this._refresh(domBinding, dataCtx);
+        if (this.isStatic && !dataCtx.unloaded) {
+          this.disabled = true;
+        }
+      }
     };
 
     _AliasFeature.prototype._refresh = function(domBinding, dataCtx) {
-      var data;
-      data = this.evaluate(domBinding, dataCtx);
-      domBinding.scope.data.setTargetData(data);
+      var alias, data;
+      for (alias in this.expressions) {
+        data = this.evaluate(domBinding, alias, dataCtx);
+        domBinding.scope.data.setAliasTargetData(alias, data);
+      }
     };
 
     return _AliasFeature;
 
-  })(cola._ExpressionFeature);
+  })(cola._BindingFeature);
 
   cola._RepeatFeature = (function(superClass) {
     extend(_RepeatFeature, superClass);
@@ -10241,7 +10405,7 @@
             for (id in ref1) {
               iScope = ref1[id];
               i = iScope.data.getIndex();
-              if (i >= index && iScope.data.getTargetData() !== entity) {
+              if (i >= index && iScope.data.getItemData() !== entity) {
                 iScope.data.setIndex(i + 1);
               }
             }
@@ -10334,11 +10498,13 @@
                 scope.regItemScope(itemId, itemScope);
                 itemDomBinding.itemId = itemId;
                 domBinding.itemDomBindingMap[itemId] = itemDomBinding;
-                itemScope.data.setTargetData(item);
-                itemScope.data.setIndex(i + 1);
+                itemScope.data.setItemData(item);
               } else {
                 itemDom = _this.createNewItem(domBinding, templateDom, scope, item, i + 1);
                 $fly(tailDom).before(itemDom);
+              }
+              if (itemScope != null) {
+                itemScope.data.setIndex(i + 1);
               }
               if (item === (items.current || (originItems != null ? originItems.current : void 0))) {
                 $fly(itemDom).addClass(cola.constants.COLLECTION_CURRENT_CLASS);
@@ -10364,10 +10530,10 @@
     _RepeatFeature.prototype.createNewItem = function(repeatDomBinding, templateDom, scope, item, index) {
       var domBinding, itemDom, itemId, itemScope;
       itemScope = new cola.ItemScope(scope, this.alias);
-      itemScope.data.setTargetData(item, true);
+      itemScope.data.setItemData(item, true);
       itemScope.data.setIndex(index, true);
       itemDom = templateDom.cloneNode(true);
-      this.deepCloneNodeData(itemDom, itemScope, false);
+      this.deepCloneNodeData(itemDom, itemScope);
       domBinding = cola.util.userData(itemDom, cola.constants.DOM_BINDING_KEY);
       this.refreshItemDomBinding(itemDom, itemScope);
       if (typeof item === "object") {
@@ -10382,7 +10548,7 @@
     };
 
     _RepeatFeature.prototype.deepCloneNodeData = function(node, scope) {
-      var child, clonedStore, k, store, v;
+      var child, childScope, clonedStore, k, store, v;
       store = cola.util.userData(node);
       if (store) {
         clonedStore = {};
@@ -10390,6 +10556,7 @@
           v = store[k];
           if (k === cola.constants.DOM_BINDING_KEY) {
             v = v.clone(node, scope);
+            childScope = v.scope;
           } else if (k.substring(0, 2) === "__") {
             continue;
           }
@@ -10400,7 +10567,7 @@
       child = node.firstChild;
       while (child) {
         if (child.nodeType !== 3 && !(typeof child.hasAttribute === "function" ? child.hasAttribute(cola.constants.IGNORE_DIRECTIVE) : void 0)) {
-          this.deepCloneNodeData(child, scope);
+          this.deepCloneNodeData(child, childScope || scope);
         }
         child = child.nextSibling;
       }
@@ -10416,13 +10583,6 @@
           currentDom = cola.util.userData(domBinding.dom, cola.constants.REPEAT_TAIL_KEY);
         }
       }
-      child = dom.firstChild;
-      while (child) {
-        if (child.nodeType !== 3 && !(typeof child.hasAttribute === "function" ? child.hasAttribute(cola.constants.IGNORE_DIRECTIVE) : void 0)) {
-          child = this.refreshItemDomBinding(child, itemScope);
-        }
-        child = child.nextSibling;
-      }
       initializers = cola.util.userData(dom, cola.constants.DOM_INITIALIZER_KEY);
       if (initializers) {
         for (l = 0, len1 = initializers.length; l < len1; l++) {
@@ -10430,6 +10590,13 @@
           initializer(itemScope, dom);
         }
         cola.util.removeUserData(dom, cola.constants.DOM_INITIALIZER_KEY);
+      }
+      child = dom.firstChild;
+      while (child) {
+        if (child.nodeType !== 3 && !(typeof child.hasAttribute === "function" ? child.hasAttribute(cola.constants.IGNORE_DIRECTIVE) : void 0)) {
+          child = this.refreshItemDomBinding(child, itemScope);
+        }
+        child = child.nextSibling;
       }
       return currentDom || dom;
     };
@@ -10448,17 +10615,17 @@
       this.prepared = true;
     }
 
-    _WatchFeature.prototype.processMessage = function(domBinding, bindingPath) {
-      this.refresh(domBinding);
+    _WatchFeature.prototype.processMessage = function(domBinding, bindingPath, path, type, arg) {
+      this.refresh(domBinding, type, arg);
     };
 
-    _WatchFeature.prototype.refresh = function(domBinding) {
+    _WatchFeature.prototype.refresh = function(domBinding, type, arg) {
       var action;
       action = domBinding.scope.action(this.action);
       if (!action) {
         throw new cola.Exception("No action named \"" + this.action + "\" found.");
       }
-      action(domBinding.dom, domBinding.scope);
+      action(domBinding.dom, domBinding.scope, type, arg);
     };
 
     return _WatchFeature;
@@ -10470,8 +10637,8 @@
 
     _EventFeature.prototype.ignoreBind = true;
 
-    function _EventFeature(expressionStr, event) {
-      this.expressionStr = expressionStr;
+    function _EventFeature(expressionStr1, event) {
+      this.expressionStr = expressionStr1;
       this.event = event;
     }
 
@@ -10540,8 +10707,8 @@
   cola._DomAttrFeature = (function(superClass) {
     extend(_DomAttrFeature, superClass);
 
-    function _DomAttrFeature(expressionStr, attr1) {
-      this.expressionStr = expressionStr;
+    function _DomAttrFeature(expressionStr1, attr1) {
+      this.expressionStr = expressionStr1;
       this.attr = attr1;
     }
 
@@ -10576,8 +10743,8 @@
   cola._DomStylePropFeature = (function(superClass) {
     extend(_DomStylePropFeature, superClass);
 
-    function _DomStylePropFeature(expressionStr, prop1) {
-      this.expressionStr = expressionStr;
+    function _DomStylePropFeature(expressionStr1, prop1) {
+      this.expressionStr = expressionStr1;
       this.prop = prop1;
     }
 
@@ -10613,8 +10780,8 @@
   cola._DomToggleClassFeature = (function(superClass) {
     extend(_DomToggleClassFeature, superClass);
 
-    function _DomToggleClassFeature(expressionStr, className1) {
-      this.expressionStr = expressionStr;
+    function _DomToggleClassFeature(expressionStr1, className1) {
+      this.expressionStr = expressionStr1;
       this.className = className1;
     }
 
@@ -10803,7 +10970,6 @@
       var f, l, len1;
       this.scope = scope1;
       this.forceInit = forceInit1;
-      this.forceInit = true;
       this.dom = dom;
       this.$dom = $(dom);
       if (features) {
@@ -10827,6 +10993,9 @@
           this.unbindFeature(_features[i]);
           i--;
         }
+      }
+      if (this.subScopeCreated) {
+        this.scope.destroy();
       }
       delete this.dom;
       delete this.$dom;
@@ -10943,43 +11112,21 @@
     };
 
     _DomBinding.prototype.clone = function(dom, scope) {
-      var domBinding, feature, l, len1, ref;
-      domBinding = new this.constructor(dom, scope, this.features, this.forceInit, true);
+      var feature, features, l, len1, ref;
+      features = [];
       if (this.features) {
         ref = this.features;
         for (l = 0, len1 = ref.length; l < len1; l++) {
           feature = ref[l];
-          if (!feature.prepared && feature.compile) {
-            domBinding.removeFeature(feature);
-            feature = feature.clone();
-            domBinding.addFeature(feature, true);
-          }
+          features.push(feature.clone());
         }
       }
-      return domBinding;
+      return new this.constructor(dom, scope, features, true, true);
     };
 
     return _DomBinding;
 
   })();
-
-  cola._AliasDomBinding = (function(superClass) {
-    extend(_AliasDomBinding, superClass);
-
-    function _AliasDomBinding() {
-      return _AliasDomBinding.__super__.constructor.apply(this, arguments);
-    }
-
-    _AliasDomBinding.prototype.destroy = function() {
-      _AliasDomBinding.__super__.destroy.call(this);
-      if (this.subScopeCreated) {
-        this.scope.destroy();
-      }
-    };
-
-    return _AliasDomBinding;
-
-  })(cola._DomBinding);
 
   cola._RepeatDomBinding = (function(superClass) {
     extend(_RepeatDomBinding, superClass);
@@ -11000,7 +11147,7 @@
         cola.util.userData(headerNode, cola.constants.DOM_BINDING_KEY, this);
         cola.util.userData(headerNode, cola.constants.REPEAT_TEMPLATE_KEY, dom);
         cola.util.onNodeDispose(headerNode, _destroyDomBinding);
-        repeatItemDomBinding = new cola._RepeatItemDomBinding(dom, null);
+        repeatItemDomBinding = new cola._RepeatItemDomBinding(dom, scope);
         repeatItemDomBinding.repeatDomBinding = this;
         repeatItemDomBinding.isTemplate = true;
         if (feature) {
@@ -11026,9 +11173,6 @@
 
     _RepeatDomBinding.prototype.destroy = function() {
       _RepeatDomBinding.__super__.destroy.call(this);
-      if (this.subScopeCreated) {
-        this.scope.destroy();
-      }
       delete this.currentItemDom;
     };
 
@@ -11095,7 +11239,7 @@
 
     return _RepeatItemDomBinding;
 
-  })(cola._AliasDomBinding);
+  })(cola._DomBinding);
 
   IGNORE_NODES = ["SCRIPT", "STYLE", "META", "TEMPLATE"];
 
@@ -11536,7 +11680,7 @@
     alias: function(dom, scope, features, context) {
       var domBinding, forceInit;
       forceInit = !(context != null ? context.inRepeatTemplate : void 0);
-      domBinding = new cola._AliasDomBinding(dom, scope, features, forceInit);
+      domBinding = new cola._DomBinding(dom, scope, features, forceInit);
       scope = domBinding.scope;
       return domBinding;
     }
@@ -13421,7 +13565,6 @@
     }
 
     WidgetModel.prototype._getAction = function(name) {
-      debugger;
       var fn, method, ref;
       method = this.widget[name];
       if (method instanceof Function) {
@@ -13656,17 +13799,18 @@ Template
         this._bindInfo = bindInfo = {};
         bindInfo.expression = expression = cola._compileExpression(this._scope, bindStr);
         bindInfo.writeable = expression.writeable;
+        bindInfo.writeablePath = expression.writeablePath;
         if (expression.repeat || expression.setAlias) {
           throw new cola.Exception("Expression \"" + bindStr + "\" must be a simple expression.");
         }
         if (bindInfo.writeable) {
-          i = bindStr.lastIndexOf(".");
+          i = bindInfo.writeablePath.lastIndexOf(".");
           if (i > 0) {
-            bindInfo.entityPath = bindStr.substring(0, i);
-            bindInfo.property = bindStr.substring(i + 1);
+            bindInfo.entityPath = bindInfo.writeablePath.substring(0, i);
+            bindInfo.property = bindInfo.writeablePath.substring(i + 1);
           } else {
             bindInfo.entityPath = null;
-            bindInfo.property = bindStr;
+            bindInfo.property = bindInfo.writeablePath;
           }
         }
         if (!this._bindProcessor) {
@@ -13746,21 +13890,32 @@ Template
       if (!this._bindInfo.writeable) {
         throw new cola.Exception("Expression \"" + this._bind + "\" is not writable.");
       }
-      this._scope.set(this._bind, value);
+      this._scope.set(this._bindInfo.writeablePath, value);
     },
     getBindingProperty: function() {
-      var ref;
-      if (!(((ref = this._bindInfo) != null ? ref.expression : void 0) && this._bindInfo.writeable)) {
+      if (!this._bindInfo) {
         return;
       }
-      return this._scope.data.getProperty(this._bind);
+      if (this._bindInfo.bindingProperty !== void 0) {
+        return this._bindInfo.bindingProperty;
+      }
+      if (!(this._bindInfo.expression && this._bindInfo.writeable)) {
+        return;
+      }
+      return this._bindInfo.bindingProperty = this._scope.data.getProperty(this._bindInfo.writeablePath) || null;
     },
     getBindingDataType: function() {
       var ref;
-      if (!(((ref = this._bindInfo) != null ? ref.expression : void 0) && this._bindInfo.writeable)) {
+      if (((ref = this._bindInfo) != null ? ref.bindingDataType : void 0) !== void 0) {
+        return this._bindInfo.bindingDataType;
+      }
+      if (!(this._bindInfo.expression && this._bindInfo.writeable)) {
         return;
       }
-      return this._scope.data.getDataType(this._bind);
+      if (!this._bindInfo) {
+        return;
+      }
+      return this._bindInfo.bindingDataType = this._scope.data.getDataType(this._bindInfo.writeablePath) || null;
     }
   };
 
@@ -14215,77 +14370,6 @@ Template
       按钮的抽象类
    */
 
-  cola.AbstractButton = (function(superClass) {
-    extend(AbstractButton, superClass);
-
-    function AbstractButton() {
-      return AbstractButton.__super__.constructor.apply(this, arguments);
-    }
-
-    AbstractButton.attributes = {
-      size: {
-        "enum": ["mini", "tiny", "small", "medium", "large", "big", "huge", "massive"],
-        refreshDom: true,
-        setter: function(value) {
-          var oldValue;
-          oldValue = this._size;
-          if (oldValue && oldValue !== value && this._dom) {
-            this.removeClass(oldValue);
-          }
-          this._size = value;
-        }
-      },
-      color: {
-        refreshDom: true,
-        "enum": ["red", "orange", "yellow", "olive", "green", "teal", "blue", "violet", "purple", "pink", "brown", "grey", "black"],
-        setter: function(value) {
-          var oldValue;
-          oldValue = this._color;
-          if (oldValue && oldValue !== value && this._dom) {
-            this.removeClass(oldValue);
-          }
-          this._color = value;
-        }
-      },
-      attached: {
-        refreshDom: true,
-        defaultValue: "",
-        "enum": ["left", "right", "top", "bottom", ""],
-        setter: function(value) {
-          var oldValue;
-          oldValue = this._attached;
-          if (oldValue && oldValue !== value && this._dom) {
-            this.removeClass(oldValue + " attached", true);
-          }
-          this._attached = value;
-        }
-      }
-    };
-
-    AbstractButton.prototype._doRefreshDom = function() {
-      var attached, color, size;
-      if (!this._dom) {
-        return;
-      }
-      AbstractButton.__super__._doRefreshDom.call(this);
-      size = this.get("size");
-      if (size) {
-        this._classNamePool.add(size);
-      }
-      color = this.get("color");
-      if (color) {
-        this._classNamePool.add(color);
-      }
-      attached = this.get("attached");
-      if (attached) {
-        this._classNamePool.add(attached + " attached");
-      }
-    };
-
-    return AbstractButton;
-
-  })(cola.Widget);
-
   cola.Button = (function(superClass) {
     extend(Button, superClass);
 
@@ -14294,8 +14378,6 @@ Template
     }
 
     Button.tagName = "c-button";
-
-    Button.SEMANTIC_CLASS = ["left floated", "right floated", "top attached", "bottom attached", "left attached", "right attached"];
 
     Button.CLASS_NAME = "button";
 
@@ -14435,7 +14517,7 @@ Template
 
     return Button;
 
-  })(cola.AbstractButton);
+  })(cola.Widget);
 
   cola.registerWidget(cola.Button);
 
@@ -14504,19 +14586,11 @@ Template
 
     ButtonGroup.tagName = "c-buttonGroup";
 
-    ButtonGroup.SEMANTIC_CLASS = ["left floated", "right floated", "top attached", "bottom attached", "left attached", "right attached"];
-
     ButtonGroup.CHILDREN_TYPE_NAMESPACE = "button-group";
 
     ButtonGroup.CLASS_NAME = "buttons";
 
     ButtonGroup.attributes = {
-      fluid: {
-        type: "boolean",
-        refreshDom: true,
-        attrName: "c-fuild",
-        defaultValue: false
-      },
       mutuallyExclusive: {
         type: "boolean",
         refreshDom: true,
@@ -14601,41 +14675,11 @@ Template
       }
     };
 
-    ButtonGroup.prototype._resetFluid = function() {
-      var $dom, attrName, fluid, item, items, len1, n, newFluid, oldFluid;
-      if (!this._dom) {
-        return;
-      }
-      $dom = this.get$Dom();
-      attrName = this.constructor.attributes.fluid.attrName;
-      oldFluid = $dom.attr(attrName);
-      newFluid = 0;
-      items = this._items || [];
-      for (n = 0, len1 = items.length; n < len1; n++) {
-        item = items[n];
-        if (item instanceof cola.Button) {
-          newFluid++;
-        }
-      }
-      if (newFluid !== oldFluid) {
-        if (oldFluid) {
-          this._classNamePool.remove("" + oldFluid);
-        }
-      }
-      fluid = this.get("fluid");
-      if (!!fluid) {
-        this._classNamePool.add("" + newFluid);
-        this._classNamePool.add("fluid");
-        $dom.attr(attrName, newFluid);
-      }
-    };
-
     ButtonGroup.prototype._doRefreshDom = function() {
       if (!this._dom) {
         return;
       }
       ButtonGroup.__super__._doRefreshDom.call(this);
-      this._resetFluid();
     };
 
     ButtonGroup.prototype.addItem = function(item) {
@@ -14737,7 +14781,7 @@ Template
 
     return ButtonGroup;
 
-  })(cola.AbstractButton);
+  })(cola.Widget);
 
   cola.registerWidget(cola.ButtonGroup);
 
@@ -19778,7 +19822,7 @@ Template
 
     TabButton.events = {
       beforeClose: null,
-      afterClose: null
+      close: null
     };
 
     function TabButton(config) {
@@ -19800,7 +19844,7 @@ Template
       tab = cola.findWidget(this._dom, cola.Tab);
       tab.removeTab(this);
       this.destroy();
-      this.fire("afterClose", this, arg);
+      this.fire("close", this, arg);
       return this;
     };
 
@@ -20638,7 +20682,7 @@ Template
             entity = entity.current;
           }
           if (entity) {
-            keyMessage = entity.getKeyMessage(this._bindInfo.property);
+            keyMessage = typeof entity.getKeyMessage === "function" ? entity.getKeyMessage(this._bindInfo.property) : void 0;
             this.set("state", keyMessage != null ? keyMessage.type : void 0);
           }
         }
@@ -20967,18 +21011,6 @@ Template
       dataType: {
         setter: function(dataType) {
           return cola.DataType.dataTypeSetter.call(this, dataType);
-        }
-      },
-      size: {
-        "enum": ["mini", "tiny", "small", "medium", "large", "big", "huge", "massive"],
-        refreshDom: true,
-        setter: function(value) {
-          var oldValue;
-          oldValue = this["_size"];
-          if (oldValue && oldValue !== value && this._dom) {
-            this.get$Dom().removeClass(oldValue);
-          }
-          this["_size"] = value;
         }
       },
       placeholder: {
@@ -21711,7 +21743,8 @@ Template
         }
       },
       valueProperty: null,
-      textProperty: null
+      textProperty: null,
+      name: null
     };
 
     RadioGroup.prototype._initDom = function(dom) {
@@ -21755,7 +21788,10 @@ Template
       var item;
       item = cola.util.getItemByItemDom(itemDom);
       if (item) {
-        return item.get(this._valueProperty);
+        if (item instanceof cola.Entity) {
+          return item.get(this._valueProperty);
+        }
+        return item[this._valueProperty];
       }
     };
 
@@ -21766,14 +21802,8 @@ Template
         this._name = "name_" + cola.sequenceNo();
       }
       if (attrBinding) {
-        textProperty = "item";
-        valueProperty = "item";
-        if (this._textProperty) {
-          textProperty += "." + this._textProperty;
-        }
-        if (this._valueProperty) {
-          valueProperty += "." + this._valueProperty;
-        }
+        textProperty = "item." + (this._textProperty || "value");
+        valueProperty = "item." + (this._valueProperty || "key");
         raw = attrBinding.expression.raw;
         itemsDom = cola.xRender({
           tagName: "item",
@@ -22376,7 +22406,7 @@ Template
           if (!currentItemScope) {
             this._currentItemScope = currentItemScope = new cola.ItemScope(this._scope, alias);
           }
-          currentItemScope.data.setTargetData(item);
+          currentItemScope.data.setItemData(item);
           valueContent = this._doms.valueContent;
           if (!valueContent._inited) {
             valueContent._inited = true;
@@ -23040,6 +23070,8 @@ Template
   })(cola.AbstractDropdown);
 
   cola.registerWidget(cola.CustomDropdown);
+
+  cola.DropBox = DropBox;
 
   cola.DateGrid = (function(superClass) {
     extend(DateGrid, superClass);
@@ -24588,16 +24620,8 @@ Template
       var attrBinding, cText, cValue, item, itemsDom, len1, n, raw, ref, ref1;
       attrBinding = (ref = this._elementAttrBindings) != null ? ref["items"] : void 0;
       if (attrBinding) {
-        if (this._textProperty) {
-          cText = "item." + this._textProperty;
-        } else {
-          cText = "item";
-        }
-        if (this._valueProperty) {
-          cValue = "item." + this._valueProperty;
-        } else {
-          cValue = "item";
-        }
+        cText = "item." + (this._textProperty || "value");
+        cValue = "item." + (this._valueProperty || "key");
         raw = attrBinding.expression.raw;
         itemsDom = cola.xRender({
           tagName: "c-button",
@@ -24655,12 +24679,16 @@ Template
       Form.__super__.constructor.call(this, config);
     }
 
+    Form.prototype._getDataType = function() {
+      return this._dataType || this.getBindingDataType();
+    };
+
     Form.prototype._initDom = function(dom) {
       var caption, childDom, childDoms, dataType, defaultFieldCols, field, fieldContent, fieldsDom, labelUserData, len1, len2, maxCols, n, o, propertyDef, propertyType, ref, usedCols;
       Form.__super__._initDom.call(this, dom);
       this._$messages = this.get$Dom().find("messages, .ui.message").addClass("messages");
       if (this._fields) {
-        dataType = this._dataType || this.getBindingDataType();
+        dataType = this._getDataType();
         childDoms = [];
         maxCols = this._defaultCols;
         defaultFieldCols = 1;
@@ -24779,11 +24807,12 @@ Template
             tagName: "messages"
           }
         });
-        childDoms = $.xCreate(childDoms);
+        childDoms = cola.xCreate(childDoms);
         for (o = 0, len2 = childDoms.length; o < len2; o++) {
           childDom = childDoms[o];
           $(dom).append(childDom);
-          cola.xRender(childDom);
+          cola.xRender(childDom, this._scope);
+          childDom.setAttribute(cola.constants.IGNORE_DIRECTIVE, "");
         }
       }
     };
@@ -24894,20 +24923,38 @@ Template
       caption: null,
       property: null,
       readOnly: null,
+      type: null,
       message: {
         readOnly: true,
         getter: function() {
           if (this._messageDom) {
             return this._message;
           } else {
-
+            return null;
           }
         }
       }
     };
 
+    Field.prototype._getPropertyDef = function() {
+      var dataType, propertyDef;
+      if (this._propertyDef !== void 0) {
+        return this._propertyDef;
+      }
+      if (this._form) {
+        dataType = this._form._getDataType();
+        if (dataType && this._property) {
+          propertyDef = dataType.getProperty(this._property);
+        }
+      }
+      if (!propertyDef && this._bind) {
+        propertyDef = this.getBindingProperty();
+      }
+      return this._propertyDef = propertyDef || null;
+    };
+
     Field.prototype._parseDom = function(dom) {
-      var $label, bind, formBind, len1, n, propertyDef, ref, ref1, ref2, ref3, validator;
+      var $label, bind, editContent, editDom, formBind, len1, n, propertyDef, propertyType, ref, ref1, ref2, validator;
       this._domParsed = true;
       if (!this._bind && this._property) {
         if (dom.parentNode) {
@@ -24925,40 +24972,71 @@ Template
           } else {
             bind = this._property;
           }
+          this._bindSetter(bind);
         }
       }
       if (bind && dom.childElementCount === 0) {
         dom.appendChild($.xCreate({
-          tagName: "label"
+          tagName: "label",
+          content: this._caption || ""
         }));
-        dom.appendChild($.xCreate({
-          tagName: "c-input",
-          bind: bind
-        }));
+        propertyDef = this._getPropertyDef();
+        if (propertyDef) {
+          propertyType = propertyDef.get("dataType");
+          if (propertyType instanceof cola.BooleanDataType) {
+            if (this._type === "checkbox") {
+              editContent = {
+                tagName: "c-checkbox",
+                bind: bind,
+                readOnly: this._readOnly
+              };
+            } else {
+              editContent = {
+                tagName: "c-toggle",
+                bind: bind,
+                readOnly: this._readOnly
+              };
+            }
+          } else if (this._type === "date" || propertyType instanceof cola.DateDataType) {
+            editContent = {
+              tagName: "c-datepicker",
+              bind: bind,
+              readOnly: this._readOnly
+            };
+          } else if (this._type === "textarea") {
+            editContent = {
+              tagName: "c-textarea",
+              bind: bind,
+              readOnly: this._readOnly
+            };
+          }
+        }
+        if (editContent == null) {
+          editContent = {
+            tagName: "c-input",
+            bind: bind,
+            readOnly: this._readOnly
+          };
+        }
+        editDom = cola.xCreate(editContent);
+        dom.appendChild(editDom);
+        cola.xRender(editDom, this._scope);
+        editDom.setAttribute(cola.constants.IGNORE_DIRECTIVE, "");
       }
       this._labelDom = dom.querySelector("label");
       this._messageDom = dom.querySelector("message");
       if (this._labelDom) {
         $label = $fly(this._labelDom);
         if (!$label.data("labelUserData")) {
-          if (((ref2 = this._form) != null ? ref2._dataType : void 0) && this._property) {
-            propertyDef = this._form._dataType.getProperty(this._property);
-          } else {
-            bind = bind || this._bind;
-            if (bind) {
-              this._bind = null;
-              this._bindSetter(bind);
-              propertyDef = this.getBindingProperty();
-            }
-          }
+          propertyDef = this._getPropertyDef();
           if (propertyDef) {
             if (this._labelDom.innerHTML === "") {
               $label.text(this._caption || propertyDef.get("caption") || this._property);
             }
             if (propertyDef._validators) {
-              ref3 = propertyDef._validators;
-              for (n = 0, len1 = ref3.length; n < len1; n++) {
-                validator = ref3[n];
+              ref2 = propertyDef._validators;
+              for (n = 0, len1 = ref2.length; n < len1; n++) {
+                validator = ref2[n];
                 if (validator instanceof cola.RequiredValidator) {
                   $label.addClass("required");
                   break;
@@ -25022,6 +25100,214 @@ Template
   cola.Element.mixin(cola.Field, cola.DataWidgetMixin);
 
   cola.registerWidget(cola.Field);
+
+  cola.defineWidget({
+    tagName: "c-tag-editor",
+    attributes: {
+      bind: null,
+      items: null,
+      keyProperty: null,
+      valueProperty: null
+    },
+    events: {
+      createItemDom: null,
+      keyDown: null,
+      input: null,
+      removeItem: null,
+      addItem: null
+    },
+    template: {
+      "class": "ui tag-editor",
+      content: [
+        {
+          "class": "tag",
+          "c-repeat": "item in @bind",
+          "c-watch": "initItemDom on item",
+          content: [
+            {
+              tagName: "span"
+            }, {
+              tagName: "i",
+              "c-onclick": "removeItem(item)",
+              "class": "delete-icon",
+              content: "×"
+            }
+          ]
+        }, {
+          tagName: "input"
+        }
+      ]
+    },
+    initDom: function(dom) {
+      var $input, tagEditor;
+      tagEditor = this;
+      $(dom).on("click", function() {
+        return $(this).find("input").focus();
+      });
+      $input = $(dom).find("input");
+      if (this._doms == null) {
+        this._doms = {};
+      }
+      this._doms.input = dom;
+      return $input.on("focus", function() {
+        return tagEditor._showDropBox();
+      }).on("input", function(evt) {
+        var inputValue;
+        inputValue = $(this).val();
+        return tagEditor.fire("input", tagEditor, {
+          inputValue: inputValue,
+          input: this
+        });
+      }).on("keydown", function(evt) {
+        var $current, $next, $prev, $tagsDom, inputValue, last, selectedItems;
+        selectedItems = tagEditor._scope.get(tagEditor._bind);
+        inputValue = $(this).val();
+        if (evt.keyCode === 8) {
+          if (!inputValue && selectedItems) {
+            last = selectedItems.last();
+            last && tagEditor.removeItem(last);
+          }
+        }
+        if (evt.keyCode === 46 && selectedItems) {
+          selectedItems.empty();
+        }
+        if (tagEditor.isOpended()) {
+          $tagsDom = $(tagEditor._dropBox._dom).find(".tag-items");
+          $current = $tagsDom.find(">li.current");
+          if (evt.keyCode === 40) {
+            if ($current.length) {
+              $next = $current.next();
+              if ($next.length) {
+                $next.addClass("current");
+              } else {
+                $tagsDom.find(">li").first().addClass("current");
+              }
+              $current.removeClass("current");
+            } else {
+              $tagsDom.find(">li").first().addClass("current");
+            }
+          } else if (evt.keyCode === 38) {
+            if ($current.length) {
+              $prev = $current.prev();
+              if ($prev.length) {
+                $prev.addClass("current");
+              } else {
+                $tagsDom.find(">li").last().addClass("current");
+              }
+              $current.removeClass("current");
+            } else {
+              $tagsDom.find(">li").last().addClass("current");
+            }
+          } else if (evt.keyCode === 13) {
+            $current.length && $current.trigger("click");
+            return;
+          }
+        }
+        return tagEditor.fire("keyDown", tagEditor, {
+          keyCode: evt.keyCode,
+          input: this
+        });
+      });
+    },
+    removeItem: function(item) {
+      if (item) {
+        item.remove();
+        return this.fire("removeItem", this, {
+          item: item
+        });
+      }
+    },
+    open: function() {
+      return this._showDropBox();
+    },
+    isOpended: function() {
+      if (this._dropBox) {
+        return this._dropBox.isVisible();
+      }
+      return false;
+    },
+    _showDropBox: function() {
+      var content, dropBox;
+      dropBox = this._getDropBox();
+      content = this._getDropContent();
+      dropBox.get$Dom().empty().append(content);
+      return dropBox.show();
+    },
+    resetData: function() {
+      var content, dropBox;
+      dropBox = this._getDropBox();
+      content = this._getDropContent();
+      return dropBox.get$Dom().empty().append(content);
+    },
+    _getDropBox: function() {
+      var tagEditor;
+      tagEditor = this;
+      if (!this._dropBox) {
+        this._dropBox = new cola.DropBox({
+          beforeHide: function(self, arg) {
+            return tagEditor.get$Dom().removeClass("opened");
+          },
+          hide: function(self, arg) {
+            return tagEditor._opened = false;
+          }
+        });
+        this._dropBox._context = this;
+        this._dropBox._dropdown = this;
+        document.body.appendChild(this._dropBox.getDom());
+      }
+      return this._dropBox;
+    },
+    _getDropContent: function() {
+      var keyProperty, mapping, selectedItems, selection, tagEditor, template, valueProperty;
+      valueProperty = this._valueProperty || "value";
+      keyProperty = this._keyProperty || "key";
+      selection = this._scope.get(this._items);
+      selectedItems = this._scope.get(this._bind);
+      mapping = {};
+      tagEditor = this;
+      template = [];
+      selectedItems.each(function(item) {
+        return mapping[item.get(keyProperty)] = true;
+      });
+      selection.each(function(item) {
+        var key;
+        key = item.get(keyProperty);
+        if (mapping[key]) {
+          return;
+        }
+        return template.push({
+          tagName: "li",
+          key: item.get(keyProperty),
+          content: item.get(valueProperty),
+          click: function() {
+            return tagEditor.close(item);
+          }
+        });
+      });
+      return $.xCreate({
+        tagName: "ul",
+        "class": "tag-items",
+        content: template
+      });
+    },
+    initItemDom: function(dom, scope) {
+      var text;
+      text = scope.get("item").get(this._valueProperty || "value");
+      return $(dom).find("span").empty().text(text);
+    },
+    close: function(item) {
+      var selectedItems;
+      if (item) {
+        selectedItems = this._scope.get(this._bind);
+        selectedItems.insert(item.toJSON());
+        this.fire("addItem", this, {
+          item: item
+        });
+      }
+      this._getDropBox().hide();
+      return $(this._dom).find("input").val(null);
+    }
+  });
 
   cola.AbstractItemGroup = (function(superClass) {
     extend(AbstractItemGroup, superClass);
@@ -25679,7 +25965,7 @@ Template
         if (!itemScope) {
           itemScope = new cola.ItemScope(parentScope, alias);
           cola.currentScope = itemScope;
-          itemScope.data.setTargetData(item, true);
+          itemScope.data.setItemData(item, true);
           cola.util.userData(itemDom, "scope", itemScope);
           cola.util.userData(itemDom, "item", originItem);
           if (typeof this._doRefreshItemDom === "function") {
@@ -25688,7 +25974,7 @@ Template
           cola.xRender(itemDom, itemScope, this._templateContext);
         } else {
           cola.currentScope = itemScope;
-          if (itemScope.data.getTargetData() !== item) {
+          if (itemScope.data.getItemData() !== item) {
             if (itemDom._itemId && this._itemDomMap[itemDom._itemId] === itemDom) {
               delete this._itemDomMap[itemDom._itemId];
             }
@@ -25696,7 +25982,7 @@ Template
               throw new cola.Exception("Repeat alias mismatch. Expect \"" + itemScope.alias + "\" but \"" + alias + "\".");
             }
             cola.util.userData(itemDom, "item", originItem);
-            itemScope.data.setTargetData(item);
+            itemScope.data.setItemData(item);
           }
           if (typeof this._doRefreshItemDom === "function") {
             this._doRefreshItemDom(itemDom, item, itemScope);
@@ -29262,16 +29548,16 @@ Template
       if (!groupScope) {
         groupDom._itemScope = groupScope = new cola.ItemScope(parentScope, group._alias);
         parentScope.regItemScope(groupId, groupScope);
-        groupScope.data.setTargetData(group, true);
+        groupScope.data.setItemData(group, true);
         cola.util.userData(groupDom, "scope", groupScope);
         cola.util.userData(groupDom, "item", group);
       } else {
         oldGroup = cola.util.userData(groupDom, "item");
-        if (oldGroup !== groupScope.data.getTargetData()) {
+        if (oldGroup !== groupScope.data.getItemData()) {
           if (groupDom._itemId) {
             delete groupDom._itemId;
           }
-          groupScope.data.setTargetData(group);
+          groupScope.data.setItemData(group);
           cola.util.userData(groupDom, "item", group);
         }
       }
@@ -29403,7 +29689,7 @@ Template
       floatGroupHeaderWrapper = this._doms.floatGroupHeaderWrapper;
       if (!floatGroupHeaderWrapper) {
         groupScope = new cola.ItemScope(this._itemsScope, group._alias);
-        groupScope.data.setTargetData(group, true);
+        groupScope.data.setItemData(group, true);
         floatGroupHeader = this._createNewItem("group-header", group);
         cola.util.userData(floatGroupHeader, "scope", groupScope);
         this._templateContext.defaultPath = group._alias;
@@ -29421,7 +29707,7 @@ Template
       } else {
         floatGroupHeader = floatGroupHeaderWrapper.firstElementChild;
         groupScope = cola.util.userData(floatGroupHeader, "scope");
-        groupScope.data.setTargetData(group);
+        groupScope.data.setItemData(group);
         if (floatGroupHeaderWrapper.style.display === "none") {
           floatGroupHeaderWrapper.style.display = "";
         }
@@ -29730,7 +30016,7 @@ Template
         this._itemSlidePane = slidePane = this.getTemplate("slide-" + direction + "-pane");
         if (slidePane) {
           itemScope = cola.util.userData(slidePane, "scope");
-          itemScope.data.setTargetData(item);
+          itemScope.data.setItemData(item);
           if (this.getListeners("itemSlidePaneInit")) {
             this.fire("itemSlidePaneInit", this, {
               item: item,
@@ -30508,7 +30794,7 @@ Template
           return this._layerIndex;
         }
       },
-      splited: {
+      splitted: {
         readOnly: true,
         getter: function() {
           return this._autoSplit && this._largeScreen;
@@ -31274,7 +31560,7 @@ Template
     Tree.prototype._refreshItemDom = function(itemDom, node, parentScope) {
       var checkbox, checkboxDom, checkedPropValue, collapsed, dataPath, nodeDom, nodeScope, tree;
       nodeScope = cola.util.userData(itemDom, "scope");
-      if (nodeScope && nodeScope.data.getTargetData() !== node.get("data")) {
+      if (nodeScope && nodeScope.data.getItemData() !== node.get("data")) {
         collapsed = true;
       }
       nodeScope = Tree.__super__._refreshItemDom.call(this, itemDom, node, parentScope);
@@ -31555,18 +31841,6 @@ Template
         }
       }
       node._expanded = false;
-    };
-
-    Tree.prototype._refreshItems = function() {
-      var itemDom;
-      if (this._currentNode) {
-        itemDom = this._itemDomMap[this._currentNode._id];
-        delete this._currentNode;
-        if (itemDom) {
-          $fly(itemDom).removeClass("current");
-        }
-      }
-      return Tree.__super__._refreshItems.call(this);
     };
 
     Tree.prototype._removeNode = function(node) {
@@ -32106,7 +32380,7 @@ Template
       showFooter: {
         type: "boolean"
       },
-      columnStrecthable: {
+      columnStretchable: {
         type: "boolean",
         defaultValue: true
       },
@@ -32145,8 +32419,21 @@ Template
         "class": "in-cell",
         bind: "$default"
       },
+      "toggle-column": {
+        tagName: "c-toggle",
+        "class": "in-cell",
+        bind: "$default"
+      },
       "input-column": {
         tagName: "c-input",
+        "class": "in-cell",
+        bind: "$default",
+        style: {
+          width: "100%"
+        }
+      },
+      "date-column": {
+        tagName: "c-datepicker",
         "class": "in-cell",
         bind: "$default",
         style: {
@@ -32349,7 +32636,7 @@ Template
       child = dom.firstElementChild;
       while (child) {
         cola.xRender(child);
-        child.setAttribute(cola.constants.IGNORE_DIRECTIVE, true);
+        child.setAttribute(cola.constants.IGNORE_DIRECTIVE, "");
         child = child.nextElementSibling;
       }
       columns = [];
@@ -32447,7 +32734,53 @@ Template
     Table.CLASS_NAME = "items-view widget-table";
 
     Table.prototype._initDom = function(dom) {
+      var caption, column, columnConfigs, columnInfo, dataType, len1, len2, n, o, propertyDef, propertyType, ref, ref1, template;
       Table.__super__._initDom.call(this, dom);
+      dataType = this._getBindDataType();
+      if (dataType && dataType instanceof cola.EntityDataType) {
+        if (!this._columnsInfo.dataColumns.length) {
+          columnConfigs = [];
+          ref = dataType.getProperties().elements;
+          for (n = 0, len1 = ref.length; n < len1; n++) {
+            propertyDef = ref[n];
+            columnConfigs.push({
+              caption: propertyDef._caption,
+              bind: propertyDef._property
+            });
+          }
+          this.set("columns", columnConfigs);
+        } else {
+          ref1 = this._columnsInfo.dataColumns;
+          for (o = 0, len2 = ref1.length; o < len2; o++) {
+            columnInfo = ref1[o];
+            column = columnInfo.column;
+            if (!column._property) {
+              continue;
+            }
+            propertyDef = dataType.getProperty(column._property);
+            if (propertyDef) {
+              if (!column._caption) {
+                caption = propertyDef._caption || propertyDef._property;
+                if ((caption != null ? caption.charCodeAt(0) : void 0) === 95) {
+                  caption = column._bind;
+                }
+                column.set("caption", caption);
+              }
+              if (column._template === "$autoEditable") {
+                propertyType = propertyDef.get("dataType");
+                if (propertyType instanceof cola.BooleanDataType) {
+                  template = "checkbox-column";
+                } else if (propertyType instanceof cola.DateDataType) {
+                  template = "date-column";
+                } else {
+                  template = "input-column";
+                }
+                column.set("template", template);
+              }
+            }
+          }
+        }
+      }
       $fly(window).resize((function(_this) {
         return function() {
           var fixedFooter, fixedHeader;
@@ -32554,27 +32887,15 @@ Template
     };
 
     Table.prototype._doRefreshItems = function() {
-      var col, colInfo, colgroup, column, columnConfigs, dataType, i, len1, len2, n, nextCol, o, propertyDef, ref, ref1, tbody, tfoot, thead;
+      var col, colInfo, colgroup, column, i, len1, n, nextCol, ref, tbody, tfoot, thead;
       if (!this._columnsInfo) {
         return;
       }
-      dataType = this._getBindDataType();
-      if (!this._columnsInfo.dataColumns.length && dataType && dataType instanceof cola.EntityDataType) {
-        columnConfigs = [];
-        ref = dataType.getProperties().elements;
-        for (n = 0, len1 = ref.length; n < len1; n++) {
-          propertyDef = ref[n];
-          columnConfigs.push({
-            bind: propertyDef._property
-          });
-        }
-        this.set("columns", columnConfigs);
-      }
       colgroup = this._doms.colgroup;
       nextCol = colgroup.firstElementChild;
-      ref1 = this._columnsInfo.dataColumns;
-      for (i = o = 0, len2 = ref1.length; o < len2; i = ++o) {
-        colInfo = ref1[i];
+      ref = this._columnsInfo.dataColumns;
+      for (i = n = 0, len1 = ref.length; n < len1; i = ++n) {
+        colInfo = ref[i];
         col = nextCol;
         if (!col) {
           col = document.createElement("col");
@@ -32763,7 +33084,7 @@ Template
     };
 
     Table.prototype._refreshHeaderCell = function(dom, columnInfo, isNew) {
-      var $cell, caption, column, dataType, propertyDef, template;
+      var $cell, caption, column, template;
       column = columnInfo.column;
       dom.style.textAlign = column._align || "left";
       $cell = $fly(dom.parentNode);
@@ -32801,21 +33122,9 @@ Template
       if (column._real_headerTemplate) {
         return;
       }
-      dataType = this._getBindDataType();
-      caption = column._caption;
-      if (!caption) {
-        if (dataType && column._property) {
-          propertyDef = dataType.getProperty(column._property);
-          if (propertyDef) {
-            caption = propertyDef._caption || propertyDef._property;
-          }
-        }
-        if (caption == null) {
-          caption = column._name;
-        }
-        if ((caption != null ? caption.charCodeAt(0) : void 0) === 95) {
-          caption = column._bind;
-        }
+      caption = column._caption || column._name;
+      if ((caption != null ? caption.charCodeAt(0) : void 0) === 95) {
+        caption = column._bind;
       }
       dom.innerText = caption || "";
     };

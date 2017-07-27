@@ -5358,6 +5358,9 @@ messages {
   color: #ffffff;
 }
 
+.ui.input input:read-only {
+  background-color: #fbfbfb;
+}
 
 .ui.input.select > .editor.placeholder:not(:focus) {
   color: #999999;
@@ -7970,6 +7973,9 @@ c-timeline.log > ul li:hover:before {
 .ui.panel > .header > .content > .tools .collapse-btn:before {
   transition: transform 0.2s ease-out;
 }
+.ui.panel.collapsed {
+  height: 2.8rem;
+}
 .ui.panel.collapsed .collapse-btn:before {
   transform: rotate(-90deg);
 }
@@ -8936,4 +8942,68 @@ c-progress:not(.circle).warning > .track,
 c-progress:not(.circle).warning > .track .progress,
 .ui.progress:not(.circle).warning > .track .progress {
   background-color: #f2c037;
+}
+
+.ui.tag-editor {
+  display: inline-block;
+  border: 1px solid rgba(34, 36, 38, 0.15);
+  border-radius: 4px;
+  padding: 4px;
+}
+.ui.tag-editor .tag {
+  display: inline-block;
+  white-space: normal;
+  font-size: 1em;
+  color: rgba(0, 0, 0, 0.6);
+  padding: .35714286em .78571429em;
+  cursor: pointer;
+  line-height: 1em;
+  text-transform: none;
+  border: 0 solid transparent;
+  margin: 0.14285714rem 0.28571429rem 0.14285714rem 0;
+  border-radius: 4px;
+  position: relative;
+  box-shadow: 0 0 0 1px rgba(34, 36, 38, 0.15) inset;
+  background-color: #E8E8E8;
+}
+.ui.tag-editor .tag .delete-icon {
+  cursor: pointer;
+  background-color: #E8E8E8;
+  text-align: center;
+  display: inline-block;
+  margin-top: -8px;
+  line-height: 1em;
+  margin-left: .58571429em;
+}
+.ui.tag-editor .tag:hover {
+  box-shadow: 0 0 0 1px rgba(34, 36, 38, 0.15) inset;
+  background-color: #E8E8E8;
+  color: rgba(0, 0, 0, 0.87);
+}
+.ui.tag-editor .tag:hover .delete-icon {
+  color: #db2828;
+}
+.ui.tag-editor input {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: 60px;
+  border: 0;
+  outline: none;
+}
+.tag-items {
+  background-color: #fff;
+  margin: 0px;
+  padding: 0px;
+  list-style: none;
+}
+.tag-items > li {
+  line-height: 32px;
+  padding: 0 12px;
+  cursor: pointer;
+  color: rgba(0, 0, 0, 0.87);
+}
+.tag-items > li:hover,
+.tag-items > li.current {
+  background-color: #e7ebef;
 }
